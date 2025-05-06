@@ -1,6 +1,17 @@
 pipeline {
     agent any
     stages {
+        stage('Load Global Env') {
+            steps {
+                script {
+                    // Initialize the workspace for the pipeline
+                   def envLoader = load 'groovy/global.groovy'
+                    // Call the loadGlobalEnv method to load environment variables from global.env
+                    // This method will read the global.env file and set environment variables in the pipeline
+                    envLoader.loadGlobalEnv()
+                }
+            }
+        }
         stage('Initialize Workspace') {
             steps {
                 script {
