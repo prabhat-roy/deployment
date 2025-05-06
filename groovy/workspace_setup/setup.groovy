@@ -20,6 +20,10 @@ def initializeGitRepository() {
     sh 'git checkout main'  // You can change 'main' to any branch you want
     
     echo "Git repository initialized successfully"
+
+    def gitRepoUrl = env.GIT_REPO_URL ?: 'https://github.com/prabhat-roy/deployment.git'
+    def gitBranch = env.GIT_BRANCH ?: 'main'
+
 }
 
 // Function to combine the cleanup and Git initialization steps
