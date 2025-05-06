@@ -13,13 +13,17 @@ pipeline {
             }
         
         }
-        stage('Checkout from Git Repo') {
+        stage('Git Checkout') {
             steps {
                 script {
-                    // Load and run checkout.groovy to perform the Git checkout
-                    echo "[INFO] Running Git checkout..."
-                    def checkout = load 'groovy/checkout.groovy'
-                    checkout.checkoutFromGit(env.BRANCH, env.GITHUB_URL)  // Call the checkout function
+                    echo "[INFO] Performing fresh Git checkout..."
+
+                    // Ensure a fresh Git checkout after cleanup
+                    checkout([$class: 'GitSCM',
+                              branches: [[name: "*/${env.BRANCH}"]],
+                              userRemoteConfigs: [[url: env.GITHUB_URL]]])
+
+                    echo "[INFO] Git checkout completed."
                 }
             }
         }
