@@ -1,6 +1,6 @@
 def loadGlobalEnv = {
     echo "[INFO] Reading global.env..."
-    def envFilePath = "${pwd()}/global.env"
+    def envFilePath = "groovy/global.env"
 
     if (!fileExists(envFilePath)) {
         error("[ERROR] global.env not found at ${envFilePath}")
