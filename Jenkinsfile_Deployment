@@ -22,8 +22,11 @@ pipeline {
         stage('Load Global Env') {
             steps {
                 script {
-                    def envLoader = load 'groovy/global.groovy'
-                    envLoader.loadGlobalEnv()
+                        def envLoader = load 'groovy/global.groovy'
+                        def globalEnvVars = envLoader.loadGlobalEnv()
+                        withEnv(globalEnvVars) {
+                        echo "[INFO] Environment variables now available inside this block:"
+                        sh 'env | grep -E "BRANCH_NAME|REPO_URL|ENV"'  // Optional: preview key vars
                 }
             }
         }
