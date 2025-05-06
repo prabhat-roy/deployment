@@ -1,20 +1,19 @@
 // groovy/tools/checkov/load_checkov_env.groovy
-def loadCheckovEnv = {
-    echo "📄 Loading Checkov environment variables..."
 
-    // Reading the checkov.env file
+def loadCheckovEnv() {
+    echo "📄 Loading Checkov environment variables..."
     def envFile = readFile 'groovy/tools/checkov/checkov.env'
-    def checkovEnvVars = [:]  // Initialize an empty map for environment variables
-    
+    def envVars = [:]  // Create an empty map to store environment variables
+
     envFile.split("\n").each { line ->
         if (line.trim() && line.trim().startsWith("export ")) {
             def (key, value) = line.replace("export ", "").split("=", 2)
-            checkovEnvVars[key.trim()] = value.trim().replaceAll('"', '')
+            envVars[key.trim()] = value.trim().replaceAll('"', '')
         }
     }
 
-    // Set the environment variables in Jenkins
-    return checkovEnvVars
+    return envVars  // Return the map containing environment variables
 }
+
 
 return [loadCheckovEnv: loadCheckovEnv]
