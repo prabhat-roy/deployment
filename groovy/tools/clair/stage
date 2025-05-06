@@ -1,0 +1,26 @@
+stage('Clair') {
+    steps {
+        script {
+            load 'groovy/tools/clair/loadEnvVars.groovy'
+            loadEnvVars()
+
+            load 'groovy/tools/clair/startClairService.groovy'
+            startClairService()
+
+            load 'groovy/tools/clair/runClairScan.groovy'
+            runClairScan()
+
+            load 'groovy/tools/clair/generateReport.groovy'
+            generateReport()
+
+            load 'groovy/tools/clair/archiveReport.groovy'
+            archiveReport()
+
+            load 'groovy/tools/clair/cleanUp.groovy'
+            cleanUp()
+
+            load 'groovy/tools/clair/stopClairService.groovy'
+            stopClairService()
+        }
+    }
+}

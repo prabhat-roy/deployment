@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+    environment {
+        CHECKOV_ENV = "groovy/tools/checkov/checkov.env"  // Specify Checkov environment file here
+    }
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: 'Select the environment to deploy to')
+    }
+    stages {
+        stage('Set Environment') {
+            steps {
+                script {
+                    // Load Checkov environment file directly
+                    echo "Loading Checkov environment from: ${CHECKOV_ENV}"
+                    load CHECKOV_ENV
+                }
+            }
+        }
+
+        stage('Setup Checkov') {
+            steps {
+                script {
+                    // Load and run Checkov setup using environment variables
+                    load 'groovy/tools/checkov/setup_checkov.groovy'
+                    setupCheckov()
+                }
+            }
+        }
+
+        stage('Run Checkov Scan') {
+            steps {
+                script {
+                    // Load and run Checkov scan using environment variables
+                    load 'groovy/tools/checkov/run_checkov_scan.groovy'
+                    runCheckovScan()
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Load and build Docker image using environment variables
+                    load 'groovy/tasks/build_docker_image.groovy'
+                    buildDockerImage()
+                }
+            }
+        }
+
+        stage('Kubernetes Deployment') {
+            steps {
+                script {
+                    // Load and deploy to Kubernetes using environment variables
+                    load 'groovy/tasks/kubernetes_deploy.groovy'
+                    deployToKubernetes()
+                }
+            }
+        }
+
+        stage('Send Email with Reports') {
+            steps {
+                script {
+                    // Load and send email with reports using environment variables
+                    load 'groovy/tasks/send_email_report.groovy'
+                    sendEmailWithReports()
+                }
+            }
+        }
+    }
+}
