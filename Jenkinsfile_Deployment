@@ -9,13 +9,7 @@ pipeline {
                         def envLoader = load 'groovy/global.groovy' // This should load the script
                         echo "[INFO] Loaded global.groovy: ${envLoader}" // Check what is returned
 
-                        // Ensure that the method exists
-                        if (envLoader && envLoader.metaClass.respondsTo(envLoader, 'loadGlobalEnv')) {
-                                echo "[INFO] loadGlobalEnv method found."
-                                envLoader.loadGlobalEnv() // Load the environment variables
-                                } else {
-                                error("[ERROR] loadGlobalEnv method not found in the loaded script.")
-                    }
+                        envLoader.loadGlobalEnv()
 
                         echo "[INFO] Global environment loaded successfully."
                             } catch (Exception e) {
