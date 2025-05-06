@@ -1,14 +1,11 @@
-// cleanup.groovy
-// This script will clean up the workspace and create necessary folders.
+// groovy/cleanup.groovy
+def setupWorkspace = {
+    echo "[INFO] Cleaning up build folders only..."
+    sh 'rm -rf workspace/logs workspace/temp'
+    echo "[INFO] Cleaned folders, but kept groovy scripts intact."
 
-def cleanupWorkspace = {
-    echo "[INFO] Cleaning up the workspace..."
-    deleteDir()  // Deletes all files in the workspace to start fresh
-    echo "[INFO] Workspace cleaned successfully."
-
-    echo "[INFO] Recreating necessary folders..."
-    sh 'mkdir -p workspace/logs workspace/temp'  // Create required folder structure
-    echo "[INFO] Folder structure created successfully."
+    echo "[INFO] Recreating folder structure..."
+    sh 'mkdir -p workspace/logs workspace/temp'
 }
 
-return [cleanupWorkspace: cleanupWorkspace]
+return [setupWorkspace: setupWorkspace]
