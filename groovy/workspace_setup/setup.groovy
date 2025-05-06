@@ -1,4 +1,4 @@
-def setupWorkspace() {
+def setupWorkspace = {
     echo "[INFO] Cleaning up the workspace..."
     deleteDir()
     echo "[INFO] Workspace cleaned successfully."
