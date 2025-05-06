@@ -20,6 +20,25 @@ pipeline {
                 }
             }
         }
+        stage('Workspace Setup') {
+            steps {
+                script {
+                    try {
+                        echo "[INFO] Attempting to load setup.groovy..."
+                        def workspaceSetup = load 'groovy/workspace_setup/setup.groovy' // This should load the script
+                        echo "[INFO] Loaded setup.groovy: ${workspaceSetup}" // Check what is returned
+
+                        workspaceSetup.setupWorkspace()
+
+                        echo "[INFO] Workspace setup completed successfully."
+                    } catch (Exception e) {
+                        echo "[ERROR] Failed to set up workspace: ${e.message}"
+                        currentBuild.result = 'FAILURE'
+                        error("Aborting pipeline due to workspace setup failure.")
+                    }
+                }
+            }
+        }
         
     }
 }
