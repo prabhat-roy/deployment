@@ -25,19 +25,6 @@ pipeline {
                 }
             }
         }
-        stage('Git Checkout') {
-            steps {
-                script {
-                    echo "[INFO] Performing fresh Git checkout..."
-
-                    // Ensure a fresh Git checkout after cleanup
-                        checkout([$class: 'GitSCM',
-                                branches: [[name: "*/${env.BRANCH}"]],
-                                userRemoteConfigs: [[url: env.GITHUB_URL]]])
-
-                        echo "[INFO] Git checkout completed."
-                }
-            }
-        }
+        
     }
 }
