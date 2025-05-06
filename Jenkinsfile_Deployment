@@ -3,6 +3,7 @@ pipeline {
     stages {
         stage('Load Global Env') {
             steps {
+                try{
                 script {
                     // Initialize the workspace for the pipeline
                    def envLoader = load 'groovy/global.groovy'
@@ -11,6 +12,13 @@ pipeline {
                     envLoader.loadGlobalEnv()
                 }
             }
+            catch (e) {
+                echo "[ERROR] Failed to load global environment: ${e.message}"
+                currentBuild.result = 'FAILURE'
+                error("Aborting pipeline due to global env load failure.")
+            }
+            }
+            
         }
         stage('Initialize Workspace') {
             steps {
