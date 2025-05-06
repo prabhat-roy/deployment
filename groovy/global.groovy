@@ -1,14 +1,14 @@
-def loadGlobalEnv() {
+def loadGlobalEnv = {
     echo "[INFO] Reading global.env..."
     def envFilePath = "${pwd()}/global.env"
-    
+
     if (!fileExists(envFilePath)) {
         error("[ERROR] global.env not found at ${envFilePath}")
     }
 
     def envFile = readFile(envFilePath)
-    def envVars = [:] // Use a map to collect the environment variables
-    
+    def envVars = [:]
+
     envFile.split('\n').each { line ->
         line = line.trim()
         if (line && !line.startsWith('#')) {
@@ -20,8 +20,11 @@ def loadGlobalEnv() {
         }
     }
 
-    // Use withEnv to set environment variables for the pipeline
-    withEnv(envVars.collect { "${it.key}=${it.value}" }) {
-        echo "[INFO] Environment variables set successfully."
+    // Temporarily set variables in current context
+    envVars.each { key, value ->
+        env."${key}" = value
     }
 }
+
+// Return a map exposing the function
+return [ loadGlobalEnv: loadGlobalEnv ]
