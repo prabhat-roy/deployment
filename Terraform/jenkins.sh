@@ -56,46 +56,10 @@ done
 # You can add more below as needed
 log "INFO" "Starting core installations..."
 update_upgrade_os
-install_wget
-install_gnupg
 install_curl
+install_make
+install_gnupg
+install_git
 install_openjdk21
 install_jenkins
-# install_terraform
-# install_kubernetes
-# install_trivy
-# install_grype
-# install_syft
-# install_docker_scout
-# install_cosign
-# install_nodejs
-# install_snyk
-# install_spectral
-# install_semgrep
-# install_jenkins
-# install_calicoctl
-
-# install_python
-# install_newrelic_cli
-# install_checkov
-# install_clair
-# install_falco
-# install_tetragon
-# install_zaproxy
-# install_puppet
-# install_stackstorm
-
-# install_dependency_check
-# install_codacy_cli
-# install_ansible
-# install_make
-# install_git
-# install_go
-# install_gcp_cli
-# install_azure_cli
-# install_aws_cli
-# install_unzip
-# install_docker
-# install_sonarqube
-
 log "SUCCESS" "===== Jenkins Provisioning Completed Successfully ====="

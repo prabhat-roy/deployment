@@ -10,17 +10,9 @@ pipeline {
             steps {
                 script {
                     // Initialize the workspace for the pipeline
-                    load 'gorrvy/workspace_setup/setup.groovy'
+                   def setup = load 'groovy/workspace_setup/setup.groovy'
                     // Call the setupWorkspace method to clean the workspace and initialize the Git repo
                     setupWorkspace()
-                }
-            }
-        }
-        stage('Load Global Environment Variables') {
-            steps {
-                script {
-                    // Load global environment variables from the specified file
-                    
                 }
             }
         }

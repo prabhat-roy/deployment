@@ -21,40 +21,41 @@ resource "aws_instance" "jenkins" {
     Name = "Jenkins Server"
   }
 }
-resource "null_resource" "jenkins_provision" {
-  depends_on = [aws_instance.jenkins]
 
-  connection {
-    type        = "ssh"
-    host        = aws_instance.jenkins.public_ip
-    user        = "ubuntu"
-    private_key = file(var.private_key_path)
-  }
+# resource "null_resource" "jenkins_provision" {
+#   depends_on = [aws_instance.jenkins]
 
-  # Ensure the /tmp/install directory exists first
-  provisioner "remote-exec" {
-    inline = [
-      "mkdir -p /tmp/install"
-    ]
-  }
+#   connection {
+#     type        = "ssh"
+#     host        = aws_instance.jenkins.public_ip
+#     user        = "ubuntu"
+#     private_key = file(var.private_key_path)
+#   }
 
-  # Copy install folder contents
-  provisioner "file" {
-    source      = "install/"
-    destination = "/tmp/install/"
-  }
+#   # Ensure the /tmp/install directory exists first
+#   provisioner "remote-exec" {
+#     inline = [
+#       "mkdir -p /tmp/install"
+#     ]
+#   }
 
-  # Copy jenkins.sh script
-  provisioner "file" {
-    source      = "jenkins.sh"
-    destination = "/tmp/jenkins.sh"
-  }
+#   # Copy install folder contents
+#   provisioner "file" {
+#     source      = "install/"
+#     destination = "/tmp/install/"
+#   }
 
-  # Make executable and run with full logging
-  provisioner "remote-exec" {
-    inline = [
-      "chmod +x /tmp/jenkins.sh",
-      "sudo /tmp/jenkins.sh 2>&1 | tee /tmp/jenkins_install_full.log"
-    ]
-  }
-}
+#   # Copy jenkins.sh script
+#   provisioner "file" {
+#     source      = "jenkins.sh"
+#     destination = "/tmp/jenkins.sh"
+#   }
+
+#   # Make executable and run with full logging
+#   provisioner "remote-exec" {
+#     inline = [
+#       "chmod +x /tmp/jenkins.sh",
+#       "sudo /tmp/jenkins.sh 2>&1 | tee /tmp/jenkins_install_full.log"
+#     ]
+#   }
+# }
