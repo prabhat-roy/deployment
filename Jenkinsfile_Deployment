@@ -13,17 +13,29 @@ pipeline {
             }
         
         }
+        stage('Load Global Env') {
+            steps {
+                script {
+                    // Load environment variables from global.env
+                    def envLoader = load 'groovy/global.groovy'
+                    envLoader.loadGlobalEnv()
+                    echo "[INFO] Global environment loaded successfully."
+                    echo "[INFO] GITHUB_URL: ${env.GITHUB_URL}"
+                    echo "[INFO] BRANCH: ${env.BRANCH}"
+                }
+            }
+        }
         stage('Git Checkout') {
             steps {
                 script {
                     echo "[INFO] Performing fresh Git checkout..."
 
                     // Ensure a fresh Git checkout after cleanup
-                    checkout([$class: 'GitSCM',
-                              branches: [[name: "*/${env.BRANCH}"]],
-                              userRemoteConfigs: [[url: env.GITHUB_URL]]])
+                        checkout([$class: 'GitSCM',
+                                branches: [[name: "*/${env.BRANCH}"]],
+                                userRemoteConfigs: [[url: env.GITHUB_URL]]])
 
-                    echo "[INFO] Git checkout completed."
+                        echo "[INFO] Git checkout completed."
                 }
             }
         }
