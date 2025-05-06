@@ -13,15 +13,13 @@ pipeline {
             }
         
         }
-        stage('Load Global Env') {
+        stage('Git Checkout') {
             steps {
                 script {
-                    // Load environment variables from global.env
-                    def envLoader = load 'groovy/global.groovy'
-                    envLoader.loadGlobalEnv()
-                    echo "[INFO] Global environment loaded successfully."
-                    echo "[INFO] GITHUB_URL: ${env.GITHUB_URL}"
-                    echo "[INFO] BRANCH: ${env.BRANCH}"
+                    echo "[INFO] Performing Git checkout..."
+                    def checkoutScript = load 'groovy/checkout.groovy'
+                    checkoutScript.checkoutFromGit(env.GIT_BRANCH, env.GIT_REPO_URL)  // Use the variables from global.env
+                    echo "[INFO] Git checkout completed."
                 }
             }
         }
