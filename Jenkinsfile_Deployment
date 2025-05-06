@@ -2,24 +2,21 @@ pipeline {
     agent any
     stages {
         stage('Load Global Env') {
-            steps {
-                try{
-                script {
-                    // Initialize the workspace for the pipeline
-                   def envLoader = load 'groovy/global.groovy'
-                    // Call the loadGlobalEnv method to load environment variables from global.env
-                    // This method will read the global.env file and set environment variables in the pipeline
-                    envLoader.loadGlobalEnv()
-                }
-            }
-            catch (e) {
+    steps {
+        script {
+            try {
+                echo "[INFO] Attempting to load global.groovy..."
+                def envLoader = load 'groovy/global.groovy'
+                envLoader.loadGlobalEnv()
+                echo "[INFO] Global environment loaded successfully."
+            } catch (e) {
                 echo "[ERROR] Failed to load global environment: ${e.message}"
                 currentBuild.result = 'FAILURE'
                 error("Aborting pipeline due to global env load failure.")
             }
-            }
-            
         }
+    }
+}
         stage('Initialize Workspace') {
             steps {
                 script {
