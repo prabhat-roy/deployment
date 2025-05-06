@@ -1,34 +1,17 @@
 pipeline {
     agent any
     stages {
-        stage('Load Global Environment') {
+        stage('Cleanup Workspace') {
             steps {
                 script {
-                    try {
-                        echo "[INFO] Attempting to load global.groovy..."
-                        def envLoader = load 'groovy/global.groovy' // This should load the script
-                        echo "[INFO] Loaded global.groovy: ${envLoader}" // Check what is returned
-
-                        envLoader.loadGlobalEnv()
-
-                        echo "[INFO] Global environment loaded successfully."
-                            } catch (Exception e) {
-                                echo "[ERROR] Failed to load global environment: ${e.message}"
-                                currentBuild.result = 'FAILURE'
-                                error("Aborting pipeline due to global env load failure.")
-                    }
+                    echo "[INFO] Cleaning up the workspace..."
+                    // Load the cleanup script and execute it
+                    def cleanup = load 'groovy/cleanup.groovy'
+                    cleanup.cleanupWorkspace() // Assuming this handles workspace cleanup
+                    echo "[INFO] Workspace cleaned successfully."
                 }
             }
-        }
-        stage('Workspace Setup') {
-            steps {
-                script {
-                    echo "[INFO] Setting up the workspace..."
-                    // Assuming the setup.groovy cleans or initializes the workspace
-                    def setup = load 'groovy/workspace_setup/setup.groovy'
-                    setup.setupWorkspace() // Assuming this handles workspace setup (cleanup done here if needed)
-                }
-            }
+        
         }
         
     }
