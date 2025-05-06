@@ -1,5 +1,8 @@
-def call() {
+// groovy/tools/checkov/run_checkov_scan.groovy
+def runCheckovScan = {
     echo "🚀 Running Checkov scan..."
+
+    // Running the Checkov scan inside Docker using the loaded environment variables
     sh """
         docker run --rm \
             -v \$(pwd):/tf \
@@ -11,3 +14,5 @@ def call() {
             --output-file /tf/${env.REPORT_FILE}
     """
 }
+
+return [runCheckovScan: runCheckovScan]

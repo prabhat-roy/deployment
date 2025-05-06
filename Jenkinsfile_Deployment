@@ -31,5 +31,70 @@ pipeline {
             }
         }
     }
+    stage('Checkov') {
+            stages {
+                // Stage to load environment variables from checkov.env
+                stage('Load Env') {
+                    steps {
+                        script {
+                            // Load the environment variables script for Checkov
+                            def checkovEnvLoader = load 'groovy/tools/checkov/load_checkov_env.groovy'
+                            checkovEnvLoader.loadCheckovEnv()  // Load environment variables for Checkov
+
+                            // Loading the environment variables dynamically within withEnv
+                            withEnv(checkovEnvLoader.checkovEnvVars) {
+                                echo "[INFO] Environment variables now available inside this block:"
+                                sh 'env | grep -E "CHECKOV_API_KEY|CHECKOV_SCAN_PATH|CHECKOV_IMAGE"'  // Optional: preview key vars
+                            }
+                        }
+                    }
+                }
+
+                // Stage to run the Checkov scan
+                stage('Run Checkov Scan') {
+                    steps {
+                        script {
+                            // Load the script for running Checkov scan
+                            def runCheckovScript = load 'groovy/tools/checkov/run_checkov_scan.groovy'
+                            runCheckovScript.runCheckovScan()  // Run Checkov scan
+                        }
+                    }
+                }
+
+                // Stage to generate the Checkov report
+                stage('Generate Checkov Report') {
+                    steps {
+                        script {
+                            // Load the script for generating the Checkov report
+                            def generateReportScript = load 'groovy/tools/checkov/generate_checkov_report.groovy'
+                            generateReportScript.generateCheckovReport()  // Generate the report
+                        }
+                    }
+                }
+
+                // Stage to archive the Checkov report
+                stage('Archive Checkov Report') {
+                    steps {
+                        script {
+                            // Load the script for archiving the Checkov report
+                            def archiveReportScript = load 'groovy/tools/checkov/archive_checkov_report.groovy'
+                            archiveReportScript.archiveCheckovReport()  // Archive the report
+                        }
+                    }
+                }
+
+                // Stage to clean up the Docker container after the scan
+                stage('Cleanup Docker Container') {
+                    steps {
+                        script {
+                            // Load the cleanup script for Checkov Docker container
+                            def cleanupContainerScript = load 'groovy/tools/checkov/cleanup_checkov_container.groovy'
+                            cleanupContainerScript.cleanupCheckovContainer()  // Clean up Docker container
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
-}
+
