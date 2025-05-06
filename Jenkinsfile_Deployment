@@ -1,40 +1,31 @@
 pipeline {
     agent any
     stages {
-       stage('Load Global Env') {
-    steps {
-        script {
-            try {
-                echo "[INFO] Attempting to load global.groovy..."
-                def envLoader = load 'groovy/global.groovy' // This should load the script
-                echo "[INFO] Loaded global.groovy: ${envLoader}" // Check what is returned
-
-                // Ensure that the method exists
-                if (envLoader && envLoader.metaClass.respondsTo(envLoader, 'loadGlobalEnv')) {
-                    echo "[INFO] loadGlobalEnv method found."
-                    envLoader.loadGlobalEnv() // Load the environment variables
-                } else {
-                    error("[ERROR] loadGlobalEnv method not found in the loaded script.")
-                }
-
-                echo "[INFO] Global environment loaded successfully."
-            } catch (e) {
-                echo "[ERROR] Failed to load global environment: ${e.message}"
-                currentBuild.result = 'FAILURE'
-                error("Aborting pipeline due to global env load failure.")
-            }
-        }
-    }
-}
-        stage('Initialize Workspace') {
+        stage('Load Global Environment') {
             steps {
                 script {
-                    // Initialize the workspace for the pipeline
-                   def setup = load 'groovy/workspace_setup/setup.groovy'
-                    // Call the setupWorkspace method to clean the workspace and initialize the Git repo
-                    setupWorkspace()
+                    try {
+                        echo "[INFO] Attempting to load global.groovy..."
+                        def envLoader = load 'groovy/global.groovy' // This should load the script
+                        echo "[INFO] Loaded global.groovy: ${envLoader}" // Check what is returned
+
+                        // Ensure that the method exists
+                        if (envLoader && envLoader.metaClass.respondsTo(envLoader, 'loadGlobalEnv')) {
+                                echo "[INFO] loadGlobalEnv method found."
+                                envLoader.loadGlobalEnv() // Load the environment variables
+                                } else {
+                                error("[ERROR] loadGlobalEnv method not found in the loaded script.")
+                    }
+
+                        echo "[INFO] Global environment loaded successfully."
+                            } catch (Exception e) {
+                                echo "[ERROR] Failed to load global environment: ${e.message}"
+                                currentBuild.result = 'FAILURE'
+                                error("Aborting pipeline due to global env load failure.")
+                    }
                 }
             }
         }
+        
     }
 }
