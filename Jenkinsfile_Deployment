@@ -13,6 +13,15 @@ pipeline {
             }
         
         }
-        
+        stage('Checkout from Git Repo') {
+            steps {
+                script {
+                    // Load and run checkout.groovy to perform the Git checkout
+                    echo "[INFO] Running Git checkout..."
+                    def checkout = load 'groovy/checkout.groovy'
+                    checkout.checkoutFromGit(env.BRANCH, env.GITHUB_URL)  // Call the checkout function
+                }
+            }
+        }
     }
 }
