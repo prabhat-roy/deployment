@@ -11,25 +11,33 @@ def cleanWorkspace() {
     echo "Workspace cleaned successfully"
 }
 
-// Function to initialize the Git repository
-def initializeGitRepository() {
-    echo "Initializing Git repository..."
-    
-    // Run Git init and checkout
-    sh 'git init'
-    sh 'git checkout main'  // You can change 'main' to any branch you want
-    
-    echo "Git repository initialized successfully"
+def loadGlobalEnv() {
+    echo "[INFO] Reading global.env..."
 
-    def gitRepoUrl = env.GIT_REPO_URL ?: 'https://github.com/prabhat-roy/deployment.git'
-    def gitBranch = env.GIT_BRANCH ?: 'main'
+    def envFilePath = "${pwd()}/groovy/global.env"
+    if (!fileExists(envFilePath)) {
+        error("[ERROR] global.env not found at ${envFilePath}")
+    }
 
+    def envFile = readFile(envFilePath)
+    envFile.split('\n').each { line ->
+        line = line.trim()
+        if (line && !line.startsWith('#')) {
+            def (key, value) = line.split('=', 2).collect { it.trim() }
+            if (key && value) {
+                echo "[INFO] Setting ${key}=<masked>"
+                // This sets the variable for current build
+                env."${key}" = value
+            }
+        }
+    }
 }
+
 
 // Function to combine the cleanup and Git initialization steps
 def setupWorkspace() {
     cleanWorkspace()
-    initializeGitRepository()
+    loadGlobalEnv()
 }
 
 // Call the setupWorkspace function to perform the cleanup and Git initialization
