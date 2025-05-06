@@ -19,6 +19,13 @@ pipeline {
                 }
             }
         }
-        
+        stage('Load Global Env') {
+            steps {
+                script {
+                    def envLoader = load 'groovy/global.groovy'
+                    envLoader.loadGlobalEnv()
+                }
+            }
+        }
     }
 }

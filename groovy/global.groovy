@@ -1,30 +1,23 @@
 def loadGlobalEnv = {
-    echo "[INFO] Reading global.env..."
-    def envFilePath = "groovy/global.env"
+    echo "[INFO] Loading global environment variables..."
 
-    if (!fileExists(envFilePath)) {
-        error("[ERROR] global.env not found at ${envFilePath}")
-    }
+    def envContent = readFile 'groovy/global.env'
+    def props = [:]
 
-    def envFile = readFile(envFilePath)
-    def envVars = [:]
-
-    envFile.split('\n').each { line ->
+    envContent.split('\n').each { line ->
         line = line.trim()
-        if (line && !line.startsWith('#')) {
-            def (key, value) = line.split('=', 2).collect { it.trim() }
+        if (line && !line.startsWith("#")) {
+            def (key, value) = line.tokenize('=')
             if (key && value) {
-                echo "[INFO] Setting ${key}=<masked>"
-                envVars[key] = value
+                props[key.trim()] = value.trim()
+                // Also set it to environment dynamically
+                env[key.trim()] = value.trim()
+                echo "[DEBUG] Loaded: ${key.trim()}=${value.trim()}"
             }
         }
     }
 
-    // Temporarily set variables in current context
-    envVars.each { key, value ->
-        env."${key}" = value
-    }
+    echo "[INFO] Global environment variables loaded successfully."
 }
 
-// Return a map exposing the function
-return [ loadGlobalEnv: loadGlobalEnv ]
+return [loadGlobalEnv: loadGlobalEnv]
