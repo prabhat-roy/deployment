@@ -23,7 +23,7 @@ pipeline {
             steps {
                 script {
                     def cleaner = load 'groovy/Cleanup.groovy'
-                    cleaner.setupWorkspace()
+                    cleaner.setupWorkspace('workspace', ['logs', 'temp'])
                 }
             }
         }
