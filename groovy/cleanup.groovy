@@ -1,21 +1,21 @@
-def setupWorkspace() {
+def setupWorkspace = {
     try {
-        echo "[INFO] Starting cleanup of build folders..."
+        echo "[INFO] Starting workspace cleanup..."
 
-        def baseDir = 'workspace'
         def foldersToClean = ['logs', 'temp']
+        def baseDir = pwd()
 
         foldersToClean.each { folder ->
             def fullPath = "${baseDir}/${folder}"
-            echo "[INFO] Cleaning folder: ${fullPath}"
+            echo "[INFO] Cleaning: ${fullPath}"
             sh "rm -rf '${fullPath}'"
             sh "mkdir -p '${fullPath}'"
-            echo "[INFO] Recreated folder: ${fullPath}"
+            echo "[INFO] Recreated: ${fullPath}"
         }
 
-        echo "[INFO] Workspace cleanup and structure recreation completed successfully."
+        echo "[INFO] Cleanup completed. groovy/ folder preserved."
     } catch (Exception e) {
-        echo "[ERROR] Failed to clean workspace: ${e.message}"
+        echo "[ERROR] Cleanup failed: ${e.message}"
         throw e
     }
 }

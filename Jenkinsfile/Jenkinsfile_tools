@@ -19,5 +19,13 @@ pipeline {
                 }
             }
         }
+        stage('Cleanup Workspace') {
+            steps {
+                script {
+                    def cleaner = load 'groovy/Cleanup.groovy'
+                    cleaner.setupWorkspace()
+                }
+            }
+        }
     }
 }
