@@ -4,54 +4,19 @@ pipeline {
     environment {
         ENV_FILE_PATH = 'groovy/Deployment.env'
     }
-
+    
     stages {
         stage('Load Environment Variables') {
             steps {
                 script {
-                    // Load the Groovy script that contains the function
                     def envLoader = load 'groovy/LoadEnvVars.groovy'
+                    def envVars = envLoader.loadEnv(ENV_FILE_PATH)
 
-                    // Call the function to load environment variables from the env file
-                    def envVars = envLoader.loadEnvVars(ENV_FILE_PATH)
-
-                    // Inject environment variables into Jenkins environment
                     envVars.each { key, value ->
-                        echo "[INFO] Setting env: ${key}=${value}"
+                        echo "[INFO] Setting ${key}=****"
                         env[key] = value
                     }
                 }
-            }
-        }
-        stage('Cleanup Workspace') {
-            steps {
-                script {
-                    echo "[INFO] Checking if groovy/Cleanup.groovy exists"
-                    if (fileExists('groovy/Cleanup.groovy')) {
-                        echo "[INFO] File exists, loading Cleanup.groovy"
-                        def cleanupScript = load 'groovy/Cleanup.groovy'
-                        cleanupScript.call()
-                    } else {
-                        error "[ERROR] Cleanup.groovy not found in groovy/ directory"
-                    }
-                }
-            }
-        stage('Git Checkout') {
-            steps {
-                script {
-                    def props = readProperties file: 'groovy/Deployment.env'
-                    def checkoutScript = load 'groovy/Checkout.groovy'
-                    checkoutScript.checkoutFromGit(props.GIT_BRANCH, props.GIT_REPO_URL)
-                }
-            }
-        }
-
-    }
-
-    post {
-        always {
-            script {
-                echo "Pipeline finished."
             }
         }
     }
