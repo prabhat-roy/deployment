@@ -26,11 +26,16 @@ pipeline {
         stage('Cleanup Workspace') {
             steps {
                 script {
-                    def cleanupScript = load 'groovy/Cleanup.groovy'
-                    cleanupScript.setupWorkspace()
+                    echo "[INFO] Checking if groovy/Cleanup.groovy exists"
+                    if (fileExists('groovy/Cleanup.groovy')) {
+                        echo "[INFO] File exists, loading Cleanup.groovy"
+                        def cleanupScript = load 'groovy/Cleanup.groovy'
+                        cleanupScript.call()
+                    } else {
+                        error "[ERROR] Cleanup.groovy not found in groovy/ directory"
+                    }
                 }
             }
-        }
         stage('Git Checkout') {
             steps {
                 script {

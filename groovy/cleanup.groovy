@@ -1,10 +1,7 @@
-// groovy/cleanup.groovy
-
-def setupWorkspace = {
+def setupWorkspace() {
     try {
         echo "[INFO] Starting cleanup of build folders..."
 
-        // Safer cleanup with full path awareness
         def baseDir = 'workspace'
         def foldersToClean = ['logs', 'temp']
 
@@ -19,8 +16,8 @@ def setupWorkspace = {
         echo "[INFO] Workspace cleanup and structure recreation completed successfully."
     } catch (Exception e) {
         echo "[ERROR] Failed to clean workspace: ${e.message}"
-        throw e  // Rethrow to fail the pipeline if cleanup is critical
+        throw e
     }
 }
 
-return [setupWorkspace: setupWorkspace]
+return this
