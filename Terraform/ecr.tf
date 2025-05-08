@@ -21,21 +21,21 @@ resource "aws_ecr_repository" "microservices" {
 
   name = "microservices-repo-${each.value}"
 
-  image_tag_mutability = "MUTABLE"  # Use mutable tags (you can set to IMMUTABLE if preferred)
-  
+  image_tag_mutability = "MUTABLE" # Use mutable tags (you can set to IMMUTABLE if preferred)
+
   image_scanning_configuration {
-    scan_on_push = true  # Enable vulnerability scanning on push (recommended for security)
+    scan_on_push = true # Enable vulnerability scanning on push (recommended for security)
   }
 
   lifecycle {
-    prevent_destroy = false  # Allow deletion of the repository
+    prevent_destroy = false # Allow deletion of the repository
     ignore_changes = [
-      image_tag_mutability,  # Ignore changes to image_tag_mutability (optional)
+      image_tag_mutability, # Ignore changes to image_tag_mutability (optional)
     ]
   }
 
   tags = {
-    "Environment" = "production"  # Tag the repositories with environment (adjust as needed)
-    "Owner"       = "your-team-name"  # Replace with the relevant team or owner
+    "Environment" = "production"     # Tag the repositories with environment (adjust as needed)
+    "Owner"       = "your-team-name" # Replace with the relevant team or owner
   }
 }

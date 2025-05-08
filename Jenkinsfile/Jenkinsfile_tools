@@ -37,9 +37,8 @@ pipeline {
         stage('Install Jenkins Plugins') {
             steps {
                 script {
-                    def pluginInstaller = load 'groovy/JenkinsPlugins.groovy'
-                    def props = readProperties file: 'groovy/Deployment.env'
-                    pluginInstaller.installFromFile('jenkins_plugins.txt', props.JENKINS_URL, props.JENKINS_CREDS_ID)
+                    ddef pluginInstaller = load 'groovy/InstallPlugins.groovy'
+            pluginInstaller.installPluginsFromFile('groovy/plugins.txt', 'http://localhost:8080', 'jenkins-creds')
                 }
             }
         }
