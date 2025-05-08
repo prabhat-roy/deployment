@@ -9,25 +9,19 @@ pipeline {
         stage('Load Environment Variables') {
             steps {
                 script {
-                    def envVars = load('../groovy/LoadEnvVars.groovy').call(ENV_FILE_PATH)
-                    envVars.each { key, value -> env[key] = value }
+                     // Load the Groovy script that parses the env file
+                    def envLoader = load 'groovy/LoadEnvVars.groovy'
+
+                    // Call the loader with path to Deployment.env
+                    def envVars = envLoader.call('groovy/Deployment.env')
+
+                    // Inject into Jenkins environment
+                    envVars.each { key, value ->
+                        echo "[INFO] Setting env: ${key}=${value}"
+                        env[key] = value
                 }
             }
         }
-
-        
-
-        
-        
-
+                        
 	}
-
-
-    post {
-        always {
-            script {
-                echo "Pipeline finished for action: ${params.ACTION}"
-            }
-        }
-    }
-}
+   }
