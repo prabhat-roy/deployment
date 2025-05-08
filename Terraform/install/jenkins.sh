@@ -46,7 +46,8 @@ sudo chown -R jenkins:jenkins /var/lib/jenkins/init.groovy.d
 echo "🚀 Starting Jenkins..."
 sudo systemctl enable jenkins
 sudo systemctl restart jenkins
-
+sudo timedatectl set-timezone Asia/Kolkata
+sudo systemctl restart jenkins
 # === Done ===
 echo "✅ Jenkins setup complete!"
 echo "👤 Admin: $ADMIN_USER"

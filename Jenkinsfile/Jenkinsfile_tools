@@ -24,24 +24,7 @@ pipeline {
             }
         }
 
-        stage('Git Checkout') {
-            steps {
-                script {
-                    def props = readProperties file: 'groovy/Deployment.env'
-                    def checkoutScript = load 'groovy/Checkout.groovy'
-                    checkoutScript.checkoutFromGit(props.GIT_BRANCH, props.GIT_REPO_URL)
-                }
-            }
-        }
-
-        stage('Install Jenkins Plugins') {
-            steps {
-                script {
-                    ddef pluginInstaller = load 'groovy/InstallPlugins.groovy'
-            pluginInstaller.installPluginsFromFile('groovy/plugins.txt', 'http://localhost:8080', 'jenkins-creds')
-                }
-            }
-        }
+        
         
 
 	}
