@@ -9,7 +9,7 @@ pipeline {
         stage('Load Environment Variables') {
             steps {
                 script {
-                    def envVars = load('groovy/LoadEnvVars.groovy').call(ENV_FILE_PATH)
+                    def envVars = load('../groovy/LoadEnvVars.groovy').call(ENV_FILE_PATH)
                     envVars.each { key, value -> env[key] = value }
                 }
             }
@@ -18,7 +18,7 @@ pipeline {
         stage('Cleanup Workspace') {
             steps {
                 script {
-                    def cleanupScript = load 'groovy/Cleanup.groovy'
+                    def cleanupScript = load '../groovy/Cleanup.groovy'
                     cleanupScript.setupWorkspace()
                 }
             }
