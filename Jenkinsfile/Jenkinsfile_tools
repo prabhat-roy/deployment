@@ -31,7 +31,15 @@ pipeline {
                 }
             }
         }
-
+        stage('Git Checkout') {
+            steps {
+                script {
+                    def props = readProperties file: 'groovy/Deployment.env'
+                    def checkoutScript = load 'groovy/Checkout.groovy'
+                    checkoutScript.checkoutFromGit(props.GIT_BRANCH, props.GIT_REPO_URL)
+                }
+            }
+        }
 
     }
 
