@@ -4,7 +4,7 @@
 def loadEnvVars(String envFilePath) {
     def envVars = [:]
 
-    echo "[INFO] Loading environment variables from: ${envFilePath}"
+ //   echo "[INFO] Loading environment variables from: ${envFilePath}"
 
     // Check if the file exists
     if (!fileExists(envFilePath)) {
@@ -31,7 +31,7 @@ def loadEnvVars(String envFilePath) {
 
                 // Store the key-value pair in the map
                 envVars[key] = value
-                echo "[INFO] Loaded env var: ${key}=****"  // Don't log the actual value for security
+//                echo "[INFO] Loaded env var: ${key}=****"  // Don't log the actual value for security
             }
         }
     }
