@@ -1,6 +1,6 @@
 // groovy/loadEnvVars.groovy
 
-def call(String envFilePath = 'groovy/deployment.env') {
+def call = { String envFilePath = 'groovy/deployment.env' ->
     def envVars = [:]
 
     echo "[INFO] Loading environment variables from: ${envFilePath}"
@@ -17,7 +17,6 @@ def call(String envFilePath = 'groovy/deployment.env') {
             if (matcher.matches()) {
                 def key = matcher[0][1].trim()
                 def value = matcher[0][2].trim()
-                // Remove surrounding quotes if present
                 if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
                     value = value.substring(1, value.length() - 1)
                 }
@@ -29,3 +28,6 @@ def call(String envFilePath = 'groovy/deployment.env') {
 
     return envVars
 }
+
+// IMPORTANT: Jenkins requires this
+return [call: call]
