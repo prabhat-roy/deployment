@@ -56,10 +56,6 @@ done
 # You can add more below as needed
 log "INFO" "Starting core installations..."
 update_upgrade_os
-install_curl
-install_make
-install_gnupg
-install_git
 install_openjdk21
 install_jenkins
 log "SUCCESS" "===== Jenkins Provisioning Completed Successfully ====="

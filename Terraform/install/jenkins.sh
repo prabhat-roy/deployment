@@ -1,68 +1,54 @@
-#!/bin/bash
-# Update and upgrade the OS
+# Jenkins installation script
 set -e
-
 install_jenkins() {
-  echo "🔧 Installing Jenkins..."
+# === CONFIG ===
+ADMIN_USER="admin"
+ADMIN_PASSWORD="admin"
 
-  # Add the Jenkins repository key to the system
-  sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+# === Install Jenkins ===
+echo "📦 Installing Jenkins..."
+sudo mkdir -p /etc/apt/keyrings
+sudo wget -q -O /etc/apt/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian/jenkins.io-2023.key
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
 
-  # Add the Jenkins repository to the system
-  echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
-    https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
-    /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt-get update
+sudo apt-get install -y jenkins
 
-  # Update the package index
-  sudo apt update -y
+# === Disable Setup Wizard ===
+echo 'JAVA_ARGS="-Djenkins.install.runSetupWizard=false"' | sudo tee /etc/default/jenkins
 
-  # Install Jenkins
-  sudo apt install jenkins -y
+# === Preconfigure Jenkins Admin via Groovy ===
+echo "🔐 Configuring Jenkins admin user..."
+sudo mkdir -p /var/lib/jenkins/init.groovy.d
+cat <<EOF | sudo tee /var/lib/jenkins/init.groovy.d/basic-security.groovy > /dev/null
+#!groovy
+import jenkins.model.*
+import hudson.security.*
 
-  # Start Jenkins service
-  sudo systemctl start jenkins
+def instance = Jenkins.getInstance()
+println "--> Creating local Jenkins user"
 
-  # Enable Jenkins to start on boot
-  sudo systemctl enable jenkins
+def hudsonRealm = new HudsonPrivateSecurityRealm(false)
+hudsonRealm.createAccount("${ADMIN_USER}", "${ADMIN_PASSWORD}")
+instance.setSecurityRealm(hudsonRealm)
 
-  # Add Jenkins to sudo group
-  sudo usermod -aG sudo jenkins
-  
-  # Add Jenkins to Docker group (important for Jenkins to run Docker containers)
-  sudo usermod -aG docker jenkins
+def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
+strategy.setAllowAnonymousRead(false)
+instance.setAuthorizationStrategy(strategy)
 
-  # Print Jenkins version
-  echo -n "✅ Jenkins version: "
-  jenkins --version
+instance.save()
+EOF
 
-  # Wait for Jenkins to start up
-  echo "⏳ Waiting for Jenkins to start..."
-  sleep 30
+# === Fix Permissions ===
+sudo chown -R jenkins:jenkins /var/lib/jenkins/init.groovy.d
 
-  # Retrieve the initial Jenkins admin password
-  JENKINS_PASSWORD=$(sudo cat /var/lib/jenkins/secrets/initialAdminPassword)
-  echo "🔑 Jenkins initial password: $JENKINS_PASSWORD"
+# === Start Jenkins ===
+echo "🚀 Starting Jenkins..."
+sudo systemctl enable jenkins
+sudo systemctl restart jenkins
 
-  # Optional: Set the Jenkins admin password (change 'newAdminPassword' to your desired password)
-  NEW_PASSWORD="admin"
-  echo "🔐 Setting Jenkins admin password to: $NEW_PASSWORD"
-  curl -X POST -u admin:$JENKINS_PASSWORD \
-       --data "password=$NEW_PASSWORD" \
-       http://localhost:8080/jenkins/setting-security/update
-
-  echo "✅ Admin password updated successfully"
-
-  # Install plugins from the jenkins_plugin.sh file
-  echo "🔧 Installing Jenkins plugins..."
-  if [ -f "jenkins_plugin.sh" ]; then
-      source jenkins_plugin.sh
-  else
-      echo "❌ jenkins_plugin.sh not found. Skipping plugin installation."
-  fi
-
-  # Restart Jenkins to apply all configurations
-  echo "🔄 Restarting Jenkins to apply configurations..."
-  sudo systemctl restart jenkins
-
-  echo "✅ Jenkins is fully set up and running. You can access it at http://localhost:8080"
+# === Done ===
+echo "✅ Jenkins setup complete!"
+echo "👤 Admin: $ADMIN_USER"
+echo "🔐 Password: $ADMIN_PASSWORD"
 }

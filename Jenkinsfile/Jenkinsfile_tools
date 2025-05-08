@@ -1,0 +1,58 @@
+pipeline {
+    agent any
+
+    environment {
+        ENV_FILE_PATH = 'groovy/Deployment.env'
+    }
+
+    stages {
+        stage('Load Environment Variables') {
+            steps {
+                script {
+                    def envVars = load('groovy/LoadEnvVars.groovy').call(ENV_FILE_PATH)
+                    envVars.each { key, value -> env[key] = value }
+                }
+            }
+        }
+
+        stage('Cleanup Workspace') {
+            steps {
+                script {
+                    def cleanupScript = load 'groovy/Cleanup.groovy'
+                    cleanupScript.setupWorkspace()
+                }
+            }
+        }
+
+        stage('Git Checkout') {
+            steps {
+                script {
+                    def props = readProperties file: 'groovy/Deployment.env'
+                    def checkoutScript = load 'groovy/Checkout.groovy'
+                    checkoutScript.checkoutFromGit(props.GIT_BRANCH, props.GIT_REPO_URL)
+                }
+            }
+        }
+
+        stage('Install Jenkins Plugins') {
+            steps {
+                script {
+                    def pluginInstaller = load 'groovy/JenkinsPlugins.groovy'
+                    def props = readProperties file: 'groovy/Deployment.env'
+                    pluginInstaller.installFromFile('jenkins_plugins.txt', props.JENKINS_URL, props.JENKINS_CREDS_ID)
+                }
+            }
+        }
+        
+
+	}
+
+
+    post {
+        always {
+            script {
+                echo "Pipeline finished for action: ${params.ACTION}"
+            }
+        }
+    }
+}

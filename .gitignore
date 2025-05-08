@@ -1,39 +1,62 @@
-# Ignore Terraform initialization files
-.terraform/
-
-# Ignore Terraform lock file
+.DS_Store
+.eclipse.buildship.core.prefs
+.gradle/
+.idea/
+.kubernetes-manifests-*/
+.project
+.skaffold-*.yaml
 .terraform.lock.hcl
+.terraform/*
+.venv/
+.vs/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.pyc
+*.swp
+*.tfstate*
+*.tfvars
+*~
+bin/
+build/
+Dockerfile.pip
+node_modules/
+obj/
+pkg/
+release/wi-kubernetes-manifests.yaml
+vendor/
+# Terraform state files
+**/*.tfstate
+**/*.tfstate.backup
 
-# Ignore Terraform plan files
-*.tfplan
-*.tfstate
-*.tfstate.*
-
-# Ignore crash log files
-crash.log
-
-# Ignore override files
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-
-# Ignore .terraform directories in all subdirectories
-**/.terraform/
-
-# Ignore .terraform.lock.hcl files in all subdirectories
+# Terraform lock file
 **/.terraform.lock.hcl
 
-# Ignore .terraform plan files in all subdirectories
-**/*.tfplan
-**/*.tfstate
-**/*.tfstate.*
+# Terraform hidden directories (modules, plugins, etc.)
+**/.terraform/
 
-# Ignore the Terraform crash log in all subdirectories
+# Terraform crash logs
 **/crash.log
 
-# Ignore override files in all subdirectories
+# Terraform plan files
+**/*.tfplan
+
+# Terraform override files
 **/override.tf
 **/override.tf.json
 **/*_override.tf
 **/*_override.tf.json
+
+# Optional: sensitive variable files
+**/*.tfvars
+**/*.tfvars.json
+
+# Terraform provider/plugin binaries (optional)
+# Ignore .terraform directories and all provider binaries
+**/.terraform/
+**/.terraform.lock.hcl
+**/*.exe
+**/*.zip
+**/*.tar.gz
+**/*.bin
