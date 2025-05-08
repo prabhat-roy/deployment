@@ -9,33 +9,28 @@ pipeline {
         stage('Load Environment Variables') {
             steps {
                 script {
-                    echo "[INFO] Checking if groovy/LoadEnvVars.groovy exists"
-                    if (fileExists('groovy/LoadEnvVars.groovy')) {
-                        echo "[INFO] File exists"
-                    } else {
-                        error "[ERROR] File does not exist"
-                    }
-
-                    // Load the Groovy script that parses the env file
+                    // Load the Groovy script that contains the function
                     def envLoader = load 'groovy/LoadEnvVars.groovy'
-                    
-                    if (envLoader == null) {
-                        error "[ERROR] Failed to load Groovy script"
-                    }
 
-                    // Proceed with loading environment variables
-                    def envVars = envLoader.call('groovy/Deployment.env')
+                    // Call the function to load environment variables from the env file
+                    def envVars = envLoader.loadEnvVars(ENV_FILE_PATH)
 
-                    if (envVars == null) {
-                        error "[ERROR] No environment variables loaded"
-                    }
-
-                    def envList = envVars.collect { key, value -> "${key}=${value}" }
-
-                    withEnv(envList) {
-                        echo "SONARQUBE_URL: $SONARQUBE_URL"
+                    // Inject environment variables into Jenkins environment
+                    envVars.each { key, value ->
+                        echo "[INFO] Setting env: ${key}=${value}"
+                        env[key] = value
                     }
                 }
+            }
+        }
+
+        // Additional stages can go here
+    }
+
+    post {
+        always {
+            script {
+                echo "Pipeline finished."
             }
         }
     }
