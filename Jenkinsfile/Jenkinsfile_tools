@@ -1,27 +1,30 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    ENV_FILE_PATH = 'groovy/Deployment.env'
-  }
-
-  stages {
-    stage('Load Environment Variables') {
-      steps {
-        script {
-          def envLoader = load 'groovy/LoadEnvVars.groovy'
-          if (envLoader == null) {
-            error "[FATAL] Could not load env loader script."
-          }
-
-          def envVars = envLoader.call(ENV_FILE_PATH)
-
-          envVars.each { key, value ->
-            echo "[INFO] Injecting: ${key}=${value}"
-            env[key] = value
-          }
-        }
-      }
+    environment {
+        ENV_FILE_PATH = 'groovy/Deployment.env'
     }
-  }
+
+    stages {
+        stage('Load Environment Variables') {
+            steps {
+                script {
+                    // Load the Groovy script that parses the env file
+                    def envLoader = load 'groovy/LoadEnvVars.groovy'
+
+                    // Call the loader with path to Deployment.env
+                    def envVars = envLoader.call('groovy/Deployment.env')
+
+                    // Convert envVars map to key=value format list
+                    def envList = envVars.collect { key, value -> "${key}=${value}" }
+
+                    // Use withEnv to set environment variables for subsequent steps
+                    withEnv(envList) {
+                        // Your steps that rely on the environment variables go here
+                        echo "SONARQUBE_URL: $SONARQUBE_URL" // Example usage
+                    }
+                }
+            }
+        }
+    }
 }

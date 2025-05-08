@@ -1,6 +1,4 @@
-// groovy/loadEnvVars.groovy
-
-def call = { String envFilePath = 'groovy/deployment.env' ->
+def call(String envFilePath = 'groovy/Deployment.env') {
     def envVars = [:]
 
     echo "[INFO] Loading environment variables from: ${envFilePath}"
@@ -13,13 +11,16 @@ def call = { String envFilePath = 'groovy/deployment.env' ->
     lines.each { line ->
         line = line.trim()
         if (line && !line.startsWith("#")) {
-            def matcher = line =~ /^\s*([\w.-]+)\s*=\s*(.*)\s*$/
+            def matcher = line =~ /^\s*([\w.-]+)\s*=\s*(.*)\s*$/  // Regex for matching key=value pairs
             if (matcher.matches()) {
                 def key = matcher[0][1].trim()
                 def value = matcher[0][2].trim()
+
+                // Remove surrounding quotes if present
                 if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
                     value = value.substring(1, value.length() - 1)
                 }
+
                 envVars[key] = value
                 echo "[DEBUG] Loaded env var: ${key}=****"
             }
@@ -28,6 +29,3 @@ def call = { String envFilePath = 'groovy/deployment.env' ->
 
     return envVars
 }
-
-// IMPORTANT: Jenkins requires this
-return [call: call]
