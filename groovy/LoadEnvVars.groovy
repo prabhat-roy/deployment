@@ -3,15 +3,18 @@ def call(String envFilePath = 'groovy/Deployment.env') {
 
     echo "[INFO] Loading environment variables from: ${envFilePath}"
 
+    // Check if the file exists
     if (!fileExists(envFilePath)) {
         error "[ERROR] Environment file not found at: ${envFilePath}"
     }
 
+    // Read file contents
     def lines = readFile(envFilePath).split('\n')
     lines.each { line ->
         line = line.trim()
         if (line && !line.startsWith("#")) {
-            def matcher = line =~ /^\s*([\w.-]+)\s*=\s*(.*)\s*$/  // Regex for matching key=value pairs
+            // Regex to match key=value pairs
+            def matcher = line =~ /^\s*([\w.-]+)\s*=\s*(.*)\s*$/ 
             if (matcher.matches()) {
                 def key = matcher[0][1].trim()
                 def value = matcher[0][2].trim()
@@ -22,9 +25,16 @@ def call(String envFilePath = 'groovy/Deployment.env') {
                 }
 
                 envVars[key] = value
-                echo "[DEBUG] Loaded env var: ${key}=****"
+                echo "[DEBUG] Loaded env var: ${key}=****"  // Log key, but mask value for security
+            } else {
+                echo "[DEBUG] Skipping invalid line: ${line}"
             }
         }
+    }
+
+    // Ensure envVars is not empty before returning
+    if (envVars.isEmpty()) {
+        error "[ERROR] No valid environment variables found in the file"
     }
 
     return envVars

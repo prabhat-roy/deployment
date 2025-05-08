@@ -12,8 +12,18 @@ pipeline {
                     // Load the Groovy script that parses the env file
                     def envLoader = load 'groovy/LoadEnvVars.groovy'
 
+                    // Check if the Groovy script is loaded successfully
+                    if (envLoader == null) {
+                        error "[ERROR] Failed to load Groovy script"
+                    }
+
                     // Call the loader with path to Deployment.env
                     def envVars = envLoader.call('groovy/Deployment.env')
+
+                    // Check if environment variables were loaded
+                    if (envVars == null) {
+                        error "[ERROR] No environment variables loaded from the file"
+                    }
 
                     // Convert envVars map to key=value format list
                     def envList = envVars.collect { key, value -> "${key}=${value}" }
