@@ -39,15 +39,21 @@ resource "null_resource" "jenkins_provision" {
     ]
   }
 
-  # Copy install folder contents
+  # Copy update_upgrade_os.sh
   provisioner "file" {
-    source      = "install/"
-    destination = "/tmp/install/"
+    source      = "../shell_script/update_upgrade_os.sh"
+    destination = "/tmp/update_upgrade_os.sh"
+  }
+
+# Copy openjdk21.sh
+  provisioner "file" {
+    source      = "../shell_script/openjdk21.sh"
+    destination = "/tmp/openjdk21.sh"
   }
 
   # Copy jenkins.sh script
   provisioner "file" {
-    source      = "jenkins.sh"
+    source      = "../shell_script/jenkins.sh"
     destination = "/tmp/jenkins.sh"
   }
 
@@ -55,6 +61,10 @@ resource "null_resource" "jenkins_provision" {
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/jenkins.sh",
+      "chmod +x /tmp/update_upgrade_os.sh",
+      "chmod +x /tmp/openjdk21.sh",
+      "sudo /tmp/update_upgrade_os.sh 2>&1 | tee /tmp/update_upgrade_os.log",
+      "sudo /tmp/openjdk21.sh 2>&1 | tee /tmp/openjdk21.log",
       "sudo /tmp/jenkins.sh 2>&1 | tee /tmp/jenkins_install_full.log"
     ]
   }
