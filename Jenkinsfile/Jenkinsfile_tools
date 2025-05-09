@@ -49,5 +49,14 @@ pipeline {
                 }
             }
 
+            stage('Deleting Workspace') {
+                steps {
+                    script {
+                        deleteDir()
+                        echo "Workspace deleted."
+                    }
+                }
+            }
+
         }
 }    
