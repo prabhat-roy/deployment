@@ -32,22 +32,22 @@ pipeline {
                     }
                 }
             }
-            // stage('Install Unzip') {
-            //      steps {
-            //          script {
-            //              def unzipInstaller = load 'groovy/unzip.groovy'
-            //              unzipInstaller.installUnzip()
-            //          }
-            //      }
-            // }
-            // stage('Install Cloud CLI Tool') {
-            //     steps {
-            //         script {
-            //             def cliInstaller = load 'groovy/InstallCloudCLI.groovy'
-            //             cliInstaller.installCloudCLI()
-            //         }
-            //     }
-            // }
+            stage('Install Unzip') {
+                 steps {
+                      script {
+                          def unzipInstaller = load 'groovy/unzip.groovy'
+                          unzipInstaller.installUnzip()
+                      }
+                  }
+             }
+             stage('Install Cloud CLI Tool') {
+                 steps {
+                     script {
+                         def cliInstaller = load 'groovy/InstallCloudCLI.groovy'
+                         cliInstaller.installCloudCLI()
+                     }
+                 }
+             }
 
             stage('Deleting Workspace') {
                 steps {
