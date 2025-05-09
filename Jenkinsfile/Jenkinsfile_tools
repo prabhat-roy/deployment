@@ -32,6 +32,14 @@ pipeline {
                     }
                 }
             }
+            stage('Install Cloud CLI Tool') {
+                steps {
+                    script {
+                        def cliInstaller = load 'groovy/InstallCloudCLI.groovy'
+                        cliInstaller.installCloudCLI()
+                    }
+                }
+            }
 
         }
 }    
