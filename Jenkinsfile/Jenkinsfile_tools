@@ -1,22 +1,13 @@
 pipeline {
     agent any
     
-    environment {
-        GROOVY_PATH = "../groovy"  // Define the path to the groovy folder
-    }
-    
     stages {
 
         stage('Git Checkout') {
             steps {
                 script {
                     try {
-                        checkout scm
-                        // Load the Checkout.groovy script from the environment variable path
-                        def checkoutGit = load "groovy/Checkout.groovy"
-                        
-                        // Call the checkoutFromGit method
-                        checkoutGit.checkoutFromGit()
+                        checkout scm                                           
                         } catch (Exception e) {
                         // In case of an error during checkout, fail the pipeline with an appropriate message
                         error "[ERROR] Git checkout failed: ${e.message}"
