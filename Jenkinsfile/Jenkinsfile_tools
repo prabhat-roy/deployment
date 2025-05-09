@@ -13,16 +13,16 @@ pipeline {
             stage('Load Environment Variables') {
             steps {
                 script {
-                    // Load the Groovy script that contains the function
-                    def envLoader = load 'groovy/LoadEnvVars.groovy'
-                    def ENV_FILE_PATH = "groovy/Deployment.env"
-                    // Call the function to load environment variables from the env file
-                    def envVars = envLoader.loadEnvVars(ENV_FILE_PATH)
-
-                    // Inject environment variables into Jenkins environment
-                    envVars.each { key, value ->
-                        echo "[INFO] Setting env: ${key}=${value}"
-                        env[key] = value
+                    /def envFile = readFile('Deployment.env').split('\n')
+                    envFile.each { line ->
+                        line = line.trim()
+                        if (line && !line.startsWith("#")) {
+                            def parts = line.tokenize('=')
+                            if (parts.size() == 2) {
+                                def key = parts[0].trim()
+                                def value = parts[1].trim()
+                                env[key] = value
+                                echo "Loaded: ${key}=${value}"
                     }
                 }
             }
