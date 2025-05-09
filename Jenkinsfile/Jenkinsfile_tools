@@ -13,7 +13,7 @@ pipeline {
                     try {
                         checkout scm
                         // Load the Checkout.groovy script from the environment variable path
-                        def checkoutGit = load "${WORKSPACE}/groovy/Checkout.groovy"
+                        def checkoutGit = load "groovy/Checkout.groovy"
                         
                         // Call the checkoutFromGit method
                         checkoutGit.checkoutFromGit()
