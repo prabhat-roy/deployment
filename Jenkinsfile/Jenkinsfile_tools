@@ -2,7 +2,6 @@ pipeline {
     agent any
     
     stages {
-
         stage('Git Checkout') {
             steps {
                 script {
@@ -11,19 +10,28 @@ pipeline {
                 }
             }
             stage('Load Environment Variables') {
-            steps {
-                script {
-                    def envFile = readFile('groovy/Deployment.env').split('\n')
-                    def envUtil = load "groovy/LoadEnvVars.groovy"
-                    def envVars = envUtil.loadEnvVars("groovy/Deployment.env")
+                steps {
+                    script {
+                        def envFile = readFile('groovy/Deployment.env').split('\n')
+                        def envUtil = load "groovy/LoadEnvVars.groovy"
+                        def envVars = envUtil.loadEnvVars("groovy/Deployment.env")
 
-                    // Inject into env
-                    envVars.each { key, val ->
-                        env."${key}" = val
-                        echo "Injected: ${key}=${val}"
+                        // Inject into env
+                        envVars.each { key, val ->
+                            env."${key}" = val
+                            echo "Injected: ${key}=${val}"
+                        }
                     }
                 }
             }
+            stage('Detect Cloud Provider') {
+                steps {
+                    script {
+                        def cloudScript = load 'groovy/DetectCloud.groovy'
+                        cloudScript.detectAndSaveCloudProvider()
+                    }
+                }
+            }
+
         }
-        }
-    }    
+}    
