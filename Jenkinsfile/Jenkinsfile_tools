@@ -11,7 +11,7 @@ pipeline {
                 script {
                     try {
                         // Load the Checkout.groovy script from the environment variable path
-                        def checkoutGit = load "${GROOVY_PATH}/Checkout.groovy"
+                        def checkoutGit = load "/groovy/Checkout.groovy"
                         
                         // Call the checkoutFromGit method
                         checkoutGit.checkoutFromGit()
