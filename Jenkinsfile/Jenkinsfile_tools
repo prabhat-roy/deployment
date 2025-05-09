@@ -14,15 +14,13 @@ pipeline {
             steps {
                 script {
                     /def envFile = readFile('Deployment.env').split('\n')
-                    envFile.each { line ->
-                        line = line.trim()
-                        if (line && !line.startsWith("#")) {
-                            def parts = line.tokenize('=')
-                            if (parts.size() == 2) {
-                                def key = parts[0].trim()
-                                def value = parts[1].trim()
-                                env[key] = value
-                                echo "Loaded: ${key}=${value}"
+                    def envUtil = load "groovy/EnvLoader.groovy"
+                    def envVars = envUtil.loadEnvVars("Deployment.env")
+
+                    // Inject into env
+                    envVars.each { key, val ->
+                        env[key] = val
+                        echo "Injected: ${key}=${val}"
                     }
                 }
             }
