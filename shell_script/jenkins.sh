@@ -74,6 +74,11 @@ EOF
         sudo usermod -aG wheel jenkins
     fi
 
+    # === Enable passwordless sudo for Jenkins user ===
+    echo "🔐 Configuring passwordless sudo for 'jenkins' user..."
+    echo "jenkins ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/jenkins-nopasswd
+    sudo chmod 440 /etc/sudoers.d/jenkins-nopasswd
+    
     echo "🚀 Starting Jenkins service..."
     sudo systemctl enable "$JENKINS_SERVICE"
     sudo systemctl restart "$JENKINS_SERVICE"
