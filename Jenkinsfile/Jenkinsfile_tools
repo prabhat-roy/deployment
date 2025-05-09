@@ -32,14 +32,14 @@ pipeline {
                     }
                 }
             }
-            // stage('Install Unzip') {
-            //     steps {
-            //         script {
-            //             def unzipInstaller = load 'groovy/unzip.groovy'
-            //             unzipInstaller.installUnzip()
-            //         }
-            //     }
-            // }
+            stage('Install Unzip') {
+                 steps {
+                     script {
+                         def unzipInstaller = load 'groovy/unzip.groovy'
+                         unzipInstaller.installUnzip()
+                     }
+                 }
+            }
             stage('Install Cloud CLI Tool') {
                 steps {
                     script {
