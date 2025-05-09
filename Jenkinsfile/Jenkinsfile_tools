@@ -6,11 +6,7 @@ pipeline {
         stage('Git Checkout') {
             steps {
                 script {
-                    try {
-                        checkout scm                                           
-                        } catch (Exception e) {
-                        // In case of an error during checkout, fail the pipeline with an appropriate message
-                        error "[ERROR] Git checkout failed: ${e.message}"
+                    checkout scm
                     }
                 }
             }
