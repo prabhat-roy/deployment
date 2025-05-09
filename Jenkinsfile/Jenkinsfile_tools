@@ -6,16 +6,12 @@ pipeline {
     }
     
     stages {
-        stage('Initial Checkout') {
-            steps {
-                checkout scm  // Checks out the repo with groovy/ folder
-            }
-        }
 
         stage('Git Checkout') {
             steps {
                 script {
                     try {
+                        checkout scm
                         // Load the Checkout.groovy script from the environment variable path
                         def checkoutGit = load "${WORKSPACE}/groovy/Checkout.groovy"
                         
