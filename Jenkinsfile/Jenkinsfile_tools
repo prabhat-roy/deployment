@@ -19,7 +19,7 @@ pipeline {
 
                     // Inject into env
                     envVars.each { key, val ->
-                        env[key] = val
+                        env."${key}" = val
                         echo "Injected: ${key}=${val}"
                     }
                 }
