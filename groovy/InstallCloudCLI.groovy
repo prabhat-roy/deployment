@@ -10,6 +10,6 @@ def installCloudCLI() {
     println "Detected cloud provider: ${cloudProvider}"
     
     // Call shell script with provider name
-    sh "bash scripts/icloud_cli.sh ${cloudProvider}"
+    sh "bash shell_script/cloud_cli.sh ${cloudProvider}"
 }
 return this
