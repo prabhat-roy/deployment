@@ -15,7 +15,7 @@ pipeline {
                 script {
                     // Load the Groovy script that contains the function
                     def envLoader = load 'groovy/LoadEnvVars.groovy'
-
+                    def ENV_FILE_PATH = "groovy/Deployment.env"
                     // Call the function to load environment variables from the env file
                     def envVars = envLoader.loadEnvVars(ENV_FILE_PATH)
 
