@@ -1,4 +1,3 @@
-# === Core & Pipeline ===
 workflow-aggregator
 pipeline-utility-steps
 pipeline-stage-view
@@ -16,27 +15,19 @@ throttle-concurrents
 build-blocker-plugin
 preSCMbuildstep
 authorize-project
-
-# === Source Control ===
 git
 github
 gitlab-plugin
 bitbucket
 subversion
-
-# === SSH Integration ===
 ssh
 ssh-agent
 ssh-steps
-
-# === Build Tools ===
 nodejs
 python
 gradle
 maven-plugin
 ant
-
-# === Docker & Kubernetes ===
 docker-plugin
 docker-workflow
 docker-commons
@@ -45,41 +36,29 @@ kubernetes
 kubernetes-cli
 kubernetes-credentials
 kubernetes-pipeline-devops-steps
-
-# === Multi-Cloud Support ===
 # AWS
 amazon-ecr
 aws-credentials
-
-# Azure
 azure-vm-agents
 azure-credentials
-
-# Google Cloud
 google-oauth-plugin
 google-kubernetes-engine
-
-# === DevSecOps & Security ===
-dependency-check-jenkins-plugin     # OWASP Dependency-Check
-dependency-track-jenkins-plugin     # OWASP Dependency-Track
-zap-official                         # OWASP ZAP
+dependency-check-jenkins-plugin
+dependency-track-jenkins-plugin
+zap-official
 zap-pipeline
 sonarqube-scanner
 sonar-quality-gates
 quality-gates
 snyk-security-scanner
 aquasecurity-scanner
-trivy-scanner                        # Optional / custom hosted if needed
-checkov                              # If CLI used in pipeline
+trivy-scanner
+checkov
 audit-trail
 role-strategy
 matrix-auth
-
-# === Notifications & Monitoring ===
 slack
 email-ext
 prometheus
 build-monitor-plugin
-
-# === Optional UI Enhancements ===
 blueocean
