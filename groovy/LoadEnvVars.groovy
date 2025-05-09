@@ -1,4 +1,4 @@
-def loadEnvVars(String filePath = 'Deployment.env') {
+def loadEnvVars(String filePath = 'groovy/Deployment.env') {
     def envMap = [:]
     if (!fileExists(filePath)) {
         error "[ERROR] .env file not found at: ${filePath}"
