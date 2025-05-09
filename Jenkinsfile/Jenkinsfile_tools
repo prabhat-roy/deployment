@@ -9,62 +9,69 @@ pipeline {
                     }
                 }
             }
-            stage('Load Environment Variables') {
-                steps {
-                    script {
-                        def envFile = readFile('groovy/Deployment.env').split('\n')
-                        def envUtil = load "groovy/LoadEnvVars.groovy"
-                        def envVars = envUtil.loadEnvVars("groovy/Deployment.env")
+        stage('Load Environment Variables') {
+            steps {
+                script {
+                    def envFile = readFile('groovy/Deployment.env').split('\n')
+                    def envUtil = load "groovy/LoadEnvVars.groovy"
+                    def envVars = envUtil.loadEnvVars("groovy/Deployment.env")
 
                         // Inject into env
                         envVars.each { key, val ->
-                            env."${key}" = val
-                            echo "Injected: ${key}=${val}"
-                        }
+                        env."${key}" = val
+                        echo "Injected: ${key}=${val}"
                     }
                 }
             }
-            stage('Detect Cloud Provider') {
-                steps {
-                    script {
-                        def cloudScript = load 'groovy/DetectCloud.groovy'
-                        cloudScript.detectAndSaveCloudProvider()
-                    }
+         }
+         stage('Install Jenkins Plugins') {
+            steps {
+                script {
+                    def jenkinsPlugin = load 'groovy/jenkins_plugin.groovy'
+                    jenkinsPlugin.InstallPlugin()
                 }
             }
-            stage('Install Unzip') {
-                 steps {
-                      script {
-                          def unzipInstaller = load 'groovy/unzip.groovy'
-                          unzipInstaller.installUnzip()
-                      }
-                  }
-             }
-             stage('Install Cloud CLI Tool') {
-                 steps {
-                     script {
-                         def cliInstaller = load 'groovy/InstallCloudCLI.groovy'
-                         cliInstaller.installCloudCLI()
-                     }
-                 }
-             }
-            stage('Install Cloud Curl') {
-                 steps {
-                     script {
-                         def cliInstaller = load 'groovy/curl.groovy'
-                         cliInstaller.installCurl()
-                     }
-                 }
-             }
-
-            stage('Deleting Workspace') {
-                steps {
-                    script {
-                        deleteDir()
-                        echo "Workspace deleted."
-                    }
-                }
-            }
-
         }
+        stage('Detect Cloud Provider') {
+            steps {
+                script {
+                    def cloudScript = load 'groovy/DetectCloud.groovy'
+                    cloudScript.detectAndSaveCloudProvider()
+                }
+            }
+        }
+        stage('Install Unzip') {
+            steps {
+                script {
+                    def unzipInstaller = load 'groovy/unzip.groovy'
+                    unzipInstaller.installUnzip()
+                }
+            }
+        }
+        stage('Install Cloud CLI Tool') {
+            steps {
+                script {
+                    def cliInstaller = load 'groovy/InstallCloudCLI.groovy'
+                    cliInstaller.installCloudCLI()
+                }
+            }
+        }
+        stage('Install Cloud Curl') {
+            steps {
+                script {
+                    def curlInstaller = load 'groovy/curl.groovy'
+                    curlInstaller.installCurl()
+                }
+            }
+        }
+        stage('Deleting Workspace') {
+            steps {
+                script {
+                    deleteDir()
+                    echo "Workspace deleted."
+                }
+            }
+        }
+
+    }
 }    

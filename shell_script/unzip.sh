@@ -2,6 +2,12 @@
 
 set -e
 
+# Check if unzip is already installed
+if command -v unzip >/dev/null 2>&1; then
+    echo "✅ unzip is already installed."
+    exit 0
+fi
+
 echo "Installing unzip..."
 
 # Detect package manager and install unzip

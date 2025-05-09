@@ -32,13 +32,6 @@ resource "null_resource" "jenkins_provision" {
     private_key = file(var.private_key_path)
   }
 
-  # Ensure the /tmp/install directory exists first
-  provisioner "remote-exec" {
-    inline = [
-      "mkdir -p /tmp/install"
-    ]
-  }
-
   # Copy update_upgrade_os.sh
   provisioner "file" {
     source      = "../shell_script/update_upgrade_os.sh"
