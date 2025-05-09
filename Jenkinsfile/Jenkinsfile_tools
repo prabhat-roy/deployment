@@ -13,7 +13,7 @@ pipeline {
             stage('Load Environment Variables') {
             steps {
                 script {
-                    def envFile = readFile('Deployment.env').split('\n')
+                    def envFile = readFile('groovy/Deployment.env').split('\n')
                     def envUtil = load "groovy/EnvLoader.groovy"
                     def envVars = envUtil.loadEnvVars("groovy/Deployment.env")
 
