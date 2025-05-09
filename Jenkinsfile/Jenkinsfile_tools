@@ -1,31 +1,26 @@
 pipeline {
     agent any
-
+    
     environment {
-        ENV_FILE_PATH = 'groovy/Deployment.env'
+        GROOVY_PATH = "../groovy"  // Define the path to the groovy folder
     }
     
     stages {
-        stage('Load Environment Variables') {
+        stage('Git Checkout') {
             steps {
                 script {
-                    def envLoader = load 'groovy/LoadEnvVars.groovy'
-                    def envVars = envLoader.loadEnv(ENV_FILE_PATH)
-
-                    envVars.each { key, value ->
-                        echo "[INFO] Setting ${key}=****"
-                        env[key] = value
+                    try {
+                        // Load the Checkout.groovy script from the environment variable path
+                        def checkoutGit = load "${GROOVY_PATH}/Checkout.groovy"
+                        
+                        // Call the checkoutFromGit method
+                        checkoutGit.checkoutFromGit()
+                        } catch (Exception e) {
+                        // In case of an error during checkout, fail the pipeline with an appropriate message
+                        error "[ERROR] Git checkout failed: ${e.message}"
                     }
                 }
             }
         }
-        stage('Cleanup Workspace') {
-            steps {
-                script {
-                    def cleaner = load 'groovy/Cleanup.groovy'
-                    cleaner.setupWorkspace('workspace', ['logs', 'temp'])
-                }
-            }
-        }
-    }
+    }    
 }
