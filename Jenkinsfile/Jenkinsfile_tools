@@ -15,7 +15,7 @@ pipeline {
                 script {
                     /def envFile = readFile('Deployment.env').split('\n')
                     def envUtil = load "groovy/EnvLoader.groovy"
-                    def envVars = envUtil.loadEnvVars("Deployment.env")
+                    def envVars = envUtil.loadEnvVars("groovy/Deployment.env")
 
                     // Inject into env
                     envVars.each { key, val ->
