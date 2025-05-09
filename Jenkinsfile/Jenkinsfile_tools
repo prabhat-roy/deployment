@@ -48,6 +48,14 @@ pipeline {
                      }
                  }
              }
+            stage('Install Cloud Curl') {
+                 steps {
+                     script {
+                         def cliInstaller = load 'groovy/curl.groovy'
+                         cliInstaller.installCurl()
+                     }
+                 }
+             }
 
             stage('Deleting Workspace') {
                 steps {
