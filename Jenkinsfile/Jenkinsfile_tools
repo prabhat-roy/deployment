@@ -11,8 +11,8 @@ pipeline {
                 checkout scm  // Checks out the repo with groovy/ folder
             }
         }
-        
-        stage('Git Checkout') {
+
+        stage('Git Checkout1') {
             steps {
                 script {
                     try {
