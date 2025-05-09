@@ -1,20 +1,19 @@
-def setupWorkspace(String baseDir = 'workspace', List foldersToClean = ['logs', 'temp']) {
-    echo "[INFO] Starting workspace cleanup in: ${baseDir}"
+def installCloudCLI() {
+    def cloudProvider = env.CLOUD_PROVIDER
 
-    foldersToClean.each { folder ->
-        def fullPath = "${baseDir}/${folder}"
-        echo "[INFO] Cleaning: ${fullPath}"
-        try {
-            sh "rm -rf '${fullPath}'"
-            sh "mkdir -p '${fullPath}'"
-            echo "[INFO] Recreated: ${fullPath}"
-        } catch (Exception e) {
-            echo "[ERROR] Failed to clean folder ${fullPath}: ${e.message}"
-            throw e
-        }
+    if (!cloudProvider?.trim()) {
+        def props = new Properties()
+        new File('cloud.env').withInputStream { props.load(it) }
+        cloudProvider = props.getProperty('CLOUD_PROVIDER')
     }
 
-    echo "[INFO] Workspace cleanup completed successfully."
+    println "Detected cloud provider: ${cloudProvider}"
+
+    // Make the shell script executable
+    sh "chmod +x shell_script/cloud_cli.sh"
+
+    // Call the shell script with the cloud provider
+    sh "shell_script/cloud_cli.sh ${cloudProvider}"
 }
 
 return this
