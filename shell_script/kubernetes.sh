@@ -20,7 +20,7 @@ if ! command_exists kubectl; then
 
     echo "✅ kubectl installed successfully."
 else
-    echo "✅ kubectl is already installed. Version: $(kubectl version --client --short)"
+    echo "✅ kubectl is already installed. Version: $(kubectl version --client)"
 fi
 
 # Install kustomize
@@ -53,11 +53,11 @@ if ! command_exists helm; then
 
     echo "✅ Helm installed successfully."
 else
-    echo "✅ Helm is already installed. Version: $(helm version --short)"
+    echo "✅ Helm is already installed. Version: $(helm version)"
 fi
 
 # Final version check
 echo -e "\n📊 Installed Versions:"
-kubectl version --client --short
+kubectl version --client
 kustomize version
 helm version --short
