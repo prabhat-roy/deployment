@@ -1,43 +1,47 @@
 #!/bin/bash
 set -euo pipefail
 
+# Define Go install path
+GOROOT=/usr/local/go
+GOPATH=$HOME/go
+GO_BIN=$GOROOT/bin/go
+
 # Check if Go is already installed
-if command -v go &>/dev/null; then
+if command -v go &>/dev/null || [ -x "$GO_BIN" ]; then
     echo "Go is already installed."
-    go version
+    $GO_BIN version
     exit 0
-else
-    echo "Go is not installed, proceeding with installation..."
 fi
 
-# Fetch the latest Go version dynamically
-LATEST_GO_URL=$(curl -s https://golang.org/dl/ | grep -oP 'https://go.dev/dl/go[0-9.]+\.linux-amd64.tar.gz' | head -n 1)
+echo "Go is not installed, proceeding with installation..."
 
-# Extract Go version from the URL
-GO_VERSION=$(echo "$LATEST_GO_URL" | grep -oP 'go[0-9.]+' | head -n1)
+# Fetch latest Go version
+LATEST_GO_URL=$(curl -s https://go.dev/dl/ | grep -oP 'https://go.dev/dl/go[0-9.]+\.linux-amd64.tar.gz' | head -n 1)
 
-# Download Go tarball
-echo "Downloading $GO_VERSION..."
+# Validate URL
+if [[ -z "$LATEST_GO_URL" ]]; then
+    echo "❌ Failed to fetch Go download URL"
+    exit 1
+fi
+
+# Download and install
+echo "Downloading Go from: $LATEST_GO_URL"
 wget -q "$LATEST_GO_URL" -O /tmp/go.tar.gz
-
-# Remove any old Go installation
 sudo rm -rf /usr/local/go
-
-# Extract the tarball to /usr/local
 sudo tar -C /usr/local -xzf /tmp/go.tar.gz
 
-# Set Go environment variables in this script session
-export PATH=$PATH:/usr/local/go/bin
-export GOPATH=$HOME/go
-export GOROOT=/usr/local/go
+# Set environment vars for current session
+export GOROOT=$GOROOT
+export GOPATH=$GOPATH
+export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 
-# Also persist them for future sessions
+# Persist environment for future sessions
 {
-  echo 'export PATH=$PATH:/usr/local/go/bin'
-  echo 'export GOPATH=$HOME/go'
   echo 'export GOROOT=/usr/local/go'
+  echo 'export GOPATH=$HOME/go'
+  echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin'
 } >> ~/.bashrc
 
 # Verify installation
-echo "✅ Go installation complete:"
-go version
+echo "✅ Verifying Go installation..."
+go version || $GO_BIN version
