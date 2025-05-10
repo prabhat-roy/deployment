@@ -3,7 +3,7 @@ def installCloudCLI() {
     sh "chmod +x shell_script/cloudcli.sh"
 
     // Call the shell script to install unzip
-    sh "shell_script/cloudcli.sh"
+    sh "shell_script/cloudcli.sh ${env.CLOUD_PROVIDER}"
 }
 
 return this
