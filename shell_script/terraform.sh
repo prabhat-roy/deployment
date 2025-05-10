@@ -3,48 +3,46 @@ set -euo pipefail
 
 # Check if Terraform is already installed
 if command -v terraform &>/dev/null; then
-    echo "Terraform is already installed."
+    echo "✅ Terraform is already installed."
     terraform -version
     exit 0
 else
-    echo "Terraform is not installed, proceeding with installation..."
+    echo "📦 Terraform is not installed, proceeding with installation..."
 fi
 
-# Check distribution and install Terraform accordingly
-if [ -f /etc/debian_version ]; then
-    # Debian/Ubuntu based
-    echo "Detected Debian/Ubuntu based system"
-    
-    # Install required dependencies
+# Detect OS and version
+if [[ -f /etc/debian_version ]]; then
+    echo "🔍 Detected Debian/Ubuntu based system"
+
+    # Install dependencies
     sudo apt-get update -y
-    sudo apt-get install -y gnupg software-properties-common curl unzip
+    sudo apt-get install -y gnupg software-properties-common curl unzip lsb-release
 
-    # Add HashiCorp's GPG key and repository
+    # Add HashiCorp GPG key and repo
     curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-    sudo apt-add-repository "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+    echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" \
+        | sudo tee /etc/apt/sources.list.d/hashicorp.list
 
-    # Update package list and install Terraform
+    # Install Terraform
     sudo apt-get update -y
     sudo apt-get install -y terraform
 
-elif [ -f /etc/redhat-release ]; then
-    # RHEL/CentOS/Fedora based
-    echo "Detected RHEL/CentOS/Fedora based system"
-    
-    # Install required dependencies
-    sudo yum install -y gnupg curl unzip
+elif [[ -f /etc/redhat-release ]]; then
+    echo "🔍 Detected RHEL/CentOS/Fedora based system"
 
-    # Add HashiCorp's GPG key and repository
-    sudo curl -fsSL https://rpm.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /etc/pki/rpm-gpg/hashicorp-archive-keyring.gpg
-    sudo dnf repo-add https://rpm.releases.hashicorp.com/rhel/hashicorp.repo
+    # Install dependencies
+    sudo yum install -y yum-utils curl unzip
+
+    # Add HashiCorp YUM repo
+    sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
 
     # Install Terraform
-    sudo dnf install -y terraform
-
+    sudo yum install -y terraform
 else
-    echo "Unsupported OS. Exiting."
+    echo "❌ Unsupported OS. Exiting."
     exit 1
 fi
 
 # Verify installation
+echo "✅ Verifying Terraform installation..."
 terraform -version

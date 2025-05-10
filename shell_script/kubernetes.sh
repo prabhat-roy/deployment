@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-# Function to check if command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
@@ -9,15 +8,16 @@ command_exists() {
 # Install kubectl
 if ! command_exists kubectl; then
     echo "📦 Installing kubectl..."
-    # Fetch the latest stable release version of kubectl dynamically
-    KUBECTL_VERSION=$(curl -s https://dl.k8s.io/release/stable.txt)
+
+    KUBECTL_VERSION="$(curl -L -s https://dl.k8s.io/release/stable.txt)"
     curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-    
-    # Make it executable
-    chmod +x kubectl
-    
-    # Move to a directory in PATH
-    sudo mv kubectl /usr/local/bin/
+    curl -LO "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl.sha256"
+
+    echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+
+    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+    rm -f kubectl kubectl.sha256
+
     echo "✅ kubectl installed successfully."
 else
     echo "✅ kubectl is already installed. Version: $(kubectl version --client --short)"
@@ -26,16 +26,16 @@ fi
 # Install kustomize
 if ! command_exists kustomize; then
     echo "📦 Installing kustomize..."
-    # Fetch the latest release of kustomize dynamically
-    KUSTOMIZE_VERSION=$(curl -s "https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest" | jq -r '.tag_name')
-    curl -LO "https://github.com/kubernetes-sigs/kustomize/releases/download/${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
-    
-    # Extract kustomize binary
-    tar -zxvf "kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
-    
-    # Move to a directory in PATH
+    RAW_TAG=$(curl -s https://api.github.com/repos/kubernetes-sigs/kustomize/releases/latest | jq -r '.tag_name')
+    VERSION=$(basename "$RAW_TAG")
+    FILE="kustomize_${VERSION}_linux_amd64.tar.gz"
+    URL="https://github.com/kubernetes-sigs/kustomize/releases/download/${RAW_TAG}/${FILE}"
+
+    curl -LO --fail "$URL"
+    tar -zxvf "$FILE"
     sudo mv kustomize /usr/local/bin/
-    rm -rf "kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+    rm -f "$FILE"
+
     echo "✅ kustomize installed successfully."
 else
     echo "✅ kustomize is already installed. Version: $(kustomize version)"
@@ -44,24 +44,20 @@ fi
 # Install helm
 if ! command_exists helm; then
     echo "📦 Installing helm..."
-    # Fetch the latest release of helm dynamically
     HELM_VERSION=$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r '.tag_name')
     curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" -o helm.tar.gz
-    
-    # Extract the tarball
+
     tar -zxvf helm.tar.gz
-    
-    # Move the helm binary to a directory in PATH
     sudo mv linux-amd64/helm /usr/local/bin/helm
     rm -rf linux-amd64 helm.tar.gz
-    
+
     echo "✅ Helm installed successfully."
 else
     echo "✅ Helm is already installed. Version: $(helm version --short)"
 fi
 
-# Verify installation of all tools
-echo "📊 Installed Versions:"
+# Final version check
+echo -e "\n📊 Installed Versions:"
 kubectl version --client --short
 kustomize version
 helm version --short
