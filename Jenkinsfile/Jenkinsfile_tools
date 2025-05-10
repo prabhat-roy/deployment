@@ -24,14 +24,14 @@ pipeline {
                 }
             }
          }
-         stage('Install Jenkins Plugins') {
-            steps {
-                script {
-                    def jenkinsPlugin = load 'groovy/jenkins_plugin.groovy'
-                    jenkinsPlugin.InstallPlugin()
-                }
-            }
-        }
+        //  stage('Install Jenkins Plugins') {
+        //     steps {
+        //         script {
+        //             def jenkinsPlugin = load 'groovy/jenkins_plugin.groovy'
+        //             jenkinsPlugin.InstallPlugin()
+        //         }
+        //     }
+        // }
         // stage('Detect Cloud Provider') {
         //     steps {
         //         script {

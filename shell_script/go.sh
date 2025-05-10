@@ -1,64 +1,72 @@
 #!/bin/bash
 set -euo pipefail
 
-if command -v go &>/dev/null; then
-    echo "✅ Go is already installed."
-    go version
-    exit 0
-else
-    echo "📦 Go is not installed, proceeding with installation..."
-fi
+# Function to install Go
+install_go() {
+    echo "🚀 Installing Go..."
 
-# Fetch latest Go tarball URL and version
-LATEST_GO_URL=$(curl -s https://go.dev/dl/ | grep -oP 'https://go.dev/dl/go[0-9.]+\.linux-amd64.tar.gz' | head -n 1)
-GO_VERSION=$(echo "$LATEST_GO_URL" | grep -oP 'go[0-9.]+' | head -1)
+    # Detect OS (Debian or RedHat)
+    if [[ -f /etc/debian_version ]]; then
+        OS_TYPE="debian"
+    elif [[ -f /etc/redhat-release ]]; then
+        OS_TYPE="redhat"
+    else
+        echo "❌ Unsupported OS"
+        exit 1
+    fi
 
-echo "🌐 Downloading $GO_VERSION from $LATEST_GO_URL ..."
-wget -q "$LATEST_GO_URL" -O /tmp/go.tar.gz
+    # Install dependencies for Debian/RedHat
+    echo "🌐 Installing dependencies for ${OS_TYPE}..."
 
-# Determine installation directory
-INSTALL_DIR="/usr/local"
-USE_SUDO=true
-if ! sudo -v &>/dev/null; then
-    INSTALL_DIR="$HOME/.go"
-    USE_SUDO=false
-    mkdir -p "$INSTALL_DIR"
-    echo "⚠️ No sudo available, installing Go to $INSTALL_DIR"
-fi
+    if [[ "$OS_TYPE" == "debian" ]]; then
+        sudo apt update && sudo apt install -y wget curl tar
+    elif [[ "$OS_TYPE" == "redhat" ]]; then
+        sudo yum install -y wget curl tar
+    fi
 
-# Clean old Go install and extract
-if $USE_SUDO; then
-    sudo rm -rf "$INSTALL_DIR/go"
+    # Download the latest Go tarball
+    LATEST_GO_URL=$(curl -s https://go.dev/dl/ | grep -oP 'https://go.dev/dl/go[0-9.]+\.linux-amd64.tar.gz' | head -n 1)
+    GO_VERSION=$(echo "$LATEST_GO_URL" | grep -oP 'go[0-9.]+' | head -1)
+
+    echo "🌐 Downloading $GO_VERSION..."
+    wget -q "$LATEST_GO_URL" -O /tmp/go.tar.gz
+
+    # Optional: Install to user dir if sudo fails
+    INSTALL_DIR="/usr/local"
+    if ! sudo -v &>/dev/null; then
+        INSTALL_DIR="$HOME/.go"
+        mkdir -p "$INSTALL_DIR"
+    else
+        sudo rm -rf /usr/local/go
+    fi
+
+    # Extract Go
     sudo tar -C "$INSTALL_DIR" -xzf /tmp/go.tar.gz
-else
-    rm -rf "$INSTALL_DIR/go"
-    tar -C "$INSTALL_DIR" -xzf /tmp/go.tar.gz
-fi
 
-# Set environment variables
-export GOROOT="$INSTALL_DIR/go"
-export GOPATH="$HOME/go"
-export PATH="$GOROOT/bin:$GOPATH/bin:$PATH"
+    # Set environment variables for this session
+    echo "🌍 Setting up Go environment variables..."
+    echo "export GOROOT=$INSTALL_DIR/go" >> ~/.bashrc
+    echo "export GOPATH=$HOME/go" >> ~/.bashrc
+    echo "export PATH=\$GOROOT/bin:\$GOPATH/bin:\$PATH" >> ~/.bashrc
 
-# Persist to ~/.bashrc or ~/.profile
-PROFILE_FILE="$HOME/.bashrc"
-if [ -n "${BASH_VERSION:-}" ]; then
-    PROFILE_FILE="$HOME/.bashrc"
-elif [ -n "${ZSH_VERSION:-}" ]; then
-    PROFILE_FILE="$HOME/.zshrc"
-elif [ -f "$HOME/.profile" ]; then
-    PROFILE_FILE="$HOME/.profile"
-fi
+    # Reload the shell configuration
+    echo "🔄 Reloading shell configuration..."
+    source ~/.bashrc
 
-if ! grep -q "export GOROOT=" "$PROFILE_FILE"; then
-    {
-        echo "# Go environment"
-        echo "export GOROOT=\"$INSTALL_DIR/go\""
-        echo "export GOPATH=\"\$HOME/go\""
-        echo "export PATH=\"\$GOROOT/bin:\$GOPATH/bin:\$PATH\""
-    } >> "$PROFILE_FILE"
-    echo "✅ Go environment variables added to $PROFILE_FILE"
-fi
+    # Verify Go installation
+    echo "🧪 Verifying Go installation..."
+    go version
+}
 
-echo "🎉 Go installed at $GOROOT"
-go version
+# Check if Go is installed
+check_go_installed() {
+    if command -v go &>/dev/null; then
+        echo "✅ Go is already installed."
+        go version
+    else
+        install_go
+    fi
+}
+
+# Run the check
+check_go_installed
