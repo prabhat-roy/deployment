@@ -2,6 +2,13 @@
 
 set -euo pipefail
 
+# Check if cloud provider argument is given
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <cloud-provider>"
+  echo "Example: $0 aws"
+  exit 1
+fi
+
 PROVIDER=$(echo "$1" | tr '[:lower:]' '[:upper:]')
 
 echo "Installing CLI for cloud provider: $PROVIDER"
