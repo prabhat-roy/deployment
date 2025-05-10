@@ -1,6 +1,5 @@
 #!/bin/bash
-set -e
-
+set -euo pipefail
 # Function to check if curl is already installed
 check_installed() {
   if command -v curl &> /dev/null; then

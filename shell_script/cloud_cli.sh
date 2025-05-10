@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 PROVIDER=$(echo "$1" | tr '[:lower:]' '[:upper:]')
 

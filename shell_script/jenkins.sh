@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 ADMIN_USER="admin"
 ADMIN_PASSWORD="admin"
@@ -23,8 +23,8 @@ else
 
     elif [ -f /etc/debian_version ]; then
         echo "🔧 Detected Debian/Ubuntu-based system"
-        sudo apt-get update
-        sudo apt-get install -y wget curl gnupg2
+        sudo apt update
+        sudo apt install -y wget curl gnupg2
         sudo mkdir -p /etc/apt/keyrings
         sudo wget -q -O /etc/apt/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian/jenkins.io-2023.key
         echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null

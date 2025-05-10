@@ -35,8 +35,16 @@ pipeline {
         stage('Detect Cloud Provider') {
             steps {
                 script {
-                    def cloudScript = load 'groovy/DetectCloud.groovy'
+                    def cloudScript = load 'groovy/detectcloud.groovy'
                     cloudScript.detectAndSaveCloudProvider()
+                }
+            }
+        }
+         stage('Install Curl') {
+            steps {
+                script {
+                    def curlInstaller = load 'groovy/curl.groovy'
+                    curlInstaller.installCurl()
                 }
             }
         }
@@ -48,6 +56,38 @@ pipeline {
                 }
             }
         }
+        stage('Install wget') {
+            steps {
+                script {
+                    def wgetInstaller = load 'groovy/wget.groovy'
+                    wgetInstaller.installWget()
+                }
+            }
+        }
+        stage('Install gnupg') {
+            steps {
+                script {
+                    def gnupgInstaller = load 'groovy/gnupg.groovy'
+                    gnupgInstaller.installGnupg()
+                }
+            }
+        }
+        stage('Install make') {
+            steps {
+                script {
+                    def makeInstaller = load 'groovy/make.groovy'
+                    makeInstaller.installMake()
+                }
+            }
+        }
+        stage('Install python') {
+            steps {
+                script {
+                    def pythonInstaller = load 'groovy/python.groovy'
+                    pythonInstaller.installPython()
+                }
+            }
+        }
         stage('Install Cloud CLI Tool') {
             steps {
                 script {
@@ -56,11 +96,59 @@ pipeline {
                 }
             }
         }
-        stage('Install Cloud Curl') {
+       stage('Install go') {
             steps {
                 script {
-                    def curlInstaller = load 'groovy/curl.groovy'
-                    curlInstaller.installCurl()
+                    def goInstaller = load 'groovy/go.groovy'
+                    goInstaller.installGo()
+                }
+            }
+        }
+        stage('Install nodejs') {
+            steps {
+                script {
+                    def nodejsInstaller = load 'groovy/nodejs.groovy'
+                    nodejsInstaller.installNodejs()
+                }
+            }
+        }
+        stage('Install terraform') {
+            steps {
+                script {
+                    def terraformInstaller = load 'groovy/terraform.groovy'
+                    terraformInstaller.installTerraform()
+                }
+            }
+        }
+        stage('Install docker') {
+            steps {
+                script {
+                    def dockerInstaller = load 'groovy/docker.groovy'
+                    dockerInstaller.installDocker()
+                }
+            }
+        }
+        stage('Install kubernetes') {
+            steps {
+                script {
+                    def kubernetesInstaller = load 'groovy/kubernetes.groovy'
+                    kubernetesInstaller.installKubernetes()
+                }
+            }
+        }
+        stage('Install sonarqube') {
+            steps {
+                script {
+                    def sonarqubeInstaller = load 'groovy/sonarqube.groovy'
+                    sonarqubeInstaller.installSonarqube()
+                }
+            }
+        }
+        stage('Install owasp') {
+            steps {
+                script {
+                    def owaspInstaller = load 'groovy/owasp.groovy'
+                    owaspInstaller.installOwasp()
                 }
             }
         }

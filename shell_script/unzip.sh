@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 # Check if unzip is already installed
 if command -v unzip >/dev/null 2>&1; then
