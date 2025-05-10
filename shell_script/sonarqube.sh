@@ -8,16 +8,19 @@ SONARQUBE_ADMIN_USER="admin"
 SONARQUBE_ADMIN_PASS="admin"
 SONARQUBE_NEW_PASS="sonar"
 SONARQUBE_TOKEN_NAME="jenkins-token"
-JENKINS_CRED_ID="jenkins-cred"
+JENKINS_SONAR_CRED_ID="jenkins-cred"
 CLI_JAR="/tmp/jenkins-cli.jar"
 
-# Fetch Jenkins credentials from Jenkins credentials store (jenkins-cred)
+# Required ENV
 : "${JENKINS_URL:?Missing JENKINS_URL}"
-: "${JENKINS_CRED_ID:?Missing JENKINS_CRED_ID}"
+: "${JENKINS_CRED_USER:?Missing JENKINS_CRED_USER}"
+: "${JENKINS_CRED_PASS:?Missing JENKINS_CRED_PASS}"
 
-echo "📡 Fetching Jenkins credentials from Jenkins..."
-JENKINS_USER=$(java -jar "$CLI_JAR" -s "$JENKINS_URL" get-credentials --credential-id "$JENKINS_CRED_ID" | jq -r '.username')
-JENKINS_PASS=$(java -jar "$CLI_JAR" -s "$JENKINS_URL" get-credentials --credential-id "$JENKINS_CRED_ID" | jq -r '.password')
+# --- DOWNLOAD JENKINS CLI ---
+if [[ ! -f "$CLI_JAR" ]]; then
+  echo "⬇️  Downloading Jenkins CLI..."
+  wget -q "$JENKINS_URL/jnlpJars/jenkins-cli.jar" -O "$CLI_JAR"
+fi
 
 # --- START SONARQUBE ---
 echo "📦 Pulling SonarQube..."
@@ -46,33 +49,26 @@ SONARQUBE_TOKEN=$(curl -s -u "${SONARQUBE_ADMIN_USER}:${SONARQUBE_NEW_PASS}" \
 
 echo "✅ Token: $SONARQUBE_TOKEN"
 
-# --- DOWNLOAD JENKINS CLI ---
-if [[ ! -f "$CLI_JAR" ]]; then
-  echo "⬇️  Downloading Jenkins CLI..."
-  wget -q "$JENKINS_URL/jnlpJars/jenkins-cli.jar" -O "$CLI_JAR"
-fi
+# --- CHECK IF CREDENTIAL EXISTS ---
+echo "🔍 Checking if Jenkins credential '${JENKINS_SONAR_CRED_ID}' exists..."
+CRED_LIST=$(java -jar "$CLI_JAR" -s "$JENKINS_URL" --auth "$JENKINS_CRED_USER:$JENKINS_CRED_PASS" list-credentials system::system::jenkins _)
 
-# --- CHECK IF JENKINS CREDENTIAL EXISTS ---
-echo "🔍 Checking if Jenkins credential '${JENKINS_CRED_ID}' exists..."
-CRED_EXISTS=$(java -jar "$CLI_JAR" -s "$JENKINS_URL" --auth "$JENKINS_USER:$JENKINS_PASS" list-credentials --credential-id "$JENKINS_CRED_ID" | grep -c "$JENKINS_CRED_ID")
-
-if [ "$CRED_EXISTS" -eq 0 ]; then
+if echo "$CRED_LIST" | grep -q "$JENKINS_SONAR_CRED_ID"; then
+  echo "✅ Credential '${JENKINS_SONAR_CRED_ID}' already exists. Skipping creation."
+else
   # --- CREATE SECRET TEXT CREDENTIAL IN JENKINS ---
-  echo "🔧 Creating secret text credential in Jenkins..."
-
+  echo "🔧 Creating secret text credential '${JENKINS_SONAR_CRED_ID}' in Jenkins..."
   cat <<EOF > /tmp/sonar-secret.xml
 <com.cloudbees.plugins.credentials.impl.StringCredentialsImpl>
   <scope>GLOBAL</scope>
-  <id>${JENKINS_CRED_ID}</id>
+  <id>${JENKINS_SONAR_CRED_ID}</id>
   <description>SonarQube Token</description>
   <secret>${SONARQUBE_TOKEN}</secret>
 </com.cloudbees.plugins.credentials.impl.StringCredentialsImpl>
 EOF
 
-  java -jar "$CLI_JAR" -s "$JENKINS_URL" --auth "$JENKINS_USER:$JENKINS_PASS" \
+  java -jar "$CLI_JAR" -s "$JENKINS_URL" --auth "$JENKINS_CRED_USER:$JENKINS_CRED_PASS" \
     create-credentials-by-xml system::system::jenkins _ < /tmp/sonar-secret.xml
 
-  echo "✅ Jenkins credential '${JENKINS_CRED_ID}' created."
-else
-  echo "✅ Jenkins credential '${JENKINS_CRED_ID}' already exists, skipping creation."
+  echo "✅ Jenkins credential '${JENKINS_SONAR_CRED_ID}' created."
 fi
