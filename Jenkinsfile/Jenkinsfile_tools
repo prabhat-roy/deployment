@@ -32,14 +32,14 @@ pipeline {
                 }
             }
         }
-        stage('Detect Cloud Provider') {
-            steps {
-                script {
-                    def cloudScript = load 'groovy/detectcloud.groovy'
-                    cloudScript.detectAndSaveCloudProvider()
-                }
-            }
-        }
+        // stage('Detect Cloud Provider') {
+        //     steps {
+        //         script {
+        //             def cloudScript = load 'groovy/detectcloud.groovy'
+        //             cloudScript.detectAndSaveCloudProvider()
+        //         }
+        //     }
+        // }
          stage('Install Curl') {
             steps {
                 script {

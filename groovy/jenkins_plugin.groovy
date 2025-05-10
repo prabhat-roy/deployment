@@ -3,12 +3,11 @@ def InstallPlugin() {
         def pluginFile = 'Jenkinsfile/jenkins_plugin.txt'
         def cliJar = '/tmp/jenkins-cli.jar'
 
-        // Download Jenkins CLI if not already present
-        sh """
-            if [ ! -f "${cliJar}" ]; then
-                wget -q "${JENKINS_URL}/jnlpJars/jenkins-cli.jar" -O "${cliJar}"
+        sh '''
+            if [ ! -f "/tmp/jenkins-cli.jar" ]; then
+                wget -q "$JENKINS_URL/jnlpJars/jenkins-cli.jar" -O "/tmp/jenkins-cli.jar"
             fi
-        """
+        '''
 
         def plugins = readFile(pluginFile)
             .split('\n')
@@ -20,15 +19,23 @@ def InstallPlugin() {
         boolean pluginInstalled = false
 
         plugins.each { plugin ->
-            def checkCmd = "java -jar ${cliJar} -s ${JENKINS_URL} -auth ${JENKINS_USER}:${JENKINS_PASS} list-plugins | grep -E '^${plugin} '"
-            def isInstalled = sh(script: checkCmd, returnStatus: true) == 0
+            def isInstalled = sh(
+                script: """
+                    java -jar ${cliJar} -s \$JENKINS_URL -auth \$JENKINS_USER:\$JENKINS_PASS list-plugins | grep -E '^${plugin} '
+                """,
+                returnStatus: true
+            ) == 0
 
             if (isInstalled) {
                 echo "${plugin.padRight(30)} | Already Installed"
             } else {
                 echo "⬇️ Installing ${plugin}..."
-                def installCmd = "java -jar ${cliJar} -s ${JENKINS_URL} -auth ${JENKINS_USER}:${JENKINS_PASS} install-plugin ${plugin} -deploy"
-                def result = sh(script: installCmd, returnStatus: true)
+                def result = sh(
+                    script: """
+                        java -jar ${cliJar} -s \$JENKINS_URL -auth \$JENKINS_USER:\$JENKINS_PASS install-plugin ${plugin} -deploy
+                    """,
+                    returnStatus: true
+                )
                 if (result == 0) {
                     echo "${plugin.padRight(30)} | ✅ Installed"
                     pluginInstalled = true
@@ -40,11 +47,12 @@ def InstallPlugin() {
 
         if (pluginInstalled) {
             echo "🔄 Restarting Jenkins (plugins were installed)..."
-            sh "java -jar ${cliJar} -s ${JENKINS_URL} -auth ${JENKINS_USER}:${JENKINS_PASS} safe-restart"
+            sh '''
+                java -jar /tmp/jenkins-cli.jar -s $JENKINS_URL -auth $JENKINS_USER:$JENKINS_PASS safe-restart
+            '''
         } else {
             echo "✅ All plugins already installed. No restart needed."
         }
     }
 }
-
 return this

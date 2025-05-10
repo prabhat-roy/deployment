@@ -1,47 +1,36 @@
 #!/bin/bash
 set -euo pipefail
 
-# Define Go install path
-GOROOT=/usr/local/go
-GOPATH=$HOME/go
-GO_BIN=$GOROOT/bin/go
-
-# Check if Go is already installed
-if command -v go &>/dev/null || [ -x "$GO_BIN" ]; then
+if command -v go &>/dev/null; then
     echo "Go is already installed."
-    $GO_BIN version
+    go version
     exit 0
+else
+    echo "Go is not installed, proceeding with installation..."
 fi
 
-echo "Go is not installed, proceeding with installation..."
-
-# Fetch latest Go version
 LATEST_GO_URL=$(curl -s https://go.dev/dl/ | grep -oP 'https://go.dev/dl/go[0-9.]+\.linux-amd64.tar.gz' | head -n 1)
+GO_VERSION=$(echo "$LATEST_GO_URL" | grep -oP 'go[0-9.]+' | head -1)
 
-# Validate URL
-if [[ -z "$LATEST_GO_URL" ]]; then
-    echo "❌ Failed to fetch Go download URL"
-    exit 1
+echo "Downloading $GO_VERSION..."
+wget -q "$LATEST_GO_URL" -O /tmp/go.tar.gz
+
+# Optional: Install to user dir if sudo fails
+INSTALL_DIR="/usr/local"
+if ! sudo -v &>/dev/null; then
+    INSTALL_DIR="$HOME/.go"
+    mkdir -p "$INSTALL_DIR"
+else
+    sudo rm -rf /usr/local/go
 fi
 
-# Download and install
-echo "Downloading Go from: $LATEST_GO_URL"
-wget -q "$LATEST_GO_URL" -O /tmp/go.tar.gz
-sudo rm -rf /usr/local/go
-sudo tar -C /usr/local -xzf /tmp/go.tar.gz
+# Extract Go
+sudo tar -C "$INSTALL_DIR" -xzf /tmp/go.tar.gz
 
-# Set environment vars for current session
-export GOROOT=$GOROOT
-export GOPATH=$GOPATH
-export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+# Set env vars for this session
+export GOROOT="$INSTALL_DIR/go"
+export GOPATH="$HOME/go"
+export PATH="$GOROOT/bin:$GOPATH/bin:$PATH"
 
-# Persist environment for future sessions
-{
-  echo 'export GOROOT=/usr/local/go'
-  echo 'export GOPATH=$HOME/go'
-  echo 'export PATH=$PATH:$GOROOT/bin:$GOPATH/bin'
-} >> ~/.bashrc
-
-# Verify installation
-echo "✅ Verifying Go installation..."
-go version || $GO_BIN version
+echo "Go installed at $GOROOT"
+go version
