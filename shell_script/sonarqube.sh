@@ -13,8 +13,8 @@ CLI_JAR="/tmp/jenkins-cli.jar"
 
 # Required ENV
 : "${JENKINS_URL:?Missing JENKINS_URL}"
-: "${JENKINS_CRED_USER:?Missing JENKINS_CRED_USER}"
-: "${JENKINS_CRED_PASS:?Missing JENKINS_CRED_PASS}"
+: "${JENKINS_USER:?Missing JENKINS_USER}"
+: "${JENKINS_PASS:?Missing JENKINS_PASS}"
 
 # --- DOWNLOAD JENKINS CLI ---
 if [[ ! -f "$CLI_JAR" ]]; then
@@ -51,7 +51,7 @@ echo "✅ Token: $SONARQUBE_TOKEN"
 
 # --- CHECK IF CREDENTIAL EXISTS ---
 echo "🔍 Checking if Jenkins credential '${JENKINS_SONAR_CRED_ID}' exists..."
-CRED_LIST=$(java -jar "$CLI_JAR" -s "$JENKINS_URL" --auth "$JENKINS_CRED_USER:$JENKINS_CRED_PASS" list-credentials system::system::jenkins _)
+CRED_LIST=$(java -jar "$CLI_JAR" -s "$JENKINS_URL" --auth "$JENKINS_USER:$JENKINS_PASS" list-credentials system::system::jenkins _)
 
 if echo "$CRED_LIST" | grep -q "$JENKINS_SONAR_CRED_ID"; then
   echo "✅ Credential '${JENKINS_SONAR_CRED_ID}' already exists. Skipping creation."
@@ -67,7 +67,7 @@ else
 </com.cloudbees.plugins.credentials.impl.StringCredentialsImpl>
 EOF
 
-  java -jar "$CLI_JAR" -s "$JENKINS_URL" --auth "$JENKINS_CRED_USER:$JENKINS_CRED_PASS" \
+  java -jar "$CLI_JAR" -s "$JENKINS_URL" --auth "$JENKINS_USER:$JENKINS_PASS" \
     create-credentials-by-xml system::system::jenkins _ < /tmp/sonar-secret.xml
 
   echo "✅ Jenkins credential '${JENKINS_SONAR_CRED_ID}' created."
