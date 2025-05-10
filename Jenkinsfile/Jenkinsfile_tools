@@ -88,14 +88,14 @@ pipeline {
                 }
             }
         }
-        stage('Install Cloud CLI Tool') {
-            steps {
-                script {
-                    def cliInstaller = load 'groovy/cloudcli.groovy'
-                    cliInstaller.installCloudCLI()
-                }
-            }
-        }
+        // stage('Install Cloud CLI Tool') {
+        //     steps {
+        //         script {
+        //             def cliInstaller = load 'groovy/cloudcli.groovy'
+        //             cliInstaller.installCloudCLI()
+        //         }
+        //     }
+        // }
        stage('Install go') {
             steps {
                 script {
