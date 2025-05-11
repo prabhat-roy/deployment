@@ -22,4 +22,4 @@ echo "🚀 Running Terraform..."
 cd Terraform/AWS/ECR
 terraform init -input=false
 terraform plan
-terraform apply -auto-approve
+terraform destroy -auto-approve
