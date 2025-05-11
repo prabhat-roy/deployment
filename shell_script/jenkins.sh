@@ -3,46 +3,57 @@ set -euo pipefail
 
 ADMIN_USER="admin"
 ADMIN_PASSWORD="admin"
+PLUGINS_FILE="../../../Jenkinsfile/jenkins_plugins.txt""
 
-echo "📦 Installing Jenkins..."
+echo "📦 Starting Jenkins installation script..."
 
 # Check if Jenkins is already installed
 if command -v jenkins &> /dev/null; then
     echo "✅ Jenkins is already installed."
     sudo systemctl status jenkins --no-pager
+    exit 0
+fi
+
+# Detect distribution and install Jenkins
+if [ -f /etc/redhat-release ]; then
+    echo "🔧 Detected RHEL/CentOS-based system"
+    sudo yum install -y wget curl
+    sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
+    sudo yum install -y jenkins
+    JENKINS_SERVICE="jenkins"
+    JENKINS_DEFAULT="/etc/sysconfig/jenkins"
+
+elif [ -f /etc/debian_version ]; then
+    echo "🔧 Detected Debian/Ubuntu-based system"
+    sudo apt update
+    sudo apt install -y wget curl gnupg2
+    sudo mkdir -p /etc/apt/keyrings
+    sudo wget -q -O /etc/apt/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian/jenkins.io-2023.key
+    echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+    sudo apt update
+    sudo apt install -y jenkins
+    JENKINS_SERVICE="jenkins"
+    JENKINS_DEFAULT="/etc/default/jenkins"
 else
-    # Detect distribution and install Jenkins
-    if [ -f /etc/redhat-release ]; then
-        echo "🔧 Detected RHEL/CentOS-based system"
-        sudo yum install -y wget curl
-        sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
-        sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
-        sudo yum install -y jenkins
-        JENKINS_SERVICE="jenkins"
-        JENKINS_DEFAULT="/etc/sysconfig/jenkins"
+    echo "❌ Unsupported OS. Exiting."
+    exit 1
+fi
 
-    elif [ -f /etc/debian_version ]; then
-        echo "🔧 Detected Debian/Ubuntu-based system"
-        sudo apt update
-        sudo apt install -y wget curl gnupg2
-        sudo mkdir -p /etc/apt/keyrings
-        sudo wget -q -O /etc/apt/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian/jenkins.io-2023.key
-        echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
-        sudo apt-get update
-        sudo apt-get install -y jenkins
-        JENKINS_SERVICE="jenkins"
-        JENKINS_DEFAULT="/etc/default/jenkins"
-    else
-        echo "❌ Unsupported OS. Exiting."
-        exit 1
-    fi
+echo "🛑 Stopping Jenkins to configure it..."
+sudo systemctl stop "$JENKINS_SERVICE"
 
-    echo 'JAVA_ARGS="-Djenkins.install.runSetupWizard=false"' | sudo tee "$JENKINS_DEFAULT"
+# Disable setup wizard
+if grep -q 'JAVA_ARGS=' "$JENKINS_DEFAULT"; then
+    sudo sed -i 's|JAVA_ARGS=.*|JAVA_ARGS="-Djenkins.install.runSetupWizard=false"|' "$JENKINS_DEFAULT"
+else
+    echo 'JAVA_ARGS="-Djenkins.install.runSetupWizard=false"' | sudo tee -a "$JENKINS_DEFAULT" > /dev/null
+fi
 
-    echo "🔐 Configuring Jenkins admin user..."
-    sudo mkdir -p /var/lib/jenkins/init.groovy.d
+echo "🔐 Configuring Jenkins admin user..."
+sudo mkdir -p /var/lib/jenkins/init.groovy.d
 
-    cat <<EOF | sudo tee /var/lib/jenkins/init.groovy.d/basic-security.groovy > /dev/null
+sudo tee /var/lib/jenkins/init.groovy.d/basic-security.groovy > /dev/null <<EOF
 #!groovy
 import jenkins.model.*
 import hudson.security.*
@@ -61,28 +72,46 @@ instance.setAuthorizationStrategy(strategy)
 instance.save()
 EOF
 
-    sudo chown -R jenkins:jenkins /var/lib/jenkins/init.groovy.d
+sudo chown -R jenkins:jenkins /var/lib/jenkins/init.groovy.d
+sudo chmod 644 /var/lib/jenkins/init.groovy.d/basic-security.groovy
 
-    echo "🔧 Adding 'jenkins' user to sudo/wheel group..."
-    if getent group sudo >/dev/null 2>&1; then
-        sudo usermod -aG sudo jenkins
-    elif getent group wheel >/dev/null 2>&1; then
-        sudo usermod -aG wheel jenkins
-    fi
+# Remove initial password if it exists
+sudo rm -f /var/lib/jenkins/secrets/initialAdminPassword
 
-    echo "🔐 Configuring passwordless sudo for 'jenkins' user..."
-    echo "jenkins ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/jenkins-nopasswd
-    sudo chmod 440 /etc/sudoers.d/jenkins-nopasswd
-    echo "jenkins ALL=(ALL) NOPASSWD:ALL" | sudo tee -a /etc/sudoers > /dev/null
-
-    echo "🕓 Setting timezone to Asia/Kolkata..."
-    sudo timedatectl set-timezone Asia/Kolkata
-
-    echo "🚀 Enabling and starting Jenkins service..."
-    sudo systemctl enable "$JENKINS_SERVICE"
-    sudo systemctl restart "$JENKINS_SERVICE"
+echo "🔧 Adding 'jenkins' user to sudo/wheel group..."
+if getent group sudo >/dev/null 2>&1; then
+    sudo usermod -aG sudo jenkins
+elif getent group wheel >/dev/null 2>&1; then
+    sudo usermod -aG wheel jenkins
 fi
 
-echo "✅ Jenkins installation and configuration completed!"
+echo "🔐 Configuring passwordless sudo for 'jenkins' user..."
+echo "jenkins ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/jenkins-nopasswd
+sudo chmod 440 /etc/sudoers.d/jenkins-nopasswd
+
+echo "🕓 Setting timezone to Asia/Kolkata..."
+sudo timedatectl set-timezone Asia/Kolkata
+
+echo "🚀 Enabling and starting Jenkins service..."
+sudo systemctl enable "$JENKINS_SERVICE"
+sudo systemctl start "$JENKINS_SERVICE"
+
+# Plugin installation
+if [[ -f "$PLUGINS_FILE" ]]; then
+    echo "📦 Installing Jenkins plugins from $PLUGINS_FILE..."
+    while IFS= read -r plugin || [[ -n "$plugin" ]]; do
+        if [[ ! -z "$plugin" && ! "$plugin" =~ ^# ]]; then
+            echo "➡️  Installing plugin: $plugin"
+            sudo /usr/lib/jenkins/jenkins-cli.jar -s http://localhost:8080/ -auth $ADMIN_USER:$ADMIN_PASSWORD install-plugin "$plugin"
+        fi
+    done < "$PLUGINS_FILE"
+    echo "🔄 Restarting Jenkins to apply plugins..."
+    sudo systemctl restart "$JENKINS_SERVICE"
+else
+    echo "⚠️ No plugins.txt file found. Skipping plugin installation."
+fi
+
+echo "✅ Jenkins is ready!"
+echo "🌐 Visit: http://<your-server-ip>:8080"
 echo "👤 Admin: $ADMIN_USER"
 echo "🔐 Password: $ADMIN_PASSWORD"
