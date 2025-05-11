@@ -4,7 +4,7 @@ set -e
 
 echo "📦 Loading environment variables..."
 set -o allexport
-source .env
+source Jenkins.env
 set +o allexport
 
 echo "📜 Converting ECR_REPOS to Terraform list..."

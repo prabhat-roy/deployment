@@ -41,29 +41,29 @@ pipeline {
             }
         }
 
-        stage('Create K8s ServiceAccount') {
-            steps {
-                script {
-                    def saCreator = load 'groovy/kubernetesserviceaccount.groovy'
-                    saCreator.createServiceAccount()
-                }
-            }
-        }
-        stage('Deploy Elastic Stack') {
-            steps {
-                script {
-                    def elasticDeployer = load 'groovy/deployElasticStack.groovy'
-                    elasticDeployer.deployElasticStack()
-                }
-            }
-        }
-        stage('Generate Elastic Agent Enrollment Token') {
-            steps {
-                script {
-                    def enrollmentTokenCreator = load 'groovy/create_token.groovy'
-                    enrollmentTokenCreator.generateEnrollmentToken()
-                }
-            }
-        }
+        // stage('Create K8s ServiceAccount') {
+        //     steps {
+        //         script {
+        //             def saCreator = load 'groovy/kubernetesserviceaccount.groovy'
+        //             saCreator.createServiceAccount()
+        //         }
+        //     }
+        // }
+        // stage('Deploy Elastic Stack') {
+        //     steps {
+        //         script {
+        //             def elasticDeployer = load 'groovy/deployElasticStack.groovy'
+        //             elasticDeployer.deployElasticStack()
+        //         }
+        //     }
+        // }
+        // stage('Generate Elastic Agent Enrollment Token') {
+        //     steps {
+        //         script {
+        //             def enrollmentTokenCreator = load 'groovy/create_token.groovy'
+        //             enrollmentTokenCreator.generateEnrollmentToken()
+        //         }
+        //     }
+        // }
     }
 }
