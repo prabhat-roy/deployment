@@ -1,62 +1,57 @@
+# === OS-specific ===
 .DS_Store
-.eclipse.buildship.core.prefs
-.gradle/
-.idea/
-.kubernetes-manifests-*/
-.project
-.skaffold-*.yaml
-.terraform.lock.hcl
-.terraform/*
-.venv/
-.vs/
+Thumbs.db
+
+# === IDE/editor configs ===
 .vscode/
+.idea/
 *.iml
 *.ipr
 *.iws
-*.pyc
-*.swp
-*.tfstate*
-*.tfvars
-*~
-bin/
+.project
+.settings/
+.gradle/
 build/
-Dockerfile.pip
+target/
+bin/
+out/
+
+# === Terraform ===
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfapply
+*.tfvars
+*.tfvars.json
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform/
+**/.terraform/
+.terraform.lock.hcl
+**/.terraform.lock.hcl
+
+# === Environment and secrets ===
+.env
+.envrc
+*.key
+*.pem
+secrets/
+generated.tfvars
+
+# === Python (if used) ===
+*.pyc
+__pycache__/
+.venv/
+
+# === Node (if any UI or frontend service) ===
 node_modules/
-obj/
-pkg/
-release/wi-kubernetes-manifests.yaml
-vendor/
-# Terraform state files
-**/*.tfstate
-**/*.tfstate.backup
+*.log
 
-# Terraform lock file
-**/.terraform.lock.hcl
-
-# Terraform hidden directories (modules, plugins, etc.)
-**/.terraform/
-
-# Terraform crash logs
-**/crash.log
-
-# Terraform plan files
-**/*.tfplan
-
-# Terraform override files
-**/override.tf
-**/override.tf.json
-**/*_override.tf
-**/*_override.tf.json
-
-# Optional: sensitive variable files
-**/*.tfvars
-**/*.tfvars.json
-
-# Terraform provider/plugin binaries (optional)
-# Ignore .terraform directories and all provider binaries
-**/.terraform/
-**/.terraform.lock.hcl
-**/*.exe
-**/*.zip
-**/*.tar.gz
-**/*.bin
+# === Jenkins ===
+*.bak
+*.tmp
+*.groovy~
+*.jenkinsfile.bak
