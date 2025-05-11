@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_ecr_repository" "repos" {
-  for_each = var.ecr_repo_names
+  for_each = toset(var.ecr_repo_names)
 
   name = each.value
 
