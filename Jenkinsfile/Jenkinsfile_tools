@@ -12,7 +12,7 @@ pipeline {
         stage('Load Environment Variables') {
             steps {
                 script {
-                    def envFile = readFile('groovy/Deployment.env').split('\n')
+                    def envFile = readFile('Jenkins.env').split('\n')
                     def envUtil = load "groovy/LoadEnvVars.groovy"
                     def envVars = envUtil.loadEnvVars("groovy/Deployment.env")
 
@@ -24,22 +24,22 @@ pipeline {
                 }
             }
          }
-        //  stage('Install Jenkins Plugins') {
-        //     steps {
-        //         script {
-        //             def jenkinsPlugin = load 'groovy/jenkins_plugin.groovy'
-        //             jenkinsPlugin.InstallPlugin()
-        //         }
-        //     }
-        // }
-        // stage('Detect Cloud Provider') {
-        //     steps {
-        //         script {
-        //             def cloudScript = load 'groovy/detectcloud.groovy'
-        //             cloudScript.detectAndSaveCloudProvider()
-        //         }
-        //     }
-        // }
+         stage('Install Jenkins Plugins') {
+            steps {
+                script {
+                    def jenkinsPlugin = load 'groovy/jenkins_plugin.groovy'
+                    jenkinsPlugin.InstallPlugin()
+                }
+            }
+        }
+        stage('Detect Cloud Provider') {
+            steps {
+                script {
+                    def cloudScript = load 'groovy/detectcloud.groovy'
+                    cloudScript.detectAndSaveCloudProvider()
+                }
+            }
+        }
          stage('Install Curl') {
             steps {
                 script {
@@ -88,22 +88,22 @@ pipeline {
                 }
             }
         }
-        // stage('Install Cloud CLI Tool') {
-        //     steps {
-        //         script {
-        //             def cliInstaller = load 'groovy/cloudcli.groovy'
-        //             cliInstaller.installCloudCLI()
-        //         }
-        //     }
-        // }
-    //    stage('Install go') {
-    //         steps {
-    //             script {
-    //                 def goInstaller = load 'groovy/go.groovy'
-    //                 goInstaller.installGo()
-    //             }
-    //         }
-    //     }
+        stage('Install Cloud CLI Tool') {
+            steps {
+                script {
+                    def cliInstaller = load 'groovy/cloudcli.groovy'
+                    cliInstaller.installCloudCLI()
+                }
+            }
+        }
+       stage('Install go') {
+            steps {
+                script {
+                    def goInstaller = load 'groovy/go.groovy'
+                    goInstaller.installGo()
+                }
+            }
+        }
         stage('Install nodejs') {
             steps {
                 script {
@@ -144,14 +144,14 @@ pipeline {
         //         }
         //     }
         // }
-        stage('Install owasp') {
-            steps {
-                script {
-                    def owaspInstaller = load 'groovy/owasp.groovy'
-                    owaspInstaller.installOwasp()
-                }
-            }
-        }
+        // stage('Install owasp') {
+        //     steps {
+        //         script {
+        //             def owaspInstaller = load 'groovy/owasp.groovy'
+        //             owaspInstaller.installOwasp()
+        //         }
+        //     }
+        // }
         stage('Deleting Workspace') {
             steps {
                 script {

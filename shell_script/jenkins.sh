@@ -3,9 +3,8 @@ set -euo pipefail
 
 ADMIN_USER="admin"
 ADMIN_PASSWORD="admin"
-PLUGINS_FILE="../../../Jenkinsfile/jenkins_plugins.txt""
 
-echo "📦 Starting Jenkins installation script..."
+echo "📦 Installing Jenkins..."
 
 # Check if Jenkins is already installed
 if command -v jenkins &> /dev/null; then
@@ -96,22 +95,6 @@ echo "🚀 Enabling and starting Jenkins service..."
 sudo systemctl enable "$JENKINS_SERVICE"
 sudo systemctl start "$JENKINS_SERVICE"
 
-# Plugin installation
-if [[ -f "$PLUGINS_FILE" ]]; then
-    echo "📦 Installing Jenkins plugins from $PLUGINS_FILE..."
-    while IFS= read -r plugin || [[ -n "$plugin" ]]; do
-        if [[ ! -z "$plugin" && ! "$plugin" =~ ^# ]]; then
-            echo "➡️  Installing plugin: $plugin"
-            sudo /usr/lib/jenkins/jenkins-cli.jar -s http://localhost:8080/ -auth $ADMIN_USER:$ADMIN_PASSWORD install-plugin "$plugin"
-        fi
-    done < "$PLUGINS_FILE"
-    echo "🔄 Restarting Jenkins to apply plugins..."
-    sudo systemctl restart "$JENKINS_SERVICE"
-else
-    echo "⚠️ No plugins.txt file found. Skipping plugin installation."
-fi
-
-echo "✅ Jenkins is ready!"
-echo "🌐 Visit: http://<your-server-ip>:8080"
+echo "✅ Jenkins installation and configuration completed!"
 echo "👤 Admin: $ADMIN_USER"
 echo "🔐 Password: $ADMIN_PASSWORD"
