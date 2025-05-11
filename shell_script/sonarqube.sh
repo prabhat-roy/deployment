@@ -37,6 +37,7 @@ docker run -dt --rm --name "$SONARQUBE_CONTAINER_NAME" -p ${SONARQUBE_PORT}:9000
 
 # --- CHANGE INITIAL PASSWORD ---
 echo "🔐 Changing default password..."
+sleep 30
 curl -s -u "${SONARQUBE_ADMIN_USER}:${SONARQUBE_ADMIN_PASS}" \
   -X POST "http://localhost:${SONARQUBE_PORT}/api/users/change_password" \
   -d "login=${SONARQUBE_ADMIN_USER}&previousPassword=${SONARQUBE_ADMIN_PASS}&password=${SONARQUBE_NEW_PASS}" || true
