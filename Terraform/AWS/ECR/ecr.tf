@@ -3,9 +3,9 @@ provider "aws" {
 }
 
 resource "aws_ecr_repository" "repos" {
-  for_each = toset(var.ecr_repo_names)
+  for_each = var.ecr_repo_names
 
-  name = each.key
+  name = each.value
 
   image_scanning_configuration {
     scan_on_push = false
