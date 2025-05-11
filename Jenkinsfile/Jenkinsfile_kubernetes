@@ -24,14 +24,14 @@ pipeline {
                 }
             }
          }       
-        // stage('Detect Cloud Provider') {
-        //     steps {
-        //         script {
-        //             def cloudScript = load 'groovy/detectcloud.groovy'
-        //             cloudScript.detectAndSaveCloudProvider()
-        //         }
-        //     }
-        // }
+        stage('Detect Cloud Provider') {
+            steps {
+                script {
+                    def cloudScript = load 'groovy/detectcloud.groovy'
+                    cloudScript.detectAndSaveCloudProvider()
+                }
+            }
+        }
         stage('Create Cloud Repositories') {
             steps {
                 script {

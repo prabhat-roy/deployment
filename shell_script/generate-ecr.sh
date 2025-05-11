@@ -13,12 +13,12 @@ terraform_list=$(printf '"%s", ' "${repos_array[@]}")
 terraform_list="[${terraform_list%, }]"
 
 echo "🛠️ Writing terraform.tfvars..."
-cat > terraform/terraform.tfvars <<EOF
+cat > Terraform/AWS/ECR/terraform.tfvars <<EOF
 ecr_repo_names = ${terraform_list}
 aws_region     = "${AWS_REGION}"
 EOF
 
 echo "🚀 Running Terraform..."
 cd terraform
-terraform init -input=false
-terraform apply -auto-approve
+terraform init -chdir=Terraform/AWS/ECR -input=false
+terraform -chdir=Terraform/AWS/ECR destroy -auto-approve

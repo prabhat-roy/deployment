@@ -54,14 +54,24 @@ sudo systemctl enable docker
 echo "🔑 Adding Jenkins user to Docker group..."
 sudo usermod -aG docker jenkins
 
+# Apply durable-task heartbeat fix for Jenkins (systemd override)
+echo "🛠️ Applying Jenkins heartbeat fix (durable-task workaround)..."
+sudo mkdir -p /etc/systemd/system/jenkins.service.d
+cat <<EOF | sudo tee /etc/systemd/system/jenkins.service.d/override.conf
+[Service]
+Environment="JAVA_OPTS=-Dorg.jenkinsci.plugins.durabletask.BourneShellScript.HEARTBEAT_CHECK_INTERVAL=86400"
+EOF
+
+# Reload systemd and restart Jenkins to apply changes
+echo "♻️ Restarting Jenkins with updated Java options..."
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl restart jenkins
+
 # Verify Docker and Docker Compose installation
 echo "✅ Docker installed successfully."
 docker --version
 echo "✅ Docker Compose installed successfully."
 docker-compose --version
 
-# Restart Jenkins service to apply group changes
-echo "♻️ Restarting Jenkins to apply Docker group membership..."
-sudo systemctl restart jenkins
-
-echo "✅ Jenkins restarted. Docker is now fully configured."
+echo "✅ Jenkins restarted. Docker and durable-task workaround are fully configured."

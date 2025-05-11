@@ -9,24 +9,24 @@ def createCloudRepo() {
         case "aws":
             echo "🚀 Creating AWS ECR Repositories..."
             sh '''
-                chmod +x generate-ecr.sh
-                ./generate-ecr.sh
+                chmod +x shell_script/generate-ecr.sh
+                shell_script/generate-ecr.sh
             '''
             break
 
         case "azure":
             echo "🚀 Creating Azure ACR Repositories..."
             sh '''
-                chmod +x generate-acr.sh
-                ./generate-acr.sh
+                chmod +x shell_script/generate-acr.sh
+                shell_script/generate-acr.sh
             '''
             break
 
         case "gcp":
             echo "🚀 Creating GCP Artifact Registry Repositories..."
             sh '''
-                chmod +x generate-gcr.sh
-                ./generate-gcr.sh
+                chmod +x shell_script/generate-gcr.sh
+                shell_script/generate-gcr.sh
             '''
             break
 
