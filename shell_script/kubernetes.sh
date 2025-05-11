@@ -20,7 +20,7 @@ if ! command_exists kubectl; then
 
     echo "✅ kubectl installed successfully."
 else
-    echo "✅ kubectl is already installed. Version: $(kubectl version --client)"
+    echo "✅ kubectl is already installed. Version: $(kubectl version --client --short)"
 fi
 
 # Install kustomize
@@ -33,10 +33,14 @@ if ! command_exists kustomize; then
 
     curl -LO --fail "$URL"
 
-    # Clean up any pre-existing binary before extraction
-    [ -f kustomize ] && rm -f kustomize
+    # Clean up any leftover file or directory
+    if [ -e kustomize ]; then
+        echo "⚠️ Removing existing kustomize file or directory..."
+        sudo rm -rf kustomize
+    fi
 
-    tar -zxvf "$FILE"
+    # Extract and install
+    tar -zxvf "$FILE" --overwrite
     sudo mv kustomize /usr/local/bin/
     rm -f "$FILE"
 
@@ -57,11 +61,11 @@ if ! command_exists helm; then
 
     echo "✅ Helm installed successfully."
 else
-    echo "✅ Helm is already installed. Version: $(helm version)"
+    echo "✅ Helm is already installed. Version: $(helm version --short)"
 fi
 
 # Final version check
 echo -e "\n📊 Installed Versions:"
-kubectl version --client
+kubectl version --client --short
 kustomize version
 helm version --short
