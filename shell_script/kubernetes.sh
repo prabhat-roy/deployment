@@ -32,6 +32,10 @@ if ! command_exists kustomize; then
     URL="https://github.com/kubernetes-sigs/kustomize/releases/download/${RAW_TAG}/${FILE}"
 
     curl -LO --fail "$URL"
+
+    # Clean up any pre-existing binary before extraction
+    [ -f kustomize ] && rm -f kustomize
+
     tar -zxvf "$FILE"
     sudo mv kustomize /usr/local/bin/
     rm -f "$FILE"
