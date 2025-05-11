@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: elastic-agent
+  namespace: elastic
+spec:
+  selector:
+    matchLabels:
+      app: elastic-agent
+  template:
+    metadata:
+      labels:
+        app: elastic-agent
+    spec:
+      containers:
+        - name: elastic-agent
+          image: "{{ .Values.elasticAgent.image }}"
+          env:
+            - name: FLEET_ENROLL
+              value: "1"
+            - name: FLEET_URL
+              value: "{{ .Values.elasticAgent.fleetUrl }}"
+            - name: FLEET_ENROLLMENT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: fleet-enrollment-token
+                  key: token
+          resources:
+            requests:
+              cpu: "{{ .Values.elasticAgent.resources.requests.cpu | default "250m" }}"
+              memory: "{{ .Values.elasticAgent.resources.requests.memory | default "512Mi" }}"
+            limits:
+              cpu: "{{ .Values.elasticAgent.resources.limits.cpu | default "1" }}"
+              memory: "{{ .Values.elasticAgent.resources.limits.memory | default "1Gi" }}"

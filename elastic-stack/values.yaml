@@ -1,0 +1,106 @@
+# Default values for Elasticsearch Helm Chart
+
+elasticsearch:
+  # Image configuration
+  image:
+    repository: docker.elastic.co/elasticsearch/elasticsearch
+    tag: 8.13.2  # Specify the version of Elasticsearch
+
+  # Replicas for the StatefulSet
+  replicas: 3  # Default number of Elasticsearch replicas
+
+  # Resource requests and limits for the Elasticsearch containers
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1"
+    limits:
+      memory: "4Gi"
+      cpu: "2"
+
+  # Storage configuration for Elasticsearch persistent volume claims
+  storage:
+    size: "10Gi"  # Default storage size for Elasticsearch data
+    storageClass: "standard"  # Set this to your desired StorageClass (if using dynamic provisioning)
+
+  # Affinity settings for pod scheduling (anti-affinity to spread Elasticsearch pods across nodes)
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - elasticsearch
+          topologyKey: kubernetes.io/hostname
+
+  # Probes configuration (Liveness and Readiness)
+  probes:
+    liveness:
+      httpGet:
+        path: /_cluster/health?wait_for_status=yellow&timeout=1s
+        port: 9200
+      initialDelaySeconds: 30
+      periodSeconds: 60
+    readiness:
+      httpGet:
+        path: /_cluster/health?wait_for_status=yellow&timeout=1s
+        port: 9200
+      initialDelaySeconds: 10
+      periodSeconds: 30
+
+  # Storage Class Configuration
+  storageClass: "standard"  # Set to your desired StorageClass if needed
+
+# Secrets Configuration
+security:
+  elasticsearch:
+    username: "elastic"
+    password: "changeme"  # Update this in the secret
+
+# NodeSelector, Tolerations, and Affinity rules for scheduling the pods
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Extra environment variables or configuration for containers
+extraEnv: []
+
+kibana:
+  replicaCount: 1
+  image:
+    repository: docker.elastic.co/kibana/kibana
+    tag: 8.13.2
+  storage:
+    size: 10Gi
+  service:
+    type: LoadBalancer  # Can be ClusterIP or LoadBalancer, depending on access needs
+  storageClass: ""
+
+
+fleetServer:
+  image:
+    repository: docker.elastic.co/beats/elastic-agent
+    tag: 8.13.2
+  replicas: 1
+  fleetUrl: "http://kibana.elastic.svc.cluster.local:5601"
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1"
+
+elasticAgent:
+  image: docker.elastic.co/beats/elastic-agent:8.13.2
+  fleetUrl: http://fleet-server.elastic.svc.cluster.local:8220
+  enrollmentToken: "YOUR_ENROLLMENT_TOKEN"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"

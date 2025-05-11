@@ -1,0 +1,69 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Git Checkout') {
+            steps {
+                script {
+                    checkout scm
+                    }
+                }
+            }
+        stage('Load Environment Variables') {
+            steps {
+                script {
+                    def envFile = readFile('groovy/Deployment.env').split('\n')
+                    def envUtil = load "groovy/LoadEnvVars.groovy"
+                    def envVars = envUtil.loadEnvVars("groovy/Deployment.env")
+
+                        // Inject into env
+                        envVars.each { key, val ->
+                        env."${key}" = val
+                        echo "Injected: ${key}=${val}"
+                    }
+                }
+            }
+         }       
+        // stage('Detect Cloud Provider') {
+        //     steps {
+        //         script {
+        //             def cloudScript = load 'groovy/detectcloud.groovy'
+        //             cloudScript.detectAndSaveCloudProvider()
+        //         }
+        //     }
+        // }
+        stage('Create Cloud Repositories') {
+            steps {
+                script {
+                    def repoCreator = load 'groovy/cloudrepo.groovy'
+                    repoCreator.createCloudRepo()
+                }
+            }
+        }
+
+        stage('Create K8s ServiceAccount') {
+            steps {
+                script {
+                    def saCreator = load 'groovy/kubernetesserviceaccount.groovy'
+                    saCreator.createServiceAccount()
+                }
+            }
+        }
+        stage('Deploy Elastic Stack') {
+            steps {
+                script {
+                    def elasticDeployer = load 'groovy/deployElasticStack.groovy'
+                    elasticDeployer.deployElasticStack()
+                }
+            }
+        }
+        stage('Generate Elastic Agent Enrollment Token') {
+            steps {
+                script {
+                    def enrollmentTokenCreator = load 'groovy/create_token.groovy'
+                    enrollmentTokenCreator.generateEnrollmentToken()
+                }
+            }
+        }
+    }
+}
