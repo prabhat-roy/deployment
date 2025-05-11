@@ -6,12 +6,12 @@ def installSonarqube() {
         sh "chmod +x shell_script/sonarqube.sh"
 
         // Run the shell script with env vars passed through
-        sh """
+        sh '''
             export JENKINS_URL="${env.JENKINS_URL}"
             export JENKINS_USER="${JENKINS_USER}"
             export JENKINS_PASS="${JENKINS_PASS}"
             shell_script/sonarqube.sh
-        """
+        '''
     }
 }
 
