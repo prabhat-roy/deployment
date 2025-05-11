@@ -8,7 +8,7 @@ source Jenkins.env
 set +o allexport
 
 echo "📜 Converting ECR_REPOS to Terraform list..."
-IFS=' ' read -r -a repos_array <<< "$SERVICES"
+IFS=',' read -r -a repos_array <<< "$SERVICES"
 terraform_list=$(printf '"%s", ' "${repos_array[@]}")
 terraform_list="[${terraform_list%, }]"
 
