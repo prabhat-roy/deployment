@@ -96,14 +96,14 @@ pipeline {
                 }
             }
         }
-       stage('Install go') {
-            steps {
-                script {
-                    def goInstaller = load 'groovy/go.groovy'
-                    goInstaller.installGo()
-                }
-            }
-        }
+    //    stage('Install go') {
+    //         steps {
+    //             script {
+    //                 def goInstaller = load 'groovy/go.groovy'
+    //                 goInstaller.installGo()
+    //             }
+    //         }
+    //     }
         stage('Install nodejs') {
             steps {
                 script {
