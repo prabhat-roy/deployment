@@ -21,4 +21,4 @@ EOF
 echo "🚀 Running Terraform..."
 cd Terraform/AWS/ECR
 terraform init -input=false
-terraform destroy -auto-approve
+terraform apply -auto-approve
