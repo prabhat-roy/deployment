@@ -61,11 +61,11 @@ if ! command_exists helm; then
 
     echo "✅ Helm installed successfully."
 else
-    echo "✅ Helm is already installed. Version: $(helm version --short)"
+    echo "✅ Helm is already installed. Version: $(helm version)"
 fi
 
 # Final version check
 echo -e "\n📊 Installed Versions:"
-kubectl version --client --short
+kubectl version --client 
 kustomize version
-helm version --short
+helm version
