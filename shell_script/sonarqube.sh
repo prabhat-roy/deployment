@@ -30,10 +30,10 @@ echo "🚀 Running SonarQube container in background..."
 docker run -dt --rm --name "$SONARQUBE_CONTAINER_NAME" -p ${SONARQUBE_PORT}:9000 -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true sonarqube:latest
 
 # --- WAIT FOR SONARQUBE TO BE READY ---
-echo "⏳ Waiting for SonarQube to become healthy..."
-until curl -s "http://localhost:${SONARQUBE_PORT}/api/system/health" | grep -q '"status":"GREEN"'; do
-  sleep 5
-done
+# echo "⏳ Waiting for SonarQube to become healthy..."
+# until curl -s "http://localhost:${SONARQUBE_PORT}/api/system/health" | grep -q '"status":"GREEN"'; do
+#   sleep 5
+# done
 
 # --- CHANGE INITIAL PASSWORD ---
 echo "🔐 Changing default password..."

@@ -60,5 +60,8 @@ docker --version
 echo "✅ Docker Compose installed successfully."
 docker-compose --version
 
-# Inform user to restart or re-login for group changes to take effect
-echo "⚠️ Please log out and log back in for the Docker group changes to take effect, or you can run 'newgrp docker' to apply the changes immediately."
+# Restart Jenkins service to apply group changes
+echo "♻️ Restarting Jenkins to apply Docker group membership..."
+sudo systemctl restart jenkins
+
+echo "✅ Jenkins restarted. Docker is now fully configured."
