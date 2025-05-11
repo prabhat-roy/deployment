@@ -19,6 +19,6 @@ aws_region     = "${AWS_REGION}"
 EOF
 
 echo "🚀 Running Terraform..."
-#cd terraform
-terraform init -chdir=Terraform/AWS/ECR -input=false
-terraform -chdir=Terraform/AWS/ECR destroy -auto-approve
+cd Terraform/AWS/ECR
+terraform init -input=false
+terraform destroy -auto-approve
