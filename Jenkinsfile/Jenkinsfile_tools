@@ -136,14 +136,14 @@ pipeline {
                 }
             }
         }
-        stage('Install sonarqube') {
-            steps {
-                script {
-                    def sonarqubeInstaller = load 'groovy/sonarqube.groovy'
-                    sonarqubeInstaller.installSonarqube()
-                }
-            }
-        }
+        // stage('Install sonarqube') {
+        //     steps {
+        //         script {
+        //             def sonarqubeInstaller = load 'groovy/sonarqube.groovy'
+        //             sonarqubeInstaller.installSonarqube()
+        //         }
+        //     }
+        // }
         stage('Install owasp') {
             steps {
                 script {
