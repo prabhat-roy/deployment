@@ -1,16 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-#Load environment variables from Jenkins.env
-ENV_FILE="Jenkins.env"
-if [[ ! -f "$ENV_FILE" ]]; then
-  echo "❌ Environment file '$ENV_FILE' not found!"
-  exit 1
-fi
-# shellcheck source=/dev/null
-source "$ENV_FILE"
-
-# Ensure SERVICES and BUILD_NUMBER are available
+# Ensure BUILD_NUMBER is available
 BUILD_NUMBER="${1:-}"
 if [[ -z "$BUILD_NUMBER" ]]; then
   echo "❌ Error: BUILD_NUMBER not provided!"
@@ -18,8 +9,9 @@ if [[ -z "$BUILD_NUMBER" ]]; then
   exit 1
 fi
 
+# Ensure SERVICES is available
 if [[ -z "${SERVICES:-}" ]]; then
-  echo "❌ Error: SERVICES variable not set in $ENV_FILE"
+  echo "❌ Error: SERVICES environment variable not set!"
   exit 1
 fi
 
@@ -28,17 +20,28 @@ IFS=',' read -r -a SERVICE_LIST <<< "$SERVICES"
 
 # Loop through services and build Docker images
 for SERVICE in "${SERVICE_LIST[@]}"; do
-  echo "🐳 Building Docker image for service: $SERVICE"
-  
+  echo "🐳 Processing service: $SERVICE"
+
   SERVICE_DIR="src/$SERVICE"
-  
+  DOCKERFILE_PATH="$SERVICE_DIR/Dockerfile"
+
   if [[ ! -d "$SERVICE_DIR" ]]; then
     echo "⚠️  Skipping: Directory '$SERVICE_DIR' not found."
     continue
   fi
 
-  docker build -t "${SERVICE}:${BUILD_NUMBER}" "$SERVICE_DIR"
-  echo "✅ Built ${SERVICE}:${BUILD_NUMBER}"
+  if [[ ! -f "$DOCKERFILE_PATH" ]]; then
+    echo "⚠️  Skipping: No Dockerfile found in '$SERVICE_DIR'."
+    continue
+  fi
+
+  IMAGE_TAG="${SERVICE}:${BUILD_NUMBER}"
+  echo "📦 Building Docker image: ${IMAGE_TAG}"
+
+  # Run docker build with --no-cache option if you want to avoid using cache
+  docker build --no-cache -t "${IMAGE_TAG}" "$SERVICE_DIR"
+  
+  echo "✅ Built ${IMAGE_TAG}"
 done
 
 echo "🚀 All Docker builds complete."

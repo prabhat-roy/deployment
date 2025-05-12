@@ -15,17 +15,29 @@ pipeline {
                     }
                 }
             }
-            stage('Load Environment Variables') {
+           stage('Load Environment Variables') {
                 steps {
                     script {
-                        copyArtifacts projectName: 'tools', filter: 'Jenkins.env', target: './'  
-                        def props = readProperties file: 'Jenkins.env'
-                        props.each { k, v ->
-                            env."${k}" = v                     
+                        echo "📦 Attempting to copy Jenkins.env from 'tools' pipeline..."
+                        copyArtifacts projectName: 'tools', filter: 'Jenkins.env', target: './', optional: false
+
+                        if (!fileExists('Jenkins.env')) {
+                            error "❌ Jenkins.env file not found after copyArtifacts. Failing the build."
                         }
+
+                        echo "📖 Reading and injecting environment variables from Jenkins.env..."
+                        def props = readProperties file: 'Jenkins.env'
+
+                        props.each { k, v ->
+                            env."${k}" = v
+                            echo "✅ Injected: ${k}=${v}"
+                        }
+
+                        echo "🌍 All environment variables successfully loaded from Jenkins.env"
                     }
                 }
             }
+
             stage('Create Cloud Repositories') {
                 steps {
                     script {

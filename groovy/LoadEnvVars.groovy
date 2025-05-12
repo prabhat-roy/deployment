@@ -1,5 +1,5 @@
 // EnvLoader.groovy
-def loadEnvVars(String envFilePath = 'groovy/Deployment.env') {
+def loadEnvVars(String envFilePath = 'Jenkins.env') {
     def envVars = [:]
 
     echo "[INFO] Loading env vars from: ${envFilePath}"

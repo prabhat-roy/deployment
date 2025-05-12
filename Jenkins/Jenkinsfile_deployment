@@ -1,28 +1,101 @@
 pipeline {
     agent any
-    
+
+    parameters {
+        choice(
+            name: 'ACTION',
+            choices: ['create', 'destroy'],
+            description: 'Choose whether to create or destroy Kubernetes resources.'
+        )
+    }
+
     stages {
         stage('Git Checkout') {
             steps {
                 script {
+                    echo "📥 Checking out source code..."
                     checkout scm
-                    }
                 }
             }
+        }
+
         stage('Load Environment Variables') {
             steps {
                 script {
-                    def envFile = readFile('Jenkins.env').split('\n')
-                    def envUtil = load "groovy/LoadEnvVars.groovy"
-                    def envVars = envUtil.loadEnvVars("Jenkins.env")
+                    echo "📦 Copying Jenkins.env from 'tools' pipeline..."
+                    copyArtifacts projectName: 'tools', filter: 'Jenkins.env', target: './', optional: false
 
-                        // Inject into env
-                        envVars.each { key, val ->
-                        env."${key}" = val
-                        echo "Injected: ${key}=${val}"
+                    if (!fileExists('Jenkins.env')) {
+                        error "❌ Jenkins.env file not found. Aborting build."
                     }
+
+                    echo "📖 Loading environment variables using env_loader.groovy..."
+                    def envLoader = load 'groovy/env_loader.groovy'
+                    def envMap = envLoader.loadEnvVars('Jenkins.env')
+
+                    envMap.each { k, v ->
+                        env."${k}" = v
+                        echo "✅ Loaded: ${k}=${v}"
+                    }
+
+                    echo "🌍 All variables successfully loaded into the environment"
                 }
             }
-         }
+        }
+
+        stage('Create Docker Images') {
+            steps {
+                script {
+                    def dockerBuild = load 'groovy/docker_build.groovy'
+                        dockerBuild.createDockerBuild()
+                }
+            }
+        }
     }
 }
+
+
+//         stage('Docker Push') {
+//             steps {
+//                 script {
+//                     echo "🚀 Pushing Docker image to registry..."
+//                     sh "docker push ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+//                 }
+//             }
+//         }
+
+//         stage('Image Scanning') {
+//             steps {
+//                 script {
+//                     echo "🔍 Scanning Docker image for vulnerabilities..."
+//                     sh "trivy image --exit-code 1 --no-progress ${DOCKER_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
+//                 }
+//             }
+//         }
+
+//         stage('Kubernetes Deployment') {
+//             steps {
+//                 script {
+//                     echo "🚢 Deploying to Kubernetes..."
+//                     if (params.ACTION == 'create') {
+//                         sh "kubectl apply -f k8s/deployment.yaml --namespace=${K8S_NAMESPACE}"
+//                     } else {
+//                         sh "kubectl delete -f k8s/deployment.yaml --namespace=${K8S_NAMESPACE}"
+//                     }
+//                 }
+//             }
+//         }
+//     }
+
+//     post {
+//         success {
+//             echo "✅ Pipeline completed successfully."
+//         }
+//         failure {
+//             echo "❌ Pipeline failed. Please check the logs."
+//         }
+//         always {
+//             echo "📦 Final environment: ACTION=${params.ACTION}, CLOUD_PROVIDER=${env.CLOUD_PROVIDER}"
+//         }
+//     }
+// }

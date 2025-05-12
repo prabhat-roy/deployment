@@ -1,120 +1,176 @@
 pipeline {
     agent any
-    
+
     stages {
+
+        // === GIT & DETECTION ===
+
         stage('Git Checkout') {
             steps {
                 script {
+                    // Checkout code from the configured SCM
                     checkout scm
-                    }
                 }
             }
-        stage('Load Environment Variables') {
+        }
+
+        stage('Detect Cloud Provider') {
             steps {
                 script {
-                    def envFile = readFile('Jenkins.env').split('\n')
-                    def envUtil = load "groovy/LoadEnvVars.groovy"
-                    def envVars = envUtil.loadEnvVars("Jenkins.env")
+                    // Load and execute the cloud detection utility
+                    def cloudScript = load 'groovy/detect_cloud.groovy'
+                    cloudScript.detectAndSaveCloudProvider()
+                }
+            }
+        }
 
-                        // Inject into env
-                        envVars.each { key, val ->
+        stage('Detect Microservices') {
+            steps {
+                script {
+                    // Detect microservice folders inside src/ and save to env file
+                    def envWriter = load 'groovy/env_writer.groovy'
+                    def services = sh(script: "ls -1 src | tr '\\n' ',' | sed 's/,\$//'", returnStdout: true).trim()
+                    envWriter.updateEnvFile('SERVICES', services)
+                }
+            }
+        }
+
+        stage('Inject Environment Variables') {
+            steps {
+                script {
+                    // Load variables from Jenkins.env and inject them into pipeline environment
+                    def envLoader = load 'groovy/env_loader.groovy'
+                    def envVars = envLoader.loadEnvVars("Jenkins.env")
+                    envVars.each { key, val ->
                         env."${key}" = val
                         echo "Injected: ${key}=${val}"
                     }
                 }
             }
-         }        
-        stage('Detect Cloud Provider') {
-            steps {
-                script {
-                    def cloudScript = load 'groovy/detect_cloud.groovy'
-                    cloudScript.detectAndSaveCloudProvider()
-                    archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
-                    stash name: 'env-file', includes: 'Jenkins.env'
-                }
-            }
         }
-         stage('Install Curl') {
+
+        // === SYSTEM UTILITIES INSTALLATION ===
+
+        stage('Install Curl') {
             steps {
                 script {
+                    // Install curl command-line tool
                     def curlInstaller = load 'groovy/curl.groovy'
                     curlInstaller.installCurl()
                 }
             }
         }
-        stage('Install Unzip') {
+
+        stage('Install Wget') {
             steps {
                 script {
-                    def unzipInstaller = load 'groovy/unzip.groovy'
-                    unzipInstaller.installUnzip()
-                }
-            }
-        }
-        stage('Install wget') {
-            steps {
-                script {
+                    // Install wget command-line tool
                     def wgetInstaller = load 'groovy/wget.groovy'
                     wgetInstaller.installWget()
                 }
             }
         }
-        stage('Install gnupg') {
+
+        stage('Install Unzip') {
             steps {
                 script {
+                    // Install unzip utility
+                    def unzipInstaller = load 'groovy/unzip.groovy'
+                    unzipInstaller.installUnzip()
+                }
+            }
+        }
+
+        stage('Install GnuPG') {
+            steps {
+                script {
+                    // Install GnuPG (GNU Privacy Guard) for secure communication
                     def gnupgInstaller = load 'groovy/gnupg.groovy'
                     gnupgInstaller.installGnupg()
                 }
             }
         }
-        stage('Install make') {
+
+        stage('Install Make') {
             steps {
                 script {
+                    // Install GNU Make tool
                     def makeInstaller = load 'groovy/make.groovy'
                     makeInstaller.installMake()
                 }
             }
         }
-        stage('Install python') {
+
+        // === LANGUAGE RUNTIME ENVIRONMENTS ===
+
+        stage('Install Python') {
             steps {
                 script {
+                    // Install Python runtime
                     def pythonInstaller = load 'groovy/python.groovy'
                     pythonInstaller.installPython()
                 }
             }
         }
-        stage('Install Cloud CLI Tool') {
+
+        stage('Install Node.js') {
             steps {
                 script {
-                    def cliInstaller = load 'groovy/cloud_cli.groovy'
-                    cliInstaller.installCloudCLI()
-                }
-            }
-        }
-        stage('Install nodejs') {
-            steps {
-                script {
+                    // Install Node.js runtime
                     def nodejsInstaller = load 'groovy/nodejs.groovy'
                     nodejsInstaller.installNodejs()
                 }
             }
         }
-        stage('Install terraform') {
+
+        // === INFRASTRUCTURE & CLI TOOLS ===
+
+        stage('Install Cloud CLI Tool') {
             steps {
                 script {
+                    // Install AWS CLI / Azure CLI / GCP CLI depending on cloud provider
+                    def cliInstaller = load 'groovy/cloud_cli.groovy'
+                    cliInstaller.installCloudCLI()
+                }
+            }
+        }
+
+        stage('Install Terraform') {
+            steps {
+                script {
+                    // Install Terraform CLI
                     def terraformInstaller = load 'groovy/terraform.groovy'
                     terraformInstaller.installTerraform()
                 }
             }
-        }        
-        stage('Install kubernetes') {
+        }
+
+        stage('Install Kubernetes CLI Tools') {
             steps {
                 script {
+                    // Install kubectl, helm, kustomize, etc.
                     def kubernetesInstaller = load 'groovy/kubernetes.groovy'
                     kubernetesInstaller.installKubernetes()
                 }
             }
         }
-        // stage('Install sonarqube') {
+
+        // === ENVIRONMENT FILE HANDOFF ===
+
+        stage('Archive Jenkins.env') {
+            steps {
+                script {
+                    // Archive Jenkins.env for visibility and stash for next pipeline usage
+                    archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
+                    stash name: 'env-file', includes: 'Jenkins.env'
+                }
+            }
+        }
+
+        // === OPTIONAL TOOLS ===
+        // These can be uncommented when needed for static analysis or scanning
+
+        // stage('Install SonarQube') {
         //     steps {
         //         script {
         //             def sonarqubeInstaller = load 'groovy/sonarqube.groovy'
@@ -122,7 +178,8 @@ pipeline {
         //         }
         //     }
         // }
-        // stage('Install owasp') {
+
+        // stage('Install OWASP ZAP') {
         //     steps {
         //         script {
         //             def owaspInstaller = load 'groovy/owasp.groovy'
@@ -130,14 +187,17 @@ pipeline {
         //         }
         //     }
         // }
-        stage('Deleting Workspace') {
+
+        // === CLEANUP ===
+
+        stage('Clean Workspace') {
             steps {
                 script {
+                    // Remove all workspace files
                     deleteDir()
                     echo "Workspace deleted."
                 }
             }
         }
-
     }
-}    
+}

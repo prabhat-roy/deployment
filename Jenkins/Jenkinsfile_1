@@ -1,0 +1,280 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(
+            name: 'ACTION',
+            choices: ['create', 'destroy'],
+            description: 'Choose whether to create or destroy Kubernetes resources.'
+        )
+    }
+
+    environment {
+        K8S_NAMESPACE = 'monitoring'  // Namespace for Prometheus, Elastic Stack, and Wazuh
+        CLOUD_PROVIDER = 'AWS'  // Set to 'AWS', 'GCP', or 'Azure' based on your environment
+        CLUSTER_NAME = 'my-k8s-cluster'
+        REGION = 'us-west-2'
+        KUBECONFIG_PATH = '/root/.kube/config'  // Location for storing kubeconfig
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                script {
+                    echo "📥 Checking out source code from Git..."
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Load Environment Variables') {
+            steps {
+                script {
+                    echo "📦 Attempting to copy Jenkins.env from 'tools' pipeline..."
+                    copyArtifacts projectName: 'tools', filter: 'Jenkins.env', target: './', optional: false
+
+                    if (!fileExists('Jenkins.env')) {
+                        error "❌ Jenkins.env file not found after copyArtifacts. Failing the build."
+                    }
+
+                    echo "📖 Reading and injecting environment variables from Jenkins.env..."
+                    def props = readProperties file: 'Jenkins.env'
+
+                    props.each { k, v ->
+                        env."${k}" = v
+                        echo "✅ Injected: ${k}=${v}"
+                    }
+
+                    echo "🌍 All environment variables successfully loaded from Jenkins.env"
+                }
+            }
+        }
+
+        stage('Create Cloud Repository') {
+            steps {
+                script {
+                    echo "🏗️ Creating Cloud Repository..."
+                    def repoCreator = load 'groovy/cloud_repo.groovy'
+                    repoCreator.createCloudRepo(params.ACTION)
+                }
+            }
+        }
+
+        stage('Create Kubernetes Cluster') {
+            steps {
+                script {
+                    echo "🚀 Creating Kubernetes cluster using cloud provider (${CLOUD_PROVIDER})..."
+
+                    if (CLOUD_PROVIDER == 'AWS') {
+                        // Example for AWS using eksctl
+                        sh """
+                            eksctl create cluster --name ${CLUSTER_NAME} --region ${REGION} --nodes 3 --node-type t2.medium
+                        """
+                    } else if (CLOUD_PROVIDER == 'GCP') {
+                        // Example for GCP using gcloud
+                        sh """
+                            gcloud container clusters create ${CLUSTER_NAME} --region ${REGION} --num-nodes 3
+                        """
+                    } else if (CLOUD_PROVIDER == 'Azure') {
+                        // Example for Azure using az CLI (AKS)
+                        sh """
+                            az aks create --name ${CLUSTER_NAME} --resource-group myResourceGroup --node-count 3 --enable-addons monitoring --generate-ssh-keys
+                        """
+                    } else {
+                        error "❌ Unsupported cloud provider ${CLOUD_PROVIDER}."
+                    }
+
+                    echo "🌍 Kubernetes cluster created: ${CLUSTER_NAME}"
+                }
+            }
+        }
+
+        stage('Implement Node Autoscaling (Karpenter / Alternatives)') {
+            steps {
+                script {
+                    echo "⚙️ Implementing Node Autoscaling for Kubernetes cluster..."
+
+                    if (CLOUD_PROVIDER == 'AWS') {
+                        // Implementing Karpenter on AWS
+                        echo "🌲 Deploying Karpenter on AWS..."
+
+                        // IAM roles for Karpenter
+                        sh """
+                            eksctl create iamserviceaccount \
+                              --name karpenter-controller \
+                              --namespace kube-system \
+                              --cluster ${CLUSTER_NAME} \
+                              --attach-policy-arn arn:aws:iam::aws:policy/AmazonEKSClusterPolicy \
+                              --attach-policy-arn arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy \
+                              --attach-policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess \
+                              --approve
+                        """
+
+                        // Install Karpenter
+                        sh """
+                            helm repo add karpenter https://charts.karpenter.sh
+                            helm repo update
+                            kubectl apply -f https://github.com/karpenter/karpenter/releases/download/v0.8.1/karpenter.yaml
+                            kubectl apply -f - <<EOF
+                            apiVersion: v1
+                            kind: ConfigMap
+                            metadata:
+                              name: karpenter-controller
+                              namespace: kube-system
+                            data:
+                              settings.yaml: |
+                                apiVersion: v1
+                                kind: KarpenterConfig
+                                metadata:
+                                  name: default
+                                provisioner:
+                                  provider:
+                                    instanceType: t3.medium
+                            EOF
+                        """
+                        echo "🌲 Karpenter deployed on AWS."
+                    } else if (CLOUD_PROVIDER == 'Azure') {
+                        // Implementing Azure VMSS Autoscaling on AKS
+                        echo "🔧 Enabling VMSS Autoscaling on Azure AKS..."
+
+                        sh """
+                            # Enable the Virtual Machine Scale Sets (VMSS) autoscaling for AKS
+                            az aks enable-addons \
+                              --resource-group myResourceGroup \
+                              --name ${CLUSTER_NAME} \
+                              --addons monitoring,virtual-node \
+                              --enable-vmss
+                        """
+                        echo "🔧 VMSS Autoscaling enabled on Azure AKS."
+                    } else if (CLOUD_PROVIDER == 'GCP') {
+                        // Implementing GKE Cluster Autoscaler
+                        echo "🔧 Enabling Cluster Autoscaler on GKE..."
+
+                        sh """
+                            # Enable the Cluster Autoscaler in GKE
+                            gcloud container clusters update ${CLUSTER_NAME} \
+                              --region ${REGION} \
+                              --enable-autoscaling \
+                              --min-nodes 1 --max-nodes 10
+                        """
+                        echo "🔧 Cluster Autoscaler enabled on GKE."
+                    } else {
+                        error "❌ Unsupported cloud provider for autoscaling: ${CLOUD_PROVIDER}."
+                    }
+
+                    echo "⚙️ Node Autoscaling successfully implemented."
+                }
+            }
+        }
+
+        stage('Update Kubeconfig') {
+            steps {
+                script {
+                    echo "📜 Updating kubeconfig for Kubernetes access..."
+                    if (CLOUD_PROVIDER == 'AWS') {
+                        sh """
+                            aws eks --region ${REGION} update-kubeconfig --name ${CLUSTER_NAME}
+                        """
+                    } else if (CLOUD_PROVIDER == 'GCP') {
+                        sh """
+                            gcloud container clusters get-credentials ${CLUSTER_NAME} --region ${REGION}
+                        """
+                    } else if (CLOUD_PROVIDER == 'Azure') {
+                        sh """
+                            az aks get-credentials --resource-group myResourceGroup --name ${CLUSTER_NAME}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Deploy Prometheus') {
+            steps {
+                script {
+                    echo "📦 Deploying Prometheus on Kubernetes..."
+                    sh """
+                        helm install prometheus stable/prometheus --namespace ${K8S_NAMESPACE} --create-namespace
+                    """
+                }
+            }
+        }
+
+        stage('Deploy Elastic Stack') {
+            steps {
+                script {
+                    echo "📦 Deploying Elastic Stack on Kubernetes..."
+                    sh """
+                        helm install elasticsearch elastic/elasticsearch --namespace ${K8S_NAMESPACE} --create-namespace
+                        helm install kibana elastic/kibana --namespace ${K8S_NAMESPACE}
+                    """
+                }
+            }
+        }
+
+        stage('Deploy Wazuh') {
+            steps {
+                script {
+                    echo "📦 Deploying Wazuh on Kubernetes..."
+                    sh """
+                        helm install wazuh wazuh/wazuh --namespace ${K8S_NAMESPACE}
+                    """
+                }
+            }
+        }
+
+        stage('Create Docker Images') {
+            steps {
+                script {
+                    echo "🐳 Building Docker images..."
+                    def dockerBuild = load 'groovy/docker_build.groovy'
+                    dockerBuild.createDockerBuild()
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                script {
+                    echo "🚀 Pushing Docker images to container registry..."
+                    def dockerPush = load 'groovy/docker_push.groovy'
+                    dockerPush.pushDockerImage()
+                }
+            }
+        }
+
+        stage('Image Scanning') {
+            steps {
+                script {
+                    echo "🔍 Scanning Docker image for vulnerabilities..."
+                    def imageScan = load 'groovy/image_scan.groovy'
+                    imageScan.scanImage()
+                }
+            }
+        }
+
+        stage('Kubernetes Deployment') {
+            steps {
+                script {
+                    echo "🚢 Deploying Docker images to Kubernetes..."
+                    if (params.ACTION == 'create') {
+                        sh "kubectl apply -f k8s/deployment.yaml --namespace=${K8S_NAMESPACE}"
+                    } else {
+                        sh "kubectl delete -f k8s/deployment.yaml --namespace=${K8S_NAMESPACE}"
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Pipeline completed successfully."
+        }
+        failure {
+            echo "❌ Pipeline failed. Please check the logs."
+        }
+        always {
+            echo "📦 Final environment: ACTION=${params.ACTION}, CLOUD_PROVIDER=${env.CLOUD_PROVIDER}"
+        }
+    }
+}
