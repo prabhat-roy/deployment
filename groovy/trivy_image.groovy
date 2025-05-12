@@ -1,27 +1,30 @@
-def scanAndArchiveImages(String envFile = 'Jenkins.env') {
+def scanAndArchiveImages() {
     echo "📥 Pulling latest Trivy image..."
     sh 'docker pull aquasec/trivy:latest'
 
-    if (!fileExists(envFile)) {
-        error "❌ ${envFile} not found!"
+    def buildNumber = env.BUILD_NUMBER
+    def dockerServices = env.DOCKER_SERVICES
+
+    if (!buildNumber) {
+        error "❌ BUILD_NUMBER environment variable is missing!"
+    }
+    if (!dockerServices) {
+        error "❌ DOCKER_SERVICES environment variable is missing!"
     }
 
-    def envVars = readFile(envFile).readLines()
-    def buildNumber = envVars.find { it.startsWith("BUILD_NUMBER=") }?.split("=")[1]
-    def dockerServices = envVars.find { it.startsWith("DOCKER_SERVICES=") }?.split("=")[1]
+    def services = dockerServices.split(",").collect { it.trim() }.findAll { it }
 
-    if (!buildNumber || !dockerServices) {
-        error "❌ BUILD_NUMBER or DOCKER_SERVICES missing in ${envFile}"
+    if (services.isEmpty()) {
+        error "❌ No valid services found in DOCKER_SERVICES!"
     }
 
-    def services = dockerServices.split(",")
     sh 'mkdir -p trivy-reports'
 
     services.each { service ->
         def imageTag = "${service}:${buildNumber}"
         def reportFile = "trivy-reports/${service}.txt"
 
-        echo "🔍 Scanning ${imageTag}..."
+        echo "🔍 Scanning image: ${imageTag}"
         sh """
             docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
@@ -31,7 +34,7 @@ def scanAndArchiveImages(String envFile = 'Jenkins.env') {
               --severity CRITICAL,HIGH \
               --format table \
               -o ${reportFile} \
-              ${imageTag} || echo "⚠️  Issues found in ${imageTag}"
+              ${imageTag} || echo "⚠️  Vulnerabilities found in ${imageTag}, but continuing."
         """
     }
 
