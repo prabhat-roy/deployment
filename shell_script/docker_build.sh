@@ -1,27 +1,44 @@
 #!/bin/bash
 set -euo pipefail
 
-SERVICE="${1:-}"
-BUILD_NUMBER="${2:-}"
+# Load environment variables from Jenkins.env
+# ENV_FILE="Jenkins.env"
+# if [[ ! -f "$ENV_FILE" ]]; then
+#   echo "❌ Environment file '$ENV_FILE' not found!"
+#   exit 1
+# fi
+# # shellcheck source=/dev/null
+# source "$ENV_FILE"
 
-if [[ -z "$SERVICE" || -z "$BUILD_NUMBER" ]]; then
-  echo "❌ Error: SERVICE or BUILD_NUMBER not provided."
-  echo "Usage: $0 <service-name> <build-number>"
+# Ensure SERVICES and BUILD_NUMBER are available
+BUILD_NUMBER="${1:-}"
+if [[ -z "$BUILD_NUMBER" ]]; then
+  echo "❌ Error: BUILD_NUMBER not provided!"
+  echo "Usage: $0 <build-number>"
   exit 1
 fi
 
-echo "🐳 Starting Docker image build..."
-echo "📦 Service: $SERVICE"
-echo "🏷️  Build Number: $BUILD_NUMBER"
-
-SERVICE_DIR="src/$SERVICE"
-
-if [[ ! -d "$SERVICE_DIR" ]]; then
-  echo "❌ Error: Directory '$SERVICE_DIR' does not exist!"
+if [[ -z "${SERVICES:-}" ]]; then
+  echo "❌ Error: SERVICES variable not set in $ENV_FILE"
   exit 1
 fi
 
-echo "🔧 Building Docker image..."
-docker build -t "${SERVICE}:${BUILD_NUMBER}" "$SERVICE_DIR"
+# Split SERVICES into array
+IFS=',' read -r -a SERVICE_LIST <<< "$SERVICES"
 
-echo "✅ Docker image '${SERVICE}:${BUILD_NUMBER}' built successfully."
+# Loop through services and build Docker images
+for SERVICE in "${SERVICE_LIST[@]}"; do
+  echo "🐳 Building Docker image for service: $SERVICE"
+  
+  SERVICE_DIR="src/$SERVICE"
+  
+  if [[ ! -d "$SERVICE_DIR" ]]; then
+    echo "⚠️  Skipping: Directory '$SERVICE_DIR' not found."
+    continue
+  fi
+
+  docker build -t "${SERVICE}:${BUILD_NUMBER}" "$SERVICE_DIR"
+  echo "✅ Built ${SERVICE}:${BUILD_NUMBER}"
+done
+
+echo "🚀 All Docker builds complete."
