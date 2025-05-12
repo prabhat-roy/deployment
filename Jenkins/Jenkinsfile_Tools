@@ -30,10 +30,11 @@ pipeline {
                     // Detect microservice folders inside src/ and save to env file
                     def envWriter = load 'groovy/env_writer.groovy'
                     def services = sh(script: "ls -1 src | tr '\\n' ',' | sed 's/,\$//'", returnStdout: true).trim()
-                    envWriter.updateEnvFile('SERVICES', services)
+                    envWriter.writeEnvVar('SERVICES', services)  // Call the existing writeEnvVar method
                 }
             }
         }
+
 
         stage('Inject Environment Variables') {
             steps {
