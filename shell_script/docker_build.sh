@@ -1,14 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-# Load environment variables from Jenkins.env
-# ENV_FILE="Jenkins.env"
-# if [[ ! -f "$ENV_FILE" ]]; then
-#   echo "❌ Environment file '$ENV_FILE' not found!"
-#   exit 1
-# fi
-# # shellcheck source=/dev/null
-# source "$ENV_FILE"
+Load environment variables from Jenkins.env
+ENV_FILE="Jenkins.env"
+if [[ ! -f "$ENV_FILE" ]]; then
+  echo "❌ Environment file '$ENV_FILE' not found!"
+  exit 1
+fi
+# shellcheck source=/dev/null
+source "$ENV_FILE"
 
 # Ensure SERVICES and BUILD_NUMBER are available
 BUILD_NUMBER="${1:-}"
