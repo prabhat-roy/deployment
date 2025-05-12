@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -euo pipefail
 
 SERVICE="${1:-}"
@@ -25,7 +24,4 @@ fi
 echo "🔧 Building Docker image..."
 docker build -t "${SERVICE}:${BUILD_NUMBER}" "$SERVICE_DIR"
 
-echo "🏷️  Tagging Docker image as ${SERVICE}:${BUILD_NUMBER}"
-# Add image push logic here if needed (e.g., Docker Hub, ECR, ACR, etc.)
-
-echo "✅ Docker image for '$SERVICE' built and tagged successfully."
+echo "✅ Docker image '${SERVICE}:${BUILD_NUMBER}' built successfully."
