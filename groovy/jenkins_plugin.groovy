@@ -1,6 +1,6 @@
 def InstallPlugin() {
     withCredentials([usernamePassword(credentialsId: 'jenkins-cred', usernameVariable: 'JENKINS_USER', passwordVariable: 'JENKINS_PASS')]) {
-        def pluginFile = 'Jenkinsfile/jenkins_plugin.txt'
+        def pluginFile = 'Jenkins/jenkins_plugin.txt'
         def cliJar = '/tmp/jenkins-cli.jar'
 
         sh '''
