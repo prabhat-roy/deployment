@@ -55,7 +55,7 @@ pipeline {
             steps {
                 script {
                     def trivyScan = load 'groovy/trivy_image.groovy'
-                    trivyScan.scanImages()
+                    trivyScan.scanAndArchiveImages()
                 }
             }
         }
