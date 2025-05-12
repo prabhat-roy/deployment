@@ -46,14 +46,7 @@ pipeline {
                     }
                 }
             }
-            stage('Create Docker Images') {
-                steps {
-                    script {
-                        def dockerBuild = load 'groovy/docker_build.groovy'
-                        dockerBuild.createDockerBuild()
-                    }
-                }
-            }
+            
     }
 }
 

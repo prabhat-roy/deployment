@@ -23,3 +23,8 @@ variable "private_key_path" {
   description = "Path to the private key file for SSH access."
   type        = string
 }
+
+variable "disk_size" {
+  description = "Size of the root volume in GB."
+  type        = number  
+}
