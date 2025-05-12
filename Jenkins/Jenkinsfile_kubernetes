@@ -26,18 +26,19 @@ pipeline {
                     }
                 }
             }
-            // stage('Create Cloud Repositories') {
-            //     steps {
-            //         script {
-            //             def repoCreator = load 'groovy/cloud_repo.groovy'
-            //             repoCreator.createCloudRepo(params.ACTION)
-            //         }
-            //     }
-            // }
+            stage('Create Cloud Repositories') {
+                steps {
+                    script {
+                        def repoCreator = load 'groovy/cloud_repo.groovy'
+                        repoCreator.createCloudRepo(params.ACTION)
+                    }
+                }
+            }
             stage('Create Docker Images') {
                 steps {
                     script {
-                        deleteDir()
+                        def dockerBuild = load 'groovy/docker_build.groovy'
+                        dockerBuild.createDockerBuild()
                     }
                 }
             }
