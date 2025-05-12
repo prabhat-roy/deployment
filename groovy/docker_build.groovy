@@ -14,7 +14,7 @@ def createDockerBuild() {
     services.each { service ->
         echo "📦 Building Docker image for service: ${service}"
 
-        sh """
+        sh label: "Build ${service}", script: """#!/bin/bash
             set -euo pipefail
 
             SERVICE="${service}"
