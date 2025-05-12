@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-Load environment variables from Jenkins.env
+#Load environment variables from Jenkins.env
 ENV_FILE="Jenkins.env"
 if [[ ! -f "$ENV_FILE" ]]; then
   echo "❌ Environment file '$ENV_FILE' not found!"
