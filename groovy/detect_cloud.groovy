@@ -34,3 +34,5 @@ def detectAndSaveCloudProvider() {
 
     echo "✅ CLOUD_PROVIDER saved to Jenkins.env"
 }
+
+return this
