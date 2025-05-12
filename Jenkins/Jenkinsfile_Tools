@@ -23,15 +23,7 @@ pipeline {
                     }
                 }
             }
-         }
-        //  stage('Install Jenkins Plugins') {
-        //     steps {
-        //         script {
-        //             def jenkinsPlugin = load 'groovy/jenkins_plugin.groovy'
-        //             jenkinsPlugin.InstallPlugin()
-        //         }
-        //     }
-        // }
+         }        
         stage('Detect Cloud Provider') {
             steps {
                 script {
@@ -98,14 +90,14 @@ pipeline {
                 }
             }
         }
-    //    stage('Install go') {
-    //         steps {
-    //             script {
-    //                 def goInstaller = load 'groovy/go.groovy'
-    //                 goInstaller.installGo()
-    //             }
-    //         }
-    //     }
+       stage('Install go') {
+            steps {
+                script {
+                    def goInstaller = load 'groovy/go.groovy'
+                    goInstaller.installGo()
+                }
+            }
+        }
         stage('Install nodejs') {
             steps {
                 script {
@@ -121,15 +113,7 @@ pipeline {
                     terraformInstaller.installTerraform()
                 }
             }
-        }
-        // stage('Install docker') {
-        //     steps {
-        //         script {
-        //             def dockerInstaller = load 'groovy/install_docker.groovy'
-        //             dockerInstaller.installDocker()
-        //         }
-        //     }
-        // }
+        }        
         stage('Install kubernetes') {
             steps {
                 script {
