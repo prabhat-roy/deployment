@@ -22,9 +22,14 @@ def scanAndArchiveImages() {
 
     services.each { service ->
         def imageTag = "${service}:${buildNumber}"
-        def reportFile = "trivy-reports/${service}.txt"
 
-        echo "🔍 Scanning image: ${imageTag}"
+        def tableReport = "trivy-reports/${service}.txt"
+        def jsonReport  = "trivy-reports/${service}.json"
+        def sarifReport = "trivy-reports/${service}.sarif"
+
+        echo "🔍 Scanning image in all formats: ${imageTag}"
+
+        // Table format
         sh """
             docker run --rm \
               -v /var/run/docker.sock:/var/run/docker.sock \
@@ -33,15 +38,52 @@ def scanAndArchiveImages() {
               --no-progress \
               --severity CRITICAL,HIGH \
               --format table \
-              -o ${reportFile} \
-              ${imageTag} || echo "⚠️  Vulnerabilities found in ${imageTag}, but continuing."
+              -o ${tableReport} \
+              ${imageTag} || echo '⚠️  Table scan failed for ${imageTag}'
         """
+
+        // JSON format
+        sh """
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v \$PWD:/root/.cache/ \
+              aquasec/trivy:latest image \
+              --no-progress \
+              --severity CRITICAL,HIGH \
+              --format json \
+              -o ${jsonReport} \
+              ${imageTag} || echo '⚠️  JSON scan failed for ${imageTag}'
+        """
+
+        // SARIF format
+        sh """
+            docker run --rm \
+              -v /var/run/docker.sock:/var/run/docker.sock \
+              -v \$PWD:/root/.cache/ \
+              aquasec/trivy:latest image \
+              --no-progress \
+              --severity CRITICAL,HIGH \
+              --format sarif \
+              -o ${sarifReport} \
+              ${imageTag} || echo '⚠️  SARIF scan failed for ${imageTag}'
+        """
+
+        // Fallback if any file is missing
+        [tableReport, jsonReport, sarifReport].each { report ->
+            if (!fileExists(report)) {
+                echo "⚠️  Creating dummy report: ${report}"
+                writeFile file: report, text: "No report generated for ${imageTag}. Scan may have failed."
+            }
+        }
     }
 
-    echo "📦 Archiving Trivy reports..."
-    archiveArtifacts artifacts: 'trivy-reports/*.txt', allowEmptyArchive: true
+    echo "📁 Listing Trivy reports..."
+    sh "ls -lh trivy-reports"
 
-    echo "✅ Trivy scan and archive complete."
+    echo "📦 Archiving Trivy reports..."
+    archiveArtifacts artifacts: 'trivy-reports/*.{txt,json,sarif}', allowEmptyArchive: false
+
+    echo "✅ Trivy scan (all formats) and archive complete."
 }
 
 return this
