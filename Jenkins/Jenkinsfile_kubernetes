@@ -1,6 +1,12 @@
 pipeline {
     agent any
-    
+    parameters {
+        choice(
+            name: 'ACTION',
+            choices: ['create', 'destroy'], 
+            description: 'Choose whether to create or destroy kubernetes resources.'
+        )
+    }
     stages {
         stage('Git Checkout') {
             steps {
@@ -12,31 +18,33 @@ pipeline {
         stage('Load Environment Variables') {
             steps {
                 script {
-                    def envFile = readFile('groovy/Deployment.env').split('\n')
-                    def envUtil = load "groovy/LoadEnvVars.groovy"
-                    def envVars = envUtil.loadEnvVars("groovy/Deployment.env")
+                    unstash 'env-file'
+                    // def envFile = readFile('Jenkins.env').split('\n')
+                    // def envUtil = load "groovy/LoadEnvVars.groovy"
+                    // def envVars = envUtil.loadEnvVars("Jenkins.env")
 
-                        // Inject into env
-                        envVars.each { key, val ->
-                        env."${key}" = val
-                        echo "Injected: ${key}=${val}"
+                    //     // Inject into env
+                    //     envVars.each { key, val ->
+                    //     env."${key}" = val
+                    //     echo "Injected: ${key}=${val}"
                     }
                 }
             }
          }       
-        stage('Detect Cloud Provider') {
-            steps {
-                script {
-                    def cloudScript = load 'groovy/detectcloud.groovy'
-                    cloudScript.detectAndSaveCloudProvider()
-                }
-            }
-        }
+        
         stage('Create Cloud Repositories') {
             steps {
                 script {
-                    def repoCreator = load 'groovy/cloudrepo.groovy'
-                    repoCreator.createCloudRepo()
+                    def repoCreator = load 'groovy/cloud_repo.groovy'
+                    repoCreator.createCloudRepo(params.ACTION)
+                }
+            }
+        }
+        stage('Create Docker Images') {
+            steps {
+                script {
+                    def dockerBuild = load 'groovy/docker_build.groovy'
+                    dockerBuild.createDockerBuild()
                 }
             }
         }

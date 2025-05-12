@@ -14,7 +14,7 @@ pipeline {
                 script {
                     def envFile = readFile('Jenkins.env').split('\n')
                     def envUtil = load "groovy/LoadEnvVars.groovy"
-                    def envVars = envUtil.loadEnvVars("groovy/Deployment.env")
+                    def envVars = envUtil.loadEnvVars("Jenkins.env")
 
                         // Inject into env
                         envVars.each { key, val ->
@@ -35,8 +35,10 @@ pipeline {
         stage('Detect Cloud Provider') {
             steps {
                 script {
-                    def cloudScript = load 'groovy/detectcloud.groovy'
+                    def cloudScript = load 'groovy/detect_cloud.groovy'
                     cloudScript.detectAndSaveCloudProvider()
+                    archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
+                    stash name: 'env-file', includes: 'Jenkins.env'
                 }
             }
         }
@@ -91,7 +93,7 @@ pipeline {
         stage('Install Cloud CLI Tool') {
             steps {
                 script {
-                    def cliInstaller = load 'groovy/cloudcli.groovy'
+                    def cliInstaller = load 'groovy/cloud_cli.groovy'
                     cliInstaller.installCloudCLI()
                 }
             }

@@ -13,6 +13,7 @@ build-blocker-plugin
 build-monitor-plugin
 build-timeout
 configuration-as-code
+copyartifact
 credentials
 credentials-binding
 dependency-check-jenkins-plugin
