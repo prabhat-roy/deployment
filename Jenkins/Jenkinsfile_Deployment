@@ -1,0 +1,28 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Git Checkout') {
+            steps {
+                script {
+                    checkout scm
+                    }
+                }
+            }
+        stage('Load Environment Variables') {
+            steps {
+                script {
+                    def envFile = readFile('Jenkins.env').split('\n')
+                    def envUtil = load "groovy/LoadEnvVars.groovy"
+                    def envVars = envUtil.loadEnvVars("Jenkins.env")
+
+                        // Inject into env
+                        envVars.each { key, val ->
+                        env."${key}" = val
+                        echo "Injected: ${key}=${val}"
+                    }
+                }
+            }
+         }
+    }
+}
