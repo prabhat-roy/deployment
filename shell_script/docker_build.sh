@@ -1,40 +1,41 @@
-#!/bin/bash
-set -euo pipefail
+def createDockerBuild() {
+    def buildNumber = env.BUILD_NUMBER
+    if (!buildNumber) {
+        error "❌ Jenkins build number is not available!"
+    }
 
-# Ensure BUILD_NUMBER is provided
-BUILD_NUMBER="${1:-}"
-if [[ -z "$BUILD_NUMBER" ]]; then
-  echo "❌ Error: BUILD_NUMBER not provided!"
-  echo "Usage: $0 <build-number>"
-  exit 1
-fi
+    def services = env.SERVICES?.split(',')
+    if (!services) {
+        error "❌ No SERVICES found in the environment!"
+    }
 
-# Ensure DOCKER_SERVICES is set
-if [[ -z "${DOCKER_SERVICES:-}" ]]; then
-  echo "❌ Error: DOCKER_SERVICES environment variable not set!"
-  exit 1
-fi
+    echo "🐳 Starting Docker image build for build number: ${buildNumber}"
 
-# Split DOCKER_SERVICES into an array
-IFS=',' read -r -a SERVICE_LIST <<< "$DOCKER_SERVICES"
+    services.each { service ->
+        echo "📦 Building Docker image for service: ${service}"
 
-# Loop through services and build Docker images
-for SERVICE in "${SERVICE_LIST[@]}"; do
-  echo "🐳 Processing service: $SERVICE"
+        sh """
+            set -euo pipefail
 
-  SERVICE_DIR="src/$SERVICE"
+            SERVICE="${service}"
+            BUILD_NUMBER="${buildNumber}"
 
-  if [[ ! -d "$SERVICE_DIR" ]]; then
-    echo "⚠️  Skipping: Directory '$SERVICE_DIR' not found."
-    continue
-  fi
+            echo "🐳 Building Docker image for service: \$SERVICE with tag: \$BUILD_NUMBER"
 
-  IMAGE_TAG="${SERVICE}:${BUILD_NUMBER}"
-  echo "📦 Building Docker image: ${IMAGE_TAG}"
+            SERVICE_DIR="src/\$SERVICE"
+            if [[ ! -d "\$SERVICE_DIR" ]]; then
+              echo "⚠️  Skipping: Directory '\$SERVICE_DIR' not found."
+              exit 1
+            fi
 
-  docker build --no-cache -t "${IMAGE_TAG}" "$SERVICE_DIR"
-  
-  echo "✅ Built ${IMAGE_TAG}"
-done
+            IMAGE_TAG="\${SERVICE}:\${BUILD_NUMBER}"
+            docker build --no-cache -t "\$IMAGE_TAG" "\$SERVICE_DIR"
 
-echo "🚀 All Docker builds complete."
+            echo "✅ Built Docker image: \$IMAGE_TAG"
+        """
+    }
+
+    echo "🚀 All Docker builds complete."
+}
+
+return this
