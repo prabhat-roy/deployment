@@ -7,7 +7,7 @@ if command -v go >/dev/null 2>&1; then
     exit 0
 fi
 
-# Ensure jq is available
+# Ensure jq is available for parsing if needed
 if ! command -v jq >/dev/null 2>&1; then
     echo "🔧 jq not found, downloading jq..."
     curl -sLo "$HOME/jq" https://github.com/stedolan/jq/releases/latest/download/jq-linux64
@@ -18,6 +18,8 @@ fi
 # Fetch the latest Go version info directly from the go.dev URL
 echo "🌐 Fetching latest Go version information..."
 LATEST_VERSION=$(curl -s https://go.dev/dl/ | grep -oP 'go[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+echo "Latest Go version found: $LATEST_VERSION"
+
 if [[ -z "$LATEST_VERSION" ]]; then
     echo "❌ Failed to retrieve the latest Go version."
     exit 1
@@ -31,14 +33,14 @@ INSTALL_DIR="$HOME/.go"
 echo "📦 Downloading $LATEST_VERSION from $TARBALL_URL..."
 curl -sSL "$TARBALL_URL" -o "$TARBALL"
 
-echo "🧹 Cleaning previous installation at $INSTALL_DIR..."
+echo "🧹 Cleaning previous Go installation at $INSTALL_DIR..."
 rm -rf "$INSTALL_DIR"
 mkdir -p "$INSTALL_DIR"
 
 echo "📂 Extracting Go to $INSTALL_DIR..."
 tar -C "$INSTALL_DIR" --strip-components=1 -xzf "$TARBALL"
 
-echo "🔧 Updating environment variables..."
+echo "🔧 Setting environment variables for Go..."
 GO_ENV_SCRIPT="$HOME/.go_env.sh"
 cat > "$GO_ENV_SCRIPT" <<EOF
 export GOROOT=$INSTALL_DIR
@@ -53,5 +55,9 @@ source "$GO_ENV_SCRIPT"
 if ! grep -q "source \$HOME/.go_env.sh" "$HOME/.bashrc" 2>/dev/null; then
     echo "source \$HOME/.go_env.sh" >> "$HOME/.bashrc"
 fi
+
+# Verify Go installation
+echo "✅ Verifying Go installation..."
+go version || { echo "❌ Go installation failed"; exit 1; }
 
 echo "✅ Go successfully installed: $(go version)"
