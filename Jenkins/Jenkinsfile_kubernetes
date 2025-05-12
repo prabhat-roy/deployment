@@ -18,7 +18,11 @@ pipeline {
             stage('Load Environment Variables') {
                 steps {
                     script {
-                        unstash 'env-file'                        
+                        copyArtifacts projectName: 'tools', filter: 'Jenkins.env', target: './'  
+                        def props = readProperties file: 'Jenkins.env'
+                        props.each { k, v ->
+                            env."${k}" = v                     
+                        }
                     }
                 }
             }
