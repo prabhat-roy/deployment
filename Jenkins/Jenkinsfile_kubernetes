@@ -15,62 +15,30 @@ pipeline {
                     }
                 }
             }
-        stage('Load Environment Variables') {
-            steps {
-                script {
-                    unstash 'env-file'
-                    // def envFile = readFile('Jenkins.env').split('\n')
-                    // def envUtil = load "groovy/LoadEnvVars.groovy"
-                    // def envVars = envUtil.loadEnvVars("Jenkins.env")
-
-                    //     // Inject into env
-                    //     envVars.each { key, val ->
-                    //     env."${key}" = val
-                    //     echo "Injected: ${key}=${val}"
+            stage('Load Environment Variables') {
+                steps {
+                    script {
+                        unstash 'env-file'                        
                     }
                 }
             }
-         }       
-        
-        stage('Create Cloud Repositories') {
-            steps {
-                script {
-                    def repoCreator = load 'groovy/cloud_repo.groovy'
-                    repoCreator.createCloudRepo(params.ACTION)
+            stage('Create Cloud Repositories') {
+                steps {
+                    script {
+                        def repoCreator = load 'groovy/cloud_repo.groovy'
+                        repoCreator.createCloudRepo(params.ACTION)
+                    }
                 }
             }
-        }
-        stage('Create Docker Images') {
-            steps {
-                script {
-                    def dockerBuild = load 'groovy/docker_build.groovy'
-                    dockerBuild.createDockerBuild()
+            stage('Create Docker Images') {
+                steps {
+                    script {
+                        def dockerBuild = load 'groovy/docker_build.groovy'
+                        dockerBuild.createDockerBuild()
+                    }
                 }
             }
-        }
-
-        // stage('Create K8s ServiceAccount') {
-        //     steps {
-        //         script {
-        //             def saCreator = load 'groovy/kubernetesserviceaccount.groovy'
-        //             saCreator.createServiceAccount()
-        //         }
-        //     }
-        // }
-        // stage('Deploy Elastic Stack') {
-        //     steps {
-        //         script {
-        //             def elasticDeployer = load 'groovy/deployElasticStack.groovy'
-        //             elasticDeployer.deployElasticStack()
-        //         }
-        //     }
-        // }
-        // stage('Generate Elastic Agent Enrollment Token') {
-        //     steps {
-        //         script {
-        //             def enrollmentTokenCreator = load 'groovy/create_token.groovy'
-        //             enrollmentTokenCreator.generateEnrollmentToken()
-        //         }
-        //     }
-        // }
     }
+}
+
+        
