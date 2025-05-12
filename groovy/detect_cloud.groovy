@@ -1,5 +1,31 @@
+// groovy/detect_cloud.groovy
+
+// Detect Cloud Provider Method
+def detectCloudProvider() {
+    try {
+        if (fileExists('/sys/hypervisor/uuid') &&
+            readFile('/sys/hypervisor/uuid').startsWith('ec2')) {
+            return 'AWS'
+        }
+
+        if (fileExists('/sys/class/dmi/id/product_name') &&
+            readFile('/sys/class/dmi/id/product_name').contains('Google')) {
+            return 'GCP'
+        }
+
+        if (fileExists('/var/lib/waagent') || fileExists('/var/log/waagent.log')) {
+            return 'AZURE'
+        }
+
+        return 'UNKNOWN'
+    } catch (Exception e) {
+        return 'UNKNOWN'
+    }
+}
+
+// Method to detect and save cloud provider
 def detectAndSaveCloudProvider() {
-    def cloud = detectCloudProvider()
+    def cloud = detectCloudProvider()  // Call the method to detect cloud provider
     echo "Detected Cloud Provider: ${cloud}"
 
     // Set as an env var for the current pipeline
@@ -35,4 +61,4 @@ def detectAndSaveCloudProvider() {
     echo "✅ CLOUD_PROVIDER saved to Jenkins.env"
 }
 
-return this
+return this  // Return the current object to make the methods accessible
