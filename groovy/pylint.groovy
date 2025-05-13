@@ -39,7 +39,6 @@ def runPylintScan() {
 
         echo "🔍 Running pylint for: ${serviceDir}"
 
-        // Docker Pylint with file filtering and fallback
         def pylintCmd = """
             docker run --rm \
               -v "${serviceDir}:/code" \
@@ -62,8 +61,9 @@ def runPylintScan() {
         echo "Running Pylint command: ${pylintCmd}"
         sh pylintCmd
 
-        // Copy reports if generated
-        [['txt', txtReport], ['json', jsonReport], ['sarif', sarifReport]].each { ext, dest ->
+        [['txt', txtReport], ['json', jsonReport], ['sarif', sarifReport]].each { pair ->
+            def ext = pair[0]
+            def dest = pair[1]
             def src = "${serviceDir}/pylint_report.${ext}"
             if (fileExists(src)) {
                 sh "cp ${src} ${dest}"
