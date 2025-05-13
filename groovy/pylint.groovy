@@ -1,5 +1,5 @@
 def createPylintConfig(String serviceDir) {
-    // Create .pylintrc file to ignore __init__.py
+    // Optional: Custom Pylint config (not needed if using find instead)
     writeFile(file: "${serviceDir}/.pylintrc", text: """
 [MASTER]
 ignore=__init__.py
@@ -16,13 +16,12 @@ def runPylintScan() {
         error "❌ BUILD_NUMBER environment variable is missing!"
     }
     if (!pythonServices) {
-        error "❌ PYTHON_SERVICES environment variable is missing!"
+        error "❌ DOCKER_SERVICES environment variable is missing!"
     }
 
     def services = pythonServices.split(",").collect { it.trim() }.findAll { it }
-
     if (services.isEmpty()) {
-        error "❌ No valid Python services found in PYTHON_SERVICES!"
+        error "❌ No valid Python services found in DOCKER_SERVICES!"
     }
 
     def workspace = pwd()
@@ -31,8 +30,6 @@ def runPylintScan() {
 
     services.each { service ->
         def serviceDir = "${workspace}/src/${service}"
-
-        // Create pylint config to ignore __init__.py
         createPylintConfig(serviceDir)
 
         def reportBase = "${reportsDir}/${service}"
@@ -42,69 +39,37 @@ def runPylintScan() {
 
         echo "🔍 Running pylint for: ${serviceDir}"
 
-        // Run pylint and generate text report inside Docker with logging
+        // Docker Pylint with file filtering and fallback
         def pylintCmd = """
             docker run --rm \
               -v "${serviceDir}:/code" \
-              python:3.11 bash -c "
+              python:3.11 bash -c '
                 pip install pylint > /dev/null &&
-                pylint /code || echo '⚠️  Pylint failed for ${service}'
-              "
+                cd /code &&
+                find . -type f -name "*.py" ! -name "__init__.py" > filelist.txt &&
+                if [ -s filelist.txt ]; then
+                  pylint \$(cat filelist.txt) > pylint_report.txt || true;
+                  pylint \$(cat filelist.txt) --output-format=json > pylint_report.json || true;
+                  pip install sarif-tools > /dev/null &&
+                  json2sarif -i pylint_report.json -o pylint_report.sarif || true;
+                else
+                  echo "No Python files found." > pylint_report.txt;
+                  echo "[]" > pylint_report.json;
+                  echo "{}" > pylint_report.sarif;
+                fi
+              '
         """
         echo "Running Pylint command: ${pylintCmd}"
         sh pylintCmd
 
-        // Check and copy the text report if it exists
-        if (fileExists("${serviceDir}/pylint_report.txt")) {
-            sh "cp ${serviceDir}/pylint_report.txt ${txtReport}"
-        } else {
-            echo "⚠️  Pylint text report not generated for ${service}."
-        }
-
-        // Generate JSON report
-        def jsonCmd = """
-            docker run --rm \
-              -v "${serviceDir}:/code" \
-              python:3.11 bash -c "
-                pip install pylint > /dev/null &&
-                pylint /code --output-format=json > /code/pylint_report.json || true
-              "
-        """
-        echo "Running Pylint JSON command: ${jsonCmd}"
-        sh jsonCmd
-
-        // Check and copy the JSON report if it exists
-        if (fileExists("${serviceDir}/pylint_report.json")) {
-            sh "cp ${serviceDir}/pylint_report.json ${jsonReport}"
-        } else {
-            echo "⚠️  Pylint JSON report not generated for ${service}."
-        }
-
-        // Convert JSON to SARIF using sarif-tools (alternative to pylint-json2sarif)
-        def sarifCmd = """
-            docker run --rm \
-              -v "${serviceDir}:/code" \
-              python:3.11 bash -c "
-                pip install pylint sarif-tools > /dev/null &&
-                pylint /code --output-format=json > /code/pylint_report.json &&
-                json2sarif -i /code/pylint_report.json -o /code/pylint_report.sarif || true
-              "
-        """
-        echo "Running SARIF conversion command: ${sarifCmd}"
-        sh sarifCmd
-
-        // Check and copy the SARIF report if it exists
-        if (fileExists("${serviceDir}/pylint_report.sarif")) {
-            sh "cp ${serviceDir}/pylint_report.sarif ${sarifReport}"
-        } else {
-            echo "⚠️  Pylint SARIF report not generated for ${service}."
-        }
-
-        // Fallback dummy reports
-        [txtReport, jsonReport, sarifReport].each { report ->
-            if (!fileExists(report)) {
-                echo "⚠️  Creating dummy report: ${report}"
-                writeFile file: report, text: "No report generated for ${service}. Pylint may have failed."
+        // Copy reports if generated
+        [['txt', txtReport], ['json', jsonReport], ['sarif', sarifReport]].each { ext, dest ->
+            def src = "${serviceDir}/pylint_report.${ext}"
+            if (fileExists(src)) {
+                sh "cp ${src} ${dest}"
+            } else {
+                echo "⚠️  Pylint ${ext.toUpperCase()} report not generated for ${service}."
+                writeFile file: dest, text: "No ${ext} report generated for ${service}."
             }
         }
     }
