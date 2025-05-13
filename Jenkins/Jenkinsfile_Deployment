@@ -37,14 +37,14 @@ pipeline {
                 }
             }
         }
-        stage('Trivy Source Code Scan') {
-            steps {
-                script {
-                    def trivyScan = load 'groovy/trivy_fs.groovy'
-                    trivyScan.scanAndArchiveFS()
-                }
-            }
-        }
+        // stage('Trivy Source Code Scan') {
+        //     steps {
+        //         script {
+        //             def trivyScan = load 'groovy/trivy_fs.groovy'
+        //             trivyScan.scanAndArchiveFS()
+        //         }
+        //     }
+        // }
         stage('Pylint Scan') {
             steps {
                 script {

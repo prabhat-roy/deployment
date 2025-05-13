@@ -2,7 +2,7 @@ def runPylintScan() {
     echo "🐍 Starting Pylint scan..."
 
     def buildNumber = env.BUILD_NUMBER
-    def pythonServices = env.DOCKER_SERVICES
+    def pythonServices = env.PYTHON_SERVICES
 
     if (!buildNumber) {
         error "❌ BUILD_NUMBER environment variable is missing!"
@@ -30,21 +30,25 @@ def runPylintScan() {
 
         echo "🔍 Running pylint for: ${sourceDir}"
 
-        // Run pylint and generate text + JSON report inside Docker
+        // Run pylint and generate text report inside Docker
         sh """
             docker run --rm \
               -v "${sourceDir}:/code" \
               python:3.11 bash -c "
-                pip install pylint pylint-json2sarif > /dev/null &&
+                pip install pylint > /dev/null &&
                 pylint /code > /code/pylint_report.txt ||
                 echo '⚠️  Pylint failed for ${service}'
               "
         """
 
-        // Copy text report
-        sh "cp ${sourceDir}/pylint_report.txt ${txtReport} || true"
+        // Check and copy the text report if it exists
+        if (fileExists("${sourceDir}/pylint_report.txt")) {
+            sh "cp ${sourceDir}/pylint_report.txt ${txtReport}"
+        } else {
+            echo "⚠️  Pylint text report not generated for ${service}."
+        }
 
-        // Generate JSON report (pylint’s JSON output needs rerun)
+        // Generate JSON report
         sh """
             docker run --rm \
               -v "${sourceDir}:/code" \
@@ -53,19 +57,31 @@ def runPylintScan() {
                 pylint /code --output-format=json > /code/pylint_report.json || true
               "
         """
-        sh "cp ${sourceDir}/pylint_report.json ${jsonReport} || true"
 
-        // Generate SARIF report from JSON
+        // Check and copy the JSON report if it exists
+        if (fileExists("${sourceDir}/pylint_report.json")) {
+            sh "cp ${sourceDir}/pylint_report.json ${jsonReport}"
+        } else {
+            echo "⚠️  Pylint JSON report not generated for ${service}."
+        }
+
+        // Convert JSON to SARIF using sarif-tools (alternative to pylint-json2sarif)
         sh """
             docker run --rm \
               -v "${sourceDir}:/code" \
               python:3.11 bash -c "
-                pip install pylint pylint-json2sarif > /dev/null &&
-                pylint /code --output-format=json > /code/temp.json &&
-                pylint-json2sarif -i /code/temp.json -o /code/pylint_report.sarif || true
+                pip install pylint sarif-tools > /dev/null &&
+                pylint /code --output-format=json > /code/pylint_report.json &&
+                json2sarif -i /code/pylint_report.json -o /code/pylint_report.sarif || true
               "
         """
-        sh "cp ${sourceDir}/pylint_report.sarif ${sarifReport} || true"
+
+        // Check and copy the SARIF report if it exists
+        if (fileExists("${sourceDir}/pylint_report.sarif")) {
+            sh "cp ${sourceDir}/pylint_report.sarif ${sarifReport}"
+        } else {
+            echo "⚠️  Pylint SARIF report not generated for ${service}."
+        }
 
         // Fallback dummy reports
         [txtReport, jsonReport, sarifReport].each { report ->
