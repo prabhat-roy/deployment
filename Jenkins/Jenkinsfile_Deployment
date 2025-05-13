@@ -45,14 +45,14 @@ pipeline {
                 }
             }
         }
-        // stage('Pylint Scan') {
-        //     steps {
-        //         script {
-        //             def pylintScript = load 'groovy/pylint.groovy'
-        //             pylintScript.runPylintScan()
-        //         }
-        //     }
-        // }
+        stage('Pylint Scan') {
+            steps {
+                script {
+                    def pylintScript = load 'groovy/pylint.groovy'
+                    pylintScript.runPylintScan()
+                }
+            }
+        }
         // stage('ESLint Scan') {
         //     steps {
         //         script {
