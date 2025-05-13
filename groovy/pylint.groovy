@@ -1,3 +1,11 @@
+def createPylintConfig(String serviceDir) {
+    // Create .pylintrc file to ignore __init__.py
+    writeFile(file: "${serviceDir}/.pylintrc", text: """
+[MASTER]
+ignore=__init__.py
+    """)
+}
+
 def runPylintScan() {
     echo "🐍 Starting Pylint scan..."
 
@@ -22,29 +30,33 @@ def runPylintScan() {
     sh "mkdir -p ${reportsDir}"
 
     services.each { service ->
-        def sourceDir = "${workspace}/src/${service}"
+        def serviceDir = "${workspace}/src/${service}"
+
+        // Create pylint config to ignore __init__.py
+        createPylintConfig(serviceDir)
+
         def reportBase = "${reportsDir}/${service}"
         def txtReport = "${reportBase}.txt"
         def jsonReport = "${reportBase}.json"
         def sarifReport = "${reportBase}.sarif"
 
-        echo "🔍 Running pylint for: ${sourceDir}"
+        echo "🔍 Running pylint for: ${serviceDir}"
 
         // Run pylint and generate text report inside Docker with logging
         def pylintCmd = """
             docker run --rm \
-              -v "${sourceDir}:/code" \
+              -v "${serviceDir}:/code" \
               python:3.11 bash -c "
                 pip install pylint > /dev/null &&
-                pylint /code --ignore-patterns='__init__.py' || echo '⚠️  Pylint failed for ${service}'
+                pylint /code || echo '⚠️  Pylint failed for ${service}'
               "
         """
         echo "Running Pylint command: ${pylintCmd}"
         sh pylintCmd
 
         // Check and copy the text report if it exists
-        if (fileExists("${sourceDir}/pylint_report.txt")) {
-            sh "cp ${sourceDir}/pylint_report.txt ${txtReport}"
+        if (fileExists("${serviceDir}/pylint_report.txt")) {
+            sh "cp ${serviceDir}/pylint_report.txt ${txtReport}"
         } else {
             echo "⚠️  Pylint text report not generated for ${service}."
         }
@@ -52,18 +64,18 @@ def runPylintScan() {
         // Generate JSON report
         def jsonCmd = """
             docker run --rm \
-              -v "${sourceDir}:/code" \
+              -v "${serviceDir}:/code" \
               python:3.11 bash -c "
                 pip install pylint > /dev/null &&
-                pylint /code --ignore-patterns='__init__.py' --output-format=json > /code/pylint_report.json || true
+                pylint /code --output-format=json > /code/pylint_report.json || true
               "
         """
         echo "Running Pylint JSON command: ${jsonCmd}"
         sh jsonCmd
 
         // Check and copy the JSON report if it exists
-        if (fileExists("${sourceDir}/pylint_report.json")) {
-            sh "cp ${sourceDir}/pylint_report.json ${jsonReport}"
+        if (fileExists("${serviceDir}/pylint_report.json")) {
+            sh "cp ${serviceDir}/pylint_report.json ${jsonReport}"
         } else {
             echo "⚠️  Pylint JSON report not generated for ${service}."
         }
@@ -71,10 +83,10 @@ def runPylintScan() {
         // Convert JSON to SARIF using sarif-tools (alternative to pylint-json2sarif)
         def sarifCmd = """
             docker run --rm \
-              -v "${sourceDir}:/code" \
+              -v "${serviceDir}:/code" \
               python:3.11 bash -c "
                 pip install pylint sarif-tools > /dev/null &&
-                pylint /code --ignore-patterns='__init__.py' --output-format=json > /code/pylint_report.json &&
+                pylint /code --output-format=json > /code/pylint_report.json &&
                 json2sarif -i /code/pylint_report.json -o /code/pylint_report.sarif || true
               "
         """
@@ -82,8 +94,8 @@ def runPylintScan() {
         sh sarifCmd
 
         // Check and copy the SARIF report if it exists
-        if (fileExists("${sourceDir}/pylint_report.sarif")) {
-            sh "cp ${sourceDir}/pylint_report.sarif ${sarifReport}"
+        if (fileExists("${serviceDir}/pylint_report.sarif")) {
+            sh "cp ${serviceDir}/pylint_report.sarif ${sarifReport}"
         } else {
             echo "⚠️  Pylint SARIF report not generated for ${service}."
         }
