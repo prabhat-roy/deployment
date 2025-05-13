@@ -83,11 +83,18 @@ def scanAndArchiveFS() {
     echo "📦 Archiving Trivy source code scan reports..."
     archiveArtifacts artifacts: 'trivy-reports/*.txt,trivy-reports/*.json,trivy-reports/*.sarif', allowEmptyArchive: false
 
-    echo "🧹 Cleaning up Trivy containers and dangling images..."
+    echo "🧹 Cleaning up Trivy containers and images..."
     sh '''
+        # Remove any exited Trivy containers (though --rm means none should exist)
         docker ps -a --filter "ancestor=aquasec/trivy:latest" --filter "status=exited" -q | xargs -r docker rm
-        docker image prune -f --filter "label=org.opencontainers.image.title=trivy" || true
+
+        # Remove the Trivy image itself (optional, uncomment if needed)
+        docker rmi aquasec/trivy:latest || true
+
+        # Remove any dangling images
+        docker image prune -f || true
     '''
+
 
     echo "✅ Trivy source scan and cleanup complete."
 }
