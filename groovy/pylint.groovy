@@ -1,31 +1,36 @@
 def runPylintScan() {
-    def containerName = "pylint_scan_container"
-    def pylintImage = "python:3.11-slim"  // Official pylint image can be pulled directly or use a slim python image to install pylint
+    def containerNamePrefix = "pylint_scan_container_"
+    def pylintImage = "python:3.11-slim"  // Official python image to run pylint inside the container
+    def services = "${env.DOCKER_SERVICES}".split(",") // Get services list from DOCKER_SERVICES environment variable
     
-    try {
-        // Pull the pylint image from the official Docker repository
-        sh "docker pull ${pylintImage}"
+    services.each { service ->
+        def containerName = "${containerNamePrefix}${service}"
 
-        // Run pylint scan inside a container
-        sh """
-            docker run --name ${containerName} -v \$PWD:/workspace -w /workspace ${pylintImage} /bin/bash -c '
-                pip install pylint > /dev/null 2>&1
-                pylint . > pylint_report.txt || true
-                pylint --output-format=json . > pylint_report.json || true
-                pylint --output-format=html . > pylint_report.html || true
-            '
-        """
+        try {
+            // Pull the pylint image from the official Docker repository
+            sh "docker pull ${pylintImage}"
 
-        // Archive the generated pylint reports (txt, json, html)
-        archiveArtifacts artifacts: 'pylint_report.*', allowEmptyArchive: true
-    } catch (err) {
-        error "Pylint scan failed: ${err}"
-    } finally {
-        // Cleanup: Remove the pylint container
-        sh "docker rm -f ${containerName} || true"
+            // Run pylint scan inside the container for each service in DOCKER_SERVICES
+            sh """
+                docker run --name ${containerName} -v /var/lib/jenkins/workspace/${service}:/workspace -w /workspace ${pylintImage} /bin/bash -c '
+                    pip install pylint pylint-json2html > /dev/null 2>&1
+                    pylint . > pylint_report_${service}.txt || true
+                    pylint --output-format=json . > pylint_report_${service}.json || true
+                    pylint-json2html -o pylint_report_${service}.html pylint_report_${service}.json || true
+                '
+            """
 
-        // Remove the pylint image after scanning
-        sh "docker rmi -f ${pylintImage} || true"
+            // Archive the generated pylint reports (txt, json, html)
+            archiveArtifacts artifacts: "pylint_report_${service}.*", allowEmptyArchive: true
+        } catch (err) {
+            error "Pylint scan failed for service ${service}: ${err}"
+        } finally {
+            // Cleanup: Remove the pylint container
+            sh "docker rm -f ${containerName} || true"
+
+            // Remove the pylint image after scanning
+            sh "docker rmi -f ${pylintImage} || true"
+        }
     }
 }
 return this
