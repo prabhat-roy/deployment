@@ -1,5 +1,4 @@
 def createPylintConfig(String serviceDir) {
-    // Optional: Custom Pylint config (not needed if using find instead)
     writeFile(file: "${serviceDir}/.pylintrc", text: """
 [MASTER]
 ignore=__init__.py
@@ -43,27 +42,25 @@ def runPylintScan() {
             docker run --rm \
               -v "${serviceDir}:/code" \
               python:3.11 bash -c '
-                pip install pylint > /dev/null &&
-                cd /code &&
-                find . -type f -name "*.py" ! -name "__init__.py" > filelist.txt &&
+                set -e
+                pip install --quiet pylint sarif-formatter
+                cd /code
+                find . -type f -name "*.py" ! -name "__init__.py" > filelist.txt
                 if [ -s filelist.txt ]; then
-                  pylint \$(cat filelist.txt) > pylint_report.txt || true;
-                  pylint \$(cat filelist.txt) --output-format=json > pylint_report.json || true;
-                  pip install sarif-tools > /dev/null &&
-                  json2sarif -i pylint_report.json -o pylint_report.sarif || true;
+                  pylint \$(cat filelist.txt) > pylint_report.txt || true
+                  pylint \$(cat filelist.txt) --output-format=json > pylint_report.json || true
+                  sarif-formatter -t pylint -i pylint_report.json -o pylint_report.sarif || true
                 else
-                  echo "No Python files found." > pylint_report.txt;
-                  echo "[]" > pylint_report.json;
-                  echo "{}" > pylint_report.sarif;
+                  echo "No Python files found." > pylint_report.txt
+                  echo "[]" > pylint_report.json
+                  echo "{}" > pylint_report.sarif
                 fi
               '
         """
         echo "Running Pylint command: ${pylintCmd}"
         sh pylintCmd
 
-        [['txt', txtReport], ['json', jsonReport], ['sarif', sarifReport]].each { pair ->
-            def ext = pair[0]
-            def dest = pair[1]
+        [['txt', txtReport], ['json', jsonReport], ['sarif', sarifReport]].each { ext, dest ->
             def src = "${serviceDir}/pylint_report.${ext}"
             if (fileExists(src)) {
                 sh "cp ${src} ${dest}"
@@ -80,7 +77,7 @@ def runPylintScan() {
     echo "📦 Archiving Pylint reports..."
     archiveArtifacts artifacts: 'pylint-reports/*.{txt,json,sarif}', allowEmptyArchive: false
 
-    echo "🧹 Cleaning up Pylint containers and image..."
+    echo "🧹 Cleaning up Docker image cache..."
     sh """
         docker ps -a -q --filter ancestor=python:3.11 | xargs -r docker rm -f || true
         docker rmi python:3.11 || true
