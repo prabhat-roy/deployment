@@ -13,14 +13,13 @@ def scanAndArchiveFS() {
     }
 
     def services = dockerServices.split(",").collect { it.trim() }.findAll { it }
-
     if (services.isEmpty()) {
         error "❌ No valid services found in DOCKER_SERVICES!"
     }
 
     def workspace = pwd()
     def reportsDir = "${workspace}/trivy-reports"
-    sh "mkdir -p ${reportsDir}"
+    sh "mkdir -p '${reportsDir}'"
 
     services.each { service ->
         def sourceDir = "${workspace}/src/${service}"
@@ -33,9 +32,9 @@ def scanAndArchiveFS() {
         // Table format
         sh """
             docker run --rm \
-              -v "${sourceDir}:/app" \
-              -v "${reportsDir}:/reports" \
-              -v "${workspace}:/root/.cache/" \
+              -v '${sourceDir}:/app' \
+              -v '${reportsDir}:/reports' \
+              -v '${workspace}:/root/.cache/' \
               aquasec/trivy:latest fs /app \
               --no-progress \
               --severity CRITICAL,HIGH \
@@ -46,9 +45,9 @@ def scanAndArchiveFS() {
         // JSON format
         sh """
             docker run --rm \
-              -v "${sourceDir}:/app" \
-              -v "${reportsDir}:/reports" \
-              -v "${workspace}:/root/.cache/" \
+              -v '${sourceDir}:/app' \
+              -v '${reportsDir}:/reports' \
+              -v '${workspace}:/root/.cache/' \
               aquasec/trivy:latest fs /app \
               --no-progress \
               --severity CRITICAL,HIGH \
@@ -59,9 +58,9 @@ def scanAndArchiveFS() {
         // SARIF format
         sh """
             docker run --rm \
-              -v "${sourceDir}:/app" \
-              -v "${reportsDir}:/reports" \
-              -v "${workspace}:/root/.cache/" \
+              -v '${sourceDir}:/app' \
+              -v '${reportsDir}:/reports' \
+              -v '${workspace}:/root/.cache/' \
               aquasec/trivy:latest fs /app \
               --no-progress \
               --severity CRITICAL,HIGH \
@@ -79,16 +78,16 @@ def scanAndArchiveFS() {
     }
 
     echo "📁 Listing Trivy reports..."
-    sh "ls -lh ${reportsDir}"
+    sh "ls -lh '${reportsDir}'"
 
     echo "📦 Archiving Trivy source code scan reports..."
-    archiveArtifacts artifacts: 'trivy-reports/*.{txt,json,sarif}', allowEmptyArchive: false
+    archiveArtifacts artifacts: 'trivy-reports/*.txt,trivy-reports/*.json,trivy-reports/*.sarif', allowEmptyArchive: false
 
     echo "🧹 Cleaning up Trivy containers and dangling images..."
-    sh """
-        docker rm \$(docker ps -a -q --filter ancestor=aquasec/trivy:latest --filter status=exited) 2>/dev/null || true
+    sh '''
+        docker ps -a --filter "ancestor=aquasec/trivy:latest" --filter "status=exited" -q | xargs -r docker rm
         docker image prune -f --filter "label=org.opencontainers.image.title=trivy" || true
-    """
+    '''
 
     echo "✅ Trivy source scan and cleanup complete."
 }
