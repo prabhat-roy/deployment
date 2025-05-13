@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cnode
+  namespace: kube-system
+  labels:
+    app: cnode
+spec:
+  selector:
+    matchLabels:
+      app: cnode
+  template:
+    metadata:
+      labels:
+        app: cnode
+    spec:
+      containers:
+        - name: cnode
+          image: cnspec/cnode:latest
+          imagePullPolicy: Always
+          securityContext:
+            privileged: true  # Allows cnode to scan node configurations
+          volumeMounts:
+            - mountPath: /host
+              name: host-root
+              readOnly: true  # Only read access to the host filesystem
+            - mountPath: /var/run/docker.sock
+              name: docker-socket
+              readOnly: true
+      volumes:
+        - name: host-root
+          hostPath:
+            path: /
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
