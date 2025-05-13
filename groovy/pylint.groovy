@@ -2,7 +2,7 @@ def runPylintScan() {
     echo "🐍 Starting Pylint scan..."
 
     def buildNumber = env.BUILD_NUMBER
-    def pythonServices = env.PYTHON_SERVICES
+    def pythonServices = env.DOCKER_SERVICES
 
     if (!buildNumber) {
         error "❌ BUILD_NUMBER environment variable is missing!"
