@@ -16,7 +16,7 @@ def runPylintScan() {
             // Run pylint scan for each service inside the container
             sh """
                 docker exec ${containerName} /bin/bash -c '
-                    cd /workspace/${service}
+                    cd /workspace/src/${service}
                     pip install pylint pylint-json2html > /dev/null 2>&1
                     pylint . > pylint_report_${service}.txt || true
                     pylint --output-format=json . > pylint_report_${service}.json || true
@@ -25,7 +25,7 @@ def runPylintScan() {
             """
 
             // Archive the generated pylint reports (txt, json, html)
-            archiveArtifacts artifacts: "${service}/pylint_report_${service}.*", allowEmptyArchive: true
+            archiveArtifacts artifacts: "src/${service}/pylint_report_${service}.*", allowEmptyArchive: true
         } catch (err) {
             error "Pylint scan failed for service ${service}: ${err}"
         }
