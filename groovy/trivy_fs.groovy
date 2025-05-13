@@ -18,50 +18,55 @@ def scanAndArchiveFS() {
         error "❌ No valid services found in DOCKER_SERVICES!"
     }
 
-    sh 'mkdir -p trivy-reports'
+    def workspace = pwd()
+    def reportsDir = "${workspace}/trivy-reports"
+    sh "mkdir -p ${reportsDir}"
 
     services.each { service ->
-        def sourceDir = "src/${service}"
-        def tableReport = "trivy-reports/${service}.txt"
-        def jsonReport  = "trivy-reports/${service}.json"
-        def sarifReport = "trivy-reports/${service}.sarif"
+        def sourceDir = "${workspace}/src/${service}"
+        def tableReport = "${reportsDir}/${service}.txt"
+        def jsonReport  = "${reportsDir}/${service}.json"
+        def sarifReport = "${reportsDir}/${service}.sarif"
 
         echo "🔍 Scanning source code for: ${sourceDir}"
 
         // Table format
         sh """
             docker run --rm \
-              -v "\$PWD/${sourceDir}:/app" \
-              -v \$PWD:/root/.cache/ \
+              -v "${sourceDir}:/app" \
+              -v "${reportsDir}:/reports" \
+              -v "${workspace}:/root/.cache/" \
               aquasec/trivy:latest fs /app \
               --no-progress \
               --severity CRITICAL,HIGH \
               --format table \
-              -o ${tableReport} || echo '⚠️  Table scan failed for ${service}'
+              -o /reports/${service}.txt || echo '⚠️  Table scan failed for ${service}'
         """
 
         // JSON format
         sh """
             docker run --rm \
-              -v "\$PWD/${sourceDir}:/app" \
-              -v \$PWD:/root/.cache/ \
+              -v "${sourceDir}:/app" \
+              -v "${reportsDir}:/reports" \
+              -v "${workspace}:/root/.cache/" \
               aquasec/trivy:latest fs /app \
               --no-progress \
               --severity CRITICAL,HIGH \
               --format json \
-              -o ${jsonReport} || echo '⚠️  JSON scan failed for ${service}'
+              -o /reports/${service}.json || echo '⚠️  JSON scan failed for ${service}'
         """
 
         // SARIF format
         sh """
             docker run --rm \
-              -v "\$PWD/${sourceDir}:/app" \
-              -v \$PWD:/root/.cache/ \
+              -v "${sourceDir}:/app" \
+              -v "${reportsDir}:/reports" \
+              -v "${workspace}:/root/.cache/" \
               aquasec/trivy:latest fs /app \
               --no-progress \
               --severity CRITICAL,HIGH \
               --format sarif \
-              -o ${sarifReport} || echo '⚠️  SARIF scan failed for ${service}'
+              -o /reports/${service}.sarif || echo '⚠️  SARIF scan failed for ${service}'
         """
 
         // Fallback for missing reports
@@ -74,12 +79,18 @@ def scanAndArchiveFS() {
     }
 
     echo "📁 Listing Trivy reports..."
-    sh "ls -lh trivy-reports"
+    sh "ls -lh ${reportsDir}"
 
     echo "📦 Archiving Trivy source code scan reports..."
     archiveArtifacts artifacts: 'trivy-reports/*.{txt,json,sarif}', allowEmptyArchive: false
 
-    echo "✅ Trivy source scan and archiving complete."
+    echo "🧹 Cleaning up Trivy containers and dangling images..."
+    sh """
+        docker rm \$(docker ps -a -q --filter ancestor=aquasec/trivy:latest --filter status=exited) 2>/dev/null || true
+        docker image prune -f --filter "label=org.opencontainers.image.title=trivy" || true
+    """
+
+    echo "✅ Trivy source scan and cleanup complete."
 }
 
 return this
