@@ -30,16 +30,17 @@ def runPylintScan() {
 
         echo "🔍 Running pylint for: ${sourceDir}"
 
-        // Run pylint and generate text report inside Docker
-        sh """
+        // Run pylint and generate text report inside Docker with logging
+        def pylintCmd = """
             docker run --rm \
               -v "${sourceDir}:/code" \
               python:3.11 bash -c "
                 pip install pylint > /dev/null &&
-                pylint /code > /code/pylint_report.txt ||
-                echo '⚠️  Pylint failed for ${service}'
+                pylint /code || echo '⚠️  Pylint failed for ${service}'
               "
         """
+        echo "Running Pylint command: ${pylintCmd}"
+        sh pylintCmd
 
         // Check and copy the text report if it exists
         if (fileExists("${sourceDir}/pylint_report.txt")) {
@@ -49,7 +50,7 @@ def runPylintScan() {
         }
 
         // Generate JSON report
-        sh """
+        def jsonCmd = """
             docker run --rm \
               -v "${sourceDir}:/code" \
               python:3.11 bash -c "
@@ -57,6 +58,8 @@ def runPylintScan() {
                 pylint /code --output-format=json > /code/pylint_report.json || true
               "
         """
+        echo "Running Pylint JSON command: ${jsonCmd}"
+        sh jsonCmd
 
         // Check and copy the JSON report if it exists
         if (fileExists("${sourceDir}/pylint_report.json")) {
@@ -66,7 +69,7 @@ def runPylintScan() {
         }
 
         // Convert JSON to SARIF using sarif-tools (alternative to pylint-json2sarif)
-        sh """
+        def sarifCmd = """
             docker run --rm \
               -v "${sourceDir}:/code" \
               python:3.11 bash -c "
@@ -75,6 +78,8 @@ def runPylintScan() {
                 json2sarif -i /code/pylint_report.json -o /code/pylint_report.sarif || true
               "
         """
+        echo "Running SARIF conversion command: ${sarifCmd}"
+        sh sarifCmd
 
         // Check and copy the SARIF report if it exists
         if (fileExists("${sourceDir}/pylint_report.sarif")) {
