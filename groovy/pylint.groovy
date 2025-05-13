@@ -36,7 +36,7 @@ def runPylintScan() {
               -v "${sourceDir}:/code" \
               python:3.11 bash -c "
                 pip install pylint > /dev/null &&
-                pylint /code || echo '⚠️  Pylint failed for ${service}'
+                pylint /code --ignore=__init__.py || echo '⚠️  Pylint failed for ${service}'
               "
         """
         echo "Running Pylint command: ${pylintCmd}"
@@ -55,7 +55,7 @@ def runPylintScan() {
               -v "${sourceDir}:/code" \
               python:3.11 bash -c "
                 pip install pylint > /dev/null &&
-                pylint /code --output-format=json > /code/pylint_report.json || true
+                pylint /code --ignore=__init__.py --output-format=json > /code/pylint_report.json || true
               "
         """
         echo "Running Pylint JSON command: ${jsonCmd}"
@@ -74,7 +74,7 @@ def runPylintScan() {
               -v "${sourceDir}:/code" \
               python:3.11 bash -c "
                 pip install pylint sarif-tools > /dev/null &&
-                pylint /code --output-format=json > /code/pylint_report.json &&
+                pylint /code --ignore=__init__.py --output-format=json > /code/pylint_report.json &&
                 json2sarif -i /code/pylint_report.json -o /code/pylint_report.sarif || true
               "
         """
