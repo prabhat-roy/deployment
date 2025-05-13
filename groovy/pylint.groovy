@@ -38,28 +38,40 @@ def runPylintScan() {
 
         echo "🔍 Running pylint for: ${serviceDir}"
 
-        def pylintCmd = """
+        // Step 1: Run Pylint inside Python container
+        sh """
             docker run --rm \
               -v "${serviceDir}:/code" \
               python:3.11 bash -c '
-                set -e
-                pip install --quiet pylint sarif-formatter
-                cd /code
-                find . -type f -name "*.py" ! -name "__init__.py" > filelist.txt
+                pip install pylint > /dev/null &&
+                cd /code &&
+                find . -type f -name "*.py" ! -name "__init__.py" > filelist.txt &&
                 if [ -s filelist.txt ]; then
-                  pylint \$(cat filelist.txt) > pylint_report.txt || true
-                  pylint \$(cat filelist.txt) --output-format=json > pylint_report.json || true
-                  sarif-formatter -t pylint -i pylint_report.json -o pylint_report.sarif || true
+                  pylint \$(cat filelist.txt) > pylint_report.txt || true;
+                  pylint \$(cat filelist.txt) --output-format=json > pylint_report.json || true;
                 else
-                  echo "No Python files found." > pylint_report.txt
-                  echo "[]" > pylint_report.json
-                  echo "{}" > pylint_report.sarif
+                  echo "No Python files found." > pylint_report.txt;
+                  echo "[]" > pylint_report.json;
                 fi
               '
         """
-        echo "Running Pylint command: ${pylintCmd}"
-        sh pylintCmd
 
+        // Step 2: Convert JSON to SARIF inside Node container
+        sh """
+            docker run --rm \
+              -v "${serviceDir}:/code" \
+              node:20 bash -c '
+                npm install -g sarif > /dev/null &&
+                cd /code &&
+                if [ -f pylint_report.json ]; then
+                  json2sarif -i pylint_report.json -o pylint_report.sarif || true;
+                else
+                  echo "{}" > pylint_report.sarif;
+                fi
+              '
+        """
+
+        // Step 3: Copy reports
         [['txt', txtReport], ['json', jsonReport], ['sarif', sarifReport]].each { ext, dest ->
             def src = "${serviceDir}/pylint_report.${ext}"
             if (fileExists(src)) {
@@ -77,13 +89,7 @@ def runPylintScan() {
     echo "📦 Archiving Pylint reports..."
     archiveArtifacts artifacts: 'pylint-reports/*.{txt,json,sarif}', allowEmptyArchive: false
 
-    echo "🧹 Cleaning up Docker image cache..."
-    sh """
-        docker ps -a -q --filter ancestor=python:3.11 | xargs -r docker rm -f || true
-        docker rmi python:3.11 || true
-    """
-
-    echo "✅ Pylint scan and cleanup complete."
+    echo "✅ Pylint scan complete."
 }
 
 return this
