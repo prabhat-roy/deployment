@@ -18,8 +18,8 @@ def runPylintScan() {
                 docker exec ${containerName} /bin/bash -c '
                     cd /workspace/src/${service}
                     pip install pylint pylint-json2html > /dev/null 2>&1
-                    pylint . > pylint_report_${service}.txt || true
-                    pylint --output-format=json . > pylint_report_${service}.json || true
+                    pylint **/*.py > pylint_report_${service}.txt || true
+                    pylint --output-format=json **/*.py > pylint_report_${service}.json || true
                     pylint-json2html -o pylint_report_${service}.html pylint_report_${service}.json || true
                 '
             """
