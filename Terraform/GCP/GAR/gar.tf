@@ -1,8 +1,3 @@
-provider "google" {
-  project = var.project_id
-  region  = var.gcp_region
-}
-
 # Create Artifact Registry repositories for Docker images
 resource "google_artifact_registry_repository" "repos" {
   for_each     = toset(var.gar_repos)
