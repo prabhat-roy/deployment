@@ -1,6 +1,7 @@
 resource "google_project_service" "container" {
   service = "container.googleapis.com"
   project = var.project_id
+  disable_on_destroy = false
 }
 
 resource "google_project_service" "compute" {
@@ -41,7 +42,7 @@ resource "google_container_cluster" "gke_cluster" {
 }
 
   remove_default_node_pool = true
-  initial_node_count       = 1
+  initial_node_count       = 0
 }
 
 resource "google_container_node_pool" "primary_nodes" {
@@ -52,6 +53,9 @@ resource "google_container_node_pool" "primary_nodes" {
 
   node_config {
     machine_type = var.worker_node_size
+    image_type   = "UBUNTU"
+    disk_type    = "pd-ssd"
+     disk_size_gb = var.disk_size
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]

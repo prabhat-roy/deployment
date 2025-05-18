@@ -13,7 +13,8 @@ locals {
     "roles/container.admin",          # Full GKE cluster management
     "roles/artifactregistry.admin",  # Manage Artifact Registry (push/pull images)
     "roles/logging.logWriter",        # Write logs (optional but useful)
-    "roles/monitoring.metricWriter"   # Write monitoring metrics (optional)
+    "roles/monitoring.metricWriter",   # Write monitoring metrics (optional)
+    "roles/serviceusage.serviceUsageAdmin"  
   ]
 
   public_key_path  = startswith(var.public_key, "~") ? abspath(replace(var.public_key, "~", var.HOME)) : abspath(var.public_key)

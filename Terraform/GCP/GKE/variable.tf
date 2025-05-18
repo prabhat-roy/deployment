@@ -17,3 +17,7 @@ variable "project_id" {
 variable "private_subnet_name" {
   type = string
 }
+
+variable "disk_size" {
+  type = number
+}
