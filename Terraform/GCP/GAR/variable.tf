@@ -9,5 +9,6 @@ variable "gcp_region" {
 }
 
 variable "gar_repos" {
- 
+ description = "List of GAR repositories to create"
+  type        = list(string)
 }
