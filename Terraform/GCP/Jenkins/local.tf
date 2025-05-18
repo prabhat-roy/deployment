@@ -7,14 +7,20 @@ locals {
   default_zone    = element(data.google_compute_zones.available.names, 0)
 
   sa_roles = [
-    "roles/compute.admin",            # Manage Compute Engine VMs & resources
-    "roles/storage.admin",            # Access Google Cloud Storage buckets
-    "roles/iam.serviceAccountUser",  # Impersonate/use service accounts (needed for GKE and others)
-    "roles/container.admin",          # Full GKE cluster management
-    "roles/artifactregistry.admin",  # Manage Artifact Registry (push/pull images)
-    "roles/logging.logWriter",        # Write logs (optional but useful)
-    "roles/monitoring.metricWriter",   # Write monitoring metrics (optional)
-    "roles/serviceusage.serviceUsageAdmin"  
+    "roles/compute.admin",
+  "roles/compute.networkAdmin",
+  "roles/compute.securityAdmin",
+  "roles/storage.admin",
+  "roles/iam.serviceAccountUser",
+  "roles/iam.serviceAccountAdmin",
+  "roles/iam.roleViewer",
+  "roles/resourcemanager.projectIamAdmin",
+  "roles/container.admin",
+  "roles/artifactregistry.admin",
+  "roles/logging.logWriter",
+  "roles/monitoring.metricWriter",
+  "roles/serviceusage.serviceUsageAdmin",
+  "roles/dns.admin"
   ]
 
   public_key_path  = startswith(var.public_key, "~") ? abspath(replace(var.public_key, "~", var.HOME)) : abspath(var.public_key)
