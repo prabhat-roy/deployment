@@ -28,8 +28,8 @@ terraform_list="[${terraform_list%, }]"
 echo "🛠️ Writing terraform.tfvars..."
 cat > Terraform/GCP/GAR/terraform.tfvars <<EOF
 gar_repo_names = ${terraform_list}
-gcp_region     = "${GCP_REGION}"
-project_id     = "${GCP_PROJECT_ID}"
+gcp_region     = "${GOOGLE_REGION}"
+project_id     = "${GOOGLE_PROJECT}"
 EOF
 
 echo "🚀 Running Terraform (${ACTION^^})..."
