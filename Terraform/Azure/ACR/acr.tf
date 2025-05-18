@@ -2,36 +2,60 @@ provider "azurerm" {
   features {}
 }
 
-# Create the Resource Group for Azure ACR
-resource "azurerm_resource_group" "main" {
-  name     = var.azure_resource_group
-  location = var.azure_location
+resource "random_id" "acr_suffix" {
+  byte_length = 4
 }
 
 # Create the Azure Container Registry (ACR)
-resource "azurerm_container_registry" "main" {
-  name                = var.azure_acr_name
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
+resource "azurerm_container_registry" "acr" {
+  name                = "kubernetes${random_id.acr_suffix.hex}"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
   sku                 = "Standard"
   admin_enabled       = true
 
   tags = {
-    CreatedBy   = "Terraform"
-    Environment = var.environment
+    CreatedBy = "Terraform"
   }
 }
 
-# Create repositories in ACR using az CLI (due to lazy creation in ACR)
-resource "null_resource" "acr_repos" {
-  for_each = toset(var.acr_repo_names)
+output "acr_name" {
+  value = azurerm_container_registry.acr.name
+}
+
+# Update Jenkins.env file with ACR_NAME and ACR_LOGIN_SERVER
+resource "null_resource" "update_jenkins_env" {
+  triggers = {
+    acr_name = azurerm_container_registry.acr.name
+  }
 
   provisioner "local-exec" {
     command = <<EOT
-az acr repository show --name ${var.azure_acr_name} --repository ${each.key} || \
-echo "📦 Dummy push required to initialize repo '${each.key}' in ACR (repos are lazy-created on push)."
+#!/bin/bash
+ENV_FILE="./Jenkins.env"
+ACR_NAME="${azurerm_container_registry.acr.name}"
+
+# Get login server using Azure CLI (az CLI must be installed and logged in)
+ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query "loginServer" --output tsv)
+
+# Update or append ACR_NAME
+if grep -q "^ACR_NAME=" "$ENV_FILE"; then
+  sed -i "s/^ACR_NAME=.*/ACR_NAME=${ACR_NAME}/" "$ENV_FILE"
+else
+  echo "ACR_NAME=${ACR_NAME}" >> "$ENV_FILE"
+fi
+
+# Update or append ACR_LOGIN_SERVER
+if grep -q "^ACR_LOGIN_SERVER=" "$ENV_FILE"; then
+  sed -i "s|^ACR_LOGIN_SERVER=.*|ACR_LOGIN_SERVER=${ACR_LOGIN_SERVER}|" "$ENV_FILE"
+else
+  echo "ACR_LOGIN_SERVER=${ACR_LOGIN_SERVER}" >> "$ENV_FILE"
+fi
+
+echo "✅ Jenkins.env updated with ACR_NAME=${ACR_NAME} and ACR_LOGIN_SERVER=${ACR_LOGIN_SERVER}"
 EOT
+    interpreter = ["bash", "-c"]
   }
 
-  depends_on = [azurerm_container_registry.main]
+  depends_on = [azurerm_container_registry.acr]
 }

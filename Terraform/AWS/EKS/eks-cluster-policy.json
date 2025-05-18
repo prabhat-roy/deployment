@@ -1,0 +1,20 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "ec2:Describe*",
+          "elasticloadbalancing:*",
+          "cloudwatch:*",
+          "autoscaling:DescribeAutoScalingGroups",
+          "autoscaling:UpdateAutoScalingGroup",
+          "autoscaling:DescribeLaunchConfigurations",
+          "autoscaling:DescribeTags",
+          "iam:PassRole"
+        ],
+        "Resource": "*"
+      }
+    ]
+  }
+  

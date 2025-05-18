@@ -1,20 +1,13 @@
-variable "gcp_project_id" {
+variable "project_id" {
+  description = "GCP project ID"
   type        = string
-  description = "The GCP project ID"
 }
 
 variable "gcp_region" {
+  description = "GCP region"
   type        = string
-  description = "GCP region for Artifact Registry"
 }
 
-variable "gcr_repos" {
-  type        = list(string)
-  description = "List of Artifact Registry repositories to create"
-}
-
-variable "environment" {
-  type        = string
-  default     = "dev"
-  description = "Environment label for tagging"
+variable "gar_repos" {
+ 
 }
