@@ -1,4 +1,4 @@
-def manageTerraform(String action) {
+def manageKubernetes(String action) {
     def cloud = env.CLOUD_PROVIDER?.toLowerCase()
     def tfAction = (action == 'destroy') ? 'destroy' : 'apply'
 
