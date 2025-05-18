@@ -33,6 +33,13 @@ resource "google_container_cluster" "gke_cluster" {
     master_ipv4_cidr_block  = "10.100.0.0/28"
   }
 
+ master_authorized_networks_config {
+  cidr_blocks {
+    cidr_block   = "10.10.0.0/"
+    display_name = "jenkins-subnet"
+  }
+}
+
   remove_default_node_pool = true
   initial_node_count       = 1
 }
