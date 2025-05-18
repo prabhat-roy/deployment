@@ -169,7 +169,7 @@ pipeline {
             steps {
                 script {
                     // Install kubectl, helm, kustomize, etc.
-                    def kubernetesInstaller = load 'groovy/kubernetes.groovy'
+                    def kubernetesInstaller = load 'groovy/install_kubernetes.groovy'
                     kubernetesInstaller.installKubernetes()
                 }
             }
