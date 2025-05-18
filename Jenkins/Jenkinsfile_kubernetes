@@ -46,14 +46,7 @@ pipeline {
                     }
                 }
             }
-            stage('Create Kubernetes Cluster') {
-                steps {
-                    script {
-                        def kubernetesCluster = load 'groovy/kubernetes_cluster.groovy'
-                        kubernetesCluster.manageKubernetes(params.ACTION)
-                    }
-                }
-            }
+            
             
     }
 }
