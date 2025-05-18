@@ -21,7 +21,6 @@ out/
 *.tfstate.*
 *.tfplan
 *.tfapply
-*.tfvars
 *.tfvars.json
 crash.log
 override.tf
