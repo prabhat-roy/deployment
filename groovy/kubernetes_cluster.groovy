@@ -9,6 +9,8 @@ def manageKubernetes(String action) {
         error "❌ Invalid action '${action}'. Allowed values: create, destroy"
     }
 
+    def tfAction = (action == 'destroy') ? 'destroy' : 'apply'
+
     def scriptMap = [
         'aws'  : 'shell_script/eks.sh',
         'azure': 'shell_script/aks.sh',
@@ -38,12 +40,12 @@ def manageKubernetes(String action) {
             break
     }
 
-    echo "🚀 Executing ${scriptPath} with action '${action.toUpperCase()}'..."
+    echo "🚀 Executing ${scriptPath} with action '${tfAction.toUpperCase()}'..."
 
     withEnv(envVars) {
         sh """
             chmod +x ${scriptPath}
-            ${scriptPath} ${action}
+            ${scriptPath} ${tfAction}
         """
     }
 }
