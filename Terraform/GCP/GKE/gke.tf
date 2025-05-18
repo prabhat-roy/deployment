@@ -7,16 +7,19 @@ resource "google_project_service" "container" {
 resource "google_project_service" "compute" {
   service = "compute.googleapis.com"
   project = var.project_id
+  disable_on_destroy = true
 }
 
 resource "google_project_service" "iam" {
   service = "iam.googleapis.com"
   project = var.project_id
+  disable_on_destroy = true
 }
 
 resource "google_project_service" "cloudresourcemanager" {
   service = "cloudresourcemanager.googleapis.com"
   project = var.project_id
+  disable_on_destroy = true
 }
 
 resource "google_container_cluster" "gke_cluster" {
