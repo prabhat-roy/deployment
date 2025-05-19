@@ -6,6 +6,6 @@ resource "aws_eks_cluster" "eks-cluster" {
         subnet_ids         = data.aws_subnets.private.ids
     }
     depends_on = [
-    aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy,
   ]
 }
