@@ -34,20 +34,6 @@ data "aws_subnet" "public_metadata" {
   id       = each.value
 }
 
-locals {
-  available_azs = data.aws_availability_zones.available.names
-
-  private_subnet_ids = [
-    for subnet_id, subnet in data.aws_subnet.private_metadata :
-    subnet_id if contains(local.available_azs, subnet.availability_zone)
-  ]
-
-  public_subnet_ids = [
-    for subnet_id, subnet in data.aws_subnet.public_metadata :
-    subnet_id if contains(local.available_azs, subnet.availability_zone)
-  ]
-}
-
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["amazon"]
