@@ -27,12 +27,21 @@ def manageKubernetes(String action) {
 
     switch (cloud) {
         case 'aws':
-            envVars = ["TF_VAR_aws_region=${env.AWS_REGION}"]
+            if (!env.AWS_REGION) {
+                error "❌ AWS_REGION environment variable is not set!"
+            }
+            envVars = ["AWS_REGION=${env.AWS_REGION}"]
             break
         case 'azure':
+            if (!env.AZURE_REGION) {
+                error "❌ AZURE_REGION environment variable is not set!"
+            }
             envVars = ["TF_VAR_azure_region=${env.AZURE_REGION}"]
             break
         case 'gcp':
+            if (!env.GOOGLE_PROJECT || !env.GOOGLE_REGION) {
+                error "❌ GOOGLE_PROJECT or GOOGLE_REGION environment variable is not set!"
+            }
             envVars = [
                 "TF_VAR_project_id=${env.GOOGLE_PROJECT}",
                 "TF_VAR_gcp_region=${env.GOOGLE_REGION}"
