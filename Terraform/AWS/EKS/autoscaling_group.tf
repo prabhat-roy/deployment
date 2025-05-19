@@ -13,9 +13,16 @@ resource "aws_autoscaling_group" "eks_workers" {
   lifecycle {
     create_before_destroy = true
   }
-tag {
+
+  tag {
     key                 = "kubernetes.io/cluster/${var.cluster_name}"
     value               = "owned"
     propagate_at_launch = true
-}
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "eks-worker-node"
+    propagate_at_launch = true
+  }
 }
