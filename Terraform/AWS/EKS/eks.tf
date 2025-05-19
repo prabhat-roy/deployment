@@ -3,7 +3,7 @@ resource "aws_eks_cluster" "eks-cluster" {
     role_arn = aws_iam_role.eks_cluster_role.arn
     version = var.eks_version
     vpc_config {
-        subnet_ids         = data.aws_subnets.private.ids
+        subnet_ids         = slice(local.private_subnet_ids, 0, 3)
     }
     depends_on = [
     aws_iam_role_policy_attachment.eks_cluster_AmazonEKSClusterPolicy,
