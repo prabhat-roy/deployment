@@ -23,4 +23,13 @@ resource "aws_launch_template" "eks_nodes" {
   iam_instance_profile {
     name = aws_iam_instance_profile.eks_nodes.name
   }
+
+  tag_specifications {
+    resource_type = "instance"
+
+    tags = {
+      "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+      # Add any other tags your nodes need here
+    }
+  }
 }
