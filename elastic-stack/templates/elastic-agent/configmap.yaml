@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: elastic-agent-config
+  labels:
+    app: elastic-agent
+data:
+  elastic-agent.yml: |-
+    agent:
+      monitoring:
+        enabled: true
+        logs: true
+        metrics: true
+    outputs:
+      default:
+        type: elasticsearch
+        hosts: ["{{ .Values.elasticsearch.service.url }}"]
+        username: "{{ .Values.elasticsearch.username }}"
+        password: "{{ .Values.elasticsearch.password }}"
+    fleet:
+      enabled: true
+      kibana:
+        host: "{{ .Values.kibana.service.url }}"
+      enrollment_token: "{{ .Values.elasticAgent.enrollmentToken }}"

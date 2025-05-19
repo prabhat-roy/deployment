@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kibana
+  labels:
+    app: kibana
+spec:
+  replicas: {{ .Values.kibana.replicaCount }}
+  selector:
+    matchLabels:
+      app: kibana
+  serviceName: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+      annotations:
+        {{- if .Values.kibana.annotations.enabled }}
+        {{ toYaml .Values.kibana.annotations | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ .Values.kibana.serviceAccount.name }}
+      containers:
+        - name: kibana
+          image: "{{ .Values.kibana.image.repository }}:{{ .Values.kibana.image.tag }}"
+          imagePullPolicy: {{ .Values.kibana.image.pullPolicy }}
+          ports:
+            - containerPort: 5601
+              name: http
+          env:
+            - name: ELASTICSEARCH_URL
+              value: {{ .Values.elasticsearch.service.url | quote }}
+            - name: SERVER_SSL_ENABLED
+              value: "true"
+            - name: SERVER_SSL_CERTIFICATE
+              value: /tls/tls.crt
+            - name: SERVER_SSL_KEY
+              value: /tls/tls.key
+          volumeMounts:
+            - name: kibana-data
+              mountPath: /usr/share/kibana/data
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+          resources:
+            limits:
+              cpu: {{ .Values.kibana.resources.limits.cpu }}
+              memory: {{ .Values.kibana.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.kibana.resources.requests.cpu }}
+              memory: {{ .Values.kibana.resources.requests.memory }}
+      volumes:
+        - name: tls
+          secret:
+            secretName: kibana-tls
+  volumeClaimTemplates:
+    - metadata:
+        name: kibana-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.kibana.persistence.size }}
+        storageClassName: {{ .Values.kibana.persistence.storageClassName | quote }}

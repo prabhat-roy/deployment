@@ -1,0 +1,18 @@
+{{- if .Values.servicemonitors.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: promtail
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: promtail
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  endpoints:
+    - port: http-metrics
+      interval: 15s
+{{- end }}

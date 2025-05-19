@@ -1,0 +1,21 @@
+{{- if .Values.rules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kubelet-rules
+  labels:
+    role: alert-rules
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: kubelet.rules
+      rules:
+        - alert: KubeletDown
+          expr: up{job="kubelet"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Kubelet down"
+            description: "Kubelet on node {{ $labels.instance }} has been down for 5 minutes."
+{{- end }}

@@ -1,0 +1,153 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Dashboard for monitoring Kubernetes Controller Manager performance and health using Prometheus metrics.",
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "iteration": 1684502800000,
+    "links": [],
+    "panels": [
+      {
+        "id": 1,
+        "title": "Controller Manager Syncs per Second",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "sum(rate(controller_manager_sync_total[5m])) by (controller)",
+            "legendFormat": "{{controller}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "reqps", "min": 0 }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Controller Manager Queue Length",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "sum(controller_manager_queue_length) by (controller)",
+            "legendFormat": "{{controller}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "min": 0 }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Controller Manager Reconciliation Duration (99th Percentile, ms)",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 5, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(controller_manager_reconcile_duration_seconds_bucket[5m])) by (le, controller)) * 1000",
+            "legendFormat": "{{controller}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "ms", "min": 0 }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Controller Manager Errors per Second",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 5, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "sum(rate(controller_manager_errors_total[5m])) by (controller)",
+            "legendFormat": "{{controller}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "errors/s", "min": 0 }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Controller Manager Work Queue Depth",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 10, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "sum(controller_manager_workqueue_depth) by (controller)",
+            "legendFormat": "{{controller}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "min": 0 }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Controller Manager Running Status",
+        "type": "stat",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 10, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "up{job=\"kube-controller-manager\"}",
+            "legendFormat": "Up",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "red" },
+                { "value": 1, "color": "green" }
+              ]
+            },
+            "min": 0,
+            "max": 1
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["last"] },
+          "textMode": "value"
+        }
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": ["kubernetes", "controller-manager", "monitoring"],
+    "templating": { "list": [] },
+    "time": { "from": "now-1h", "to": "now" },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Kubernetes Controller Manager Metrics Dashboard",
+    "uid": "kube-controller-manager-metrics",
+    "version": 1
+  }
+  

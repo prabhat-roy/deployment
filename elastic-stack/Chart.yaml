@@ -1,5 +1,6 @@
 apiVersion: v2
 name: elastic-stack
-description: A Helm chart for deploying Elastic Stack (Elasticsearch, Kibana, Fleet, Elastic Agent)
-version: 0.1.0
-appVersion: "8.13.2"
+description: A Helm chart for deploying the full Elastic Stack (Elasticsearch, Kibana, Fleet Server, and Elastic Agent)
+type: application
+version: 1.0.0
+appVersion: "8.13.0" # or latest compatible Elastic Stack version

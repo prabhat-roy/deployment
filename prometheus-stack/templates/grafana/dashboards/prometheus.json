@@ -1,0 +1,168 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Prometheus server metrics and targets health monitoring dashboard.",
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "iteration": 1684501200000,
+    "links": [],
+    "panels": [
+      {
+        "id": 1,
+        "title": "Prometheus CPU Usage",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "process_cpu_seconds_total{job=\"prometheus\"}",
+            "legendFormat": "CPU Seconds",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "min": 0
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Prometheus Memory Usage",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes{job=\"prometheus\"}",
+            "legendFormat": "Resident Memory (bytes)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "min": 0
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Prometheus TSDB Disk Usage",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "prometheus_tsdb_storage_blocks_bytes",
+            "legendFormat": "Blocks Bytes",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "bytes",
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Active Targets",
+        "type": "stat",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 8, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "count(up{job=\"prometheus\"} == 1)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "center",
+          "reduceOptions": {
+            "calcs": ["last"],
+            "fields": "",
+            "values": false
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Scrape Errors",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 18, "y": 8, "w": 6, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(prometheus_scrape_samples_post_metric_relabeling{job=\"prometheus\"}) - sum(prometheus_scrape_samples_scraped{job=\"prometheus\"})",
+            "legendFormat": "Scrape Errors",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Targets Status",
+        "type": "table",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
+        "targets": [
+          {
+            "expr": "up",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showHeader": true,
+          "sortBy": [{ "field": "Value", "desc": true }]
+        }
+      }
+    ],
+    "refresh": "15s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": ["prometheus", "metrics", "monitoring"],
+    "templating": { "list": [] },
+    "time": { "from": "now-6h", "to": "now" },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Prometheus Metrics Dashboard",
+    "uid": "prometheus-metrics-dashboard",
+    "version": 1
+  }
+  

@@ -1,0 +1,22 @@
+{{- if .Values.servicemonitors.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kube-apiserver
+  labels:
+    release: prometheus
+spec:
+  jobLabel: component
+  selector:
+    matchLabels:
+      component: apiserver
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+    - port: https
+      interval: 15s
+      scheme: https
+      tlsConfig:
+        insecureSkipVerify: true
+{{- end }}

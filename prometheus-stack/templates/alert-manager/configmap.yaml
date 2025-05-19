@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  labels:
+    app: alertmanager
+data:
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: '{{ .Values.alertmanager.smtp.host }}:{{ .Values.alertmanager.smtp.port }}'
+      smtp_from: '{{ .Values.alertmanager.smtp.from }}'
+      smtp_auth_username: '{{ .Values.alertmanager.smtp.username }}'
+      smtp_auth_password: '{{ .Values.alertmanager.smtp.password }}'
+    route:
+      receiver: default-receiver
+    receivers:
+      - name: default-receiver
+        email_configs:
+          - to: '{{ .Values.alertmanager.smtp.to }}'
+            send_resolved: true

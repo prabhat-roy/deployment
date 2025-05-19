@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "yourchart.fullname" . }}-blackbox-exporter
+  labels:
+    app: {{ include "yourchart.name" . }}
+    component: blackbox-exporter
+spec:
+  ports:
+    - name: http
+      port: {{ .Values.blackbox.service.port }}
+      targetPort: {{ .Values.blackbox.service.port }}
+  selector:
+    app: {{ include "yourchart.name" . }}
+    component: blackbox-exporter
+  type: ClusterIP

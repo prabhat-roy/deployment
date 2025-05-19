@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: elasticsearch-network-policy
+  labels:
+    app: elasticsearch
+spec:
+  podSelector:
+    matchLabels:
+      app: elasticsearch
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: elastic-agent
+        - podSelector:
+            matchLabels:
+              app: fleet-server
+        - podSelector:
+            matchLabels:
+              app: kibana
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: elastic-agent
+        - podSelector:
+            matchLabels:
+              app: fleet-server
+        - podSelector:
+            matchLabels:
+              app: kibana

@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: alertmanager-pdb
+  labels:
+    app: alertmanager
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: alertmanager

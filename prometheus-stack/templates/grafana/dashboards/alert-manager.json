@@ -1,0 +1,133 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Dashboard showing Alertmanager alerts and their status.",
+    "editable": true,
+    "gnetId": 315,
+    "graphTooltip": 0,
+    "id": null,
+    "iteration": 1625483421402,
+    "links": [],
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Active Alerts",
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+        "id": 1,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "sum(ALERTS{alertstate=\"firing\"})",
+            "legendFormat": "Active Alerts",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "orange", "value": 1 },
+                { "color": "red", "value": 5 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "table",
+        "title": "Firing Alerts Detail",
+        "gridPos": { "x": 6, "y": 0, "w": 18, "h": 8 },
+        "id": 2,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "ALERTS{alertstate=\"firing\"}",
+            "format": "table",
+            "refId": "B"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": false,
+              "indexByName": {},
+              "renameByName": {
+                "alertname": "Alert Name",
+                "severity": "Severity",
+                "instance": "Instance",
+                "job": "Job",
+                "description": "Description"
+              },
+              "setOrder": ["Alert Name", "Severity", "Instance", "Job", "Description"]
+            }
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "title": "Resolved Alerts Detail",
+        "gridPos": { "x": 0, "y": 4, "w": 24, "h": 6 },
+        "id": 3,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "ALERTS{alertstate=\"pending\"}",
+            "format": "table",
+            "refId": "C"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": false,
+              "indexByName": {},
+              "renameByName": {
+                "alertname": "Alert Name",
+                "severity": "Severity",
+                "instance": "Instance",
+                "job": "Job",
+                "description": "Description"
+              },
+              "setOrder": ["Alert Name", "Severity", "Instance", "Job", "Description"]
+            }
+          }
+        ]
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": ["alertmanager", "alerts", "monitoring"],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "AlertManager",
+    "uid": "alertmanager-dashboard",
+    "version": 1
+  }
+  

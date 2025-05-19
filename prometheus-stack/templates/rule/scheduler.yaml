@@ -1,0 +1,21 @@
+{{- if .Values.rules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: scheduler-rules
+  labels:
+    role: alert-rules
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: scheduler.rules
+      rules:
+        - alert: SchedulerDown
+          expr: up{job="kube-scheduler"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Scheduler down"
+            description: "Kube scheduler is unreachable or unresponsive."
+{{- end }}

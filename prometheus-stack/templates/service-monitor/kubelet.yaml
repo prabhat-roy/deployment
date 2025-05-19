@@ -1,0 +1,21 @@
+{{- if .Values.servicemonitors.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kubelet
+  labels:
+    release: prometheus
+spec:
+  jobLabel: component
+  selector:
+    matchLabels:
+      k8s-app: kubelet
+  namespaceSelector:
+    any: true
+  endpoints:
+    - port: https-metrics
+      interval: 15s
+      scheme: https
+      tlsConfig:
+        insecureSkipVerify: true
+{{- end }}

@@ -1,0 +1,224 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Comprehensive dashboard for Node Exporter metrics: CPU, memory, disk, network, filesystem, load, and more.",
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "iteration": 1684501200000,
+    "links": [],
+    "panels": [
+      {
+        "id": 1,
+        "title": "CPU Usage (user/system/idle)",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "CPU Breakdown by Mode",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(node_cpu_seconds_total[5m])",
+            "legendFormat": "{{mode}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Memory Usage",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "100 * (1 - ((node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes))",
+            "legendFormat": "Memory Used %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Disk IO Read/Write Rate",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(node_disk_reads_completed_total[5m])",
+            "legendFormat": "Reads/s ({{device}})",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(node_disk_writes_completed_total[5m])",
+            "legendFormat": "Writes/s ({{device}})",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Filesystem Usage",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "100 * (node_filesystem_size_bytes{fstype!=\"tmpfs\",fstype!=\"overlay\"} - node_filesystem_free_bytes{fstype!=\"tmpfs\",fstype!=\"overlay\"}) / node_filesystem_size_bytes{fstype!=\"tmpfs\",fstype!=\"overlay\"}",
+            "legendFormat": "{{mountpoint}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Network Traffic (Bytes/sec)",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "rate(node_network_receive_bytes_total[5m])",
+            "legendFormat": "Receive ({{device}})",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(node_network_transmit_bytes_total[5m])",
+            "legendFormat": "Transmit ({{device}})",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Bps",
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Load Average (1m, 5m, 15m)",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 24, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "node_load1",
+            "legendFormat": "1m",
+            "refId": "A"
+          },
+          {
+            "expr": "node_load5",
+            "legendFormat": "5m",
+            "refId": "B"
+          },
+          {
+            "expr": "node_load15",
+            "legendFormat": "15m",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Context Switches per Second",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 24, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "rate(node_context_switches_total[5m])",
+            "legendFormat": "Context Switches",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops"
+          }
+        }
+      }
+    ],
+    "refresh": "15s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": ["node-exporter", "node", "metrics", "linux"],
+    "templating": { "list": [] },
+    "time": { "from": "now-6h", "to": "now" },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Node Exporter Full Metrics Dashboard",
+    "uid": "node-exporter-full-metrics",
+    "version": 1
+  }
+  

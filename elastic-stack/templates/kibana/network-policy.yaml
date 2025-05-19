@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kibana-network-policy
+  labels:
+    app: kibana
+spec:
+  podSelector:
+    matchLabels:
+      app: kibana
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: elastic-agent
+        - podSelector:
+            matchLabels:
+              app: fleet-server
+        - podSelector:
+            matchLabels:
+              app: elasticsearch
+        - namespaceSelector: {} # allow cluster internal access, restrict if needed
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: elastic-agent
+        - podSelector:
+            matchLabels:
+              app: fleet-server
+        - podSelector:
+            matchLabels:
+              app: elasticsearch

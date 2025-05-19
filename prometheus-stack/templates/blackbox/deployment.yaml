@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "yourchart.fullname" . }}-blackbox-exporter
+  labels:
+    app: {{ include "yourchart.name" . }}
+    component: blackbox-exporter
+spec:
+  replicas: {{ .Values.blackbox.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "yourchart.name" . }}
+      component: blackbox-exporter
+  template:
+    metadata:
+      labels:
+        app: {{ include "yourchart.name" . }}
+        component: blackbox-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.blackbox.service.port }}"
+        prometheus.io/path: "/probe"
+    spec:
+      containers:
+        - name: blackbox-exporter
+          image: "{{ .Values.blackbox.image.repository }}:{{ .Values.blackbox.image.tag }}"
+          imagePullPolicy: {{ .Values.blackbox.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.blackbox.service.port }}
+          args:
+            - "--config.file=/etc/blackbox/config.yml"
+          volumeMounts:
+            - name: config
+              mountPath: /etc/blackbox
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "yourchart.fullname" . }}-blackbox-config

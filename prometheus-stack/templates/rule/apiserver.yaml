@@ -1,0 +1,21 @@
+{{- if .Values.rules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: apiserver-rules
+  labels:
+    role: alert-rules
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: apiserver.rules
+      rules:
+        - alert: APIDown
+          expr: up{job="apiserver"} == 0
+          for: 3m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Kubernetes API server is down"
+            description: "API server {{ $labels.instance }} has not been reachable for 3 minutes."
+{{- end }}

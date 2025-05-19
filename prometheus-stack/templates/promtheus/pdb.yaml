@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "prometheus.name" . }}-pdb
+  labels:
+    {{- include "prometheus.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "prometheus.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}

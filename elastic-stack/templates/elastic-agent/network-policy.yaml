@@ -1,0 +1,40 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: elastic-agent-network-policy
+  labels:
+    app: elastic-agent
+spec:
+  podSelector:
+    matchLabels:
+      app: elastic-agent
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: fleet-server
+        - podSelector:
+            matchLabels:
+              app: elasticsearch
+        - podSelector:
+            matchLabels:
+              app: kibana
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: fleet-server
+        - podSelector:
+            matchLabels:
+              app: elasticsearch
+        - podSelector:
+            matchLabels:
+              app: kibana
+    - to:
+        - namespaceSelector: {}
+          ipBlock:
+            cidr: 0.0.0.0/0
+          # Allow outbound to internet for updates/telemetry if needed, comment out if not allowed

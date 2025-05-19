@@ -1,0 +1,161 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Kubernetes Logs Dashboard using Loki datasource. View logs by namespace, pod, container, and severity.",
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "iteration": 1684501200000,
+    "links": [],
+    "panels": [
+      {
+        "id": 1,
+        "title": "Log Stream",
+        "type": "logs",
+        "datasource": "Loki",
+        "gridPos": { "x": 0, "y": 0, "w": 24, "h": 10 },
+        "targets": [
+          {
+            "expr": "{job=\"kubernetes-pods\"}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showLabels": true,
+          "showTime": true,
+          "wrapLines": true,
+          "dedupStrategy": "none",
+          "maxLines": 1000
+        }
+      },
+      {
+        "id": 2,
+        "title": "Logs by Namespace",
+        "type": "bar gauge",
+        "datasource": "Loki",
+        "gridPos": { "x": 0, "y": 10, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "count_over_time({job=\"kubernetes-pods\"} [5m]) by (namespace)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {
+              "mode": "palette-classic"
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "showUnfilled": true
+        }
+      },
+      {
+        "id": 3,
+        "title": "Logs by Pod",
+        "type": "bar gauge",
+        "datasource": "Loki",
+        "gridPos": { "x": 12, "y": 10, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "count_over_time({job=\"kubernetes-pods\"} [5m]) by (pod)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {
+              "mode": "palette-classic"
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "showUnfilled": true
+        }
+      },
+      {
+        "id": 4,
+        "title": "Logs by Container",
+        "type": "bar gauge",
+        "datasource": "Loki",
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "count_over_time({job=\"kubernetes-pods\"} [5m]) by (container)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {
+              "mode": "palette-classic"
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "showUnfilled": true
+        }
+      },
+      {
+        "id": 5,
+        "title": "Log Levels Over Time",
+        "type": "timeseries",
+        "datasource": "Loki",
+        "gridPos": { "x": 12, "y": 16, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum by (level) (count_over_time({job=\"kubernetes-pods\", level=~\"error|warn|info|debug\"} [1m]))",
+            "legendFormat": "{{level}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        }
+      }
+    ],
+    "refresh": "15s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": ["kubernetes", "logs", "loki"],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Kubernetes Logs Dashboard (Loki)",
+    "uid": "kubernetes-logs-loki",
+    "version": 1
+  }
+  

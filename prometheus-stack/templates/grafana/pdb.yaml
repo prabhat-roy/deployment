@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "grafana.fullname" . }}-pdb
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "grafana.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}

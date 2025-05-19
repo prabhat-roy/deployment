@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: fleet-server
+  labels:
+    app: fleet-server
+spec:
+  replicas: {{ .Values.fleetServer.replicaCount }}
+  selector:
+    matchLabels:
+      app: fleet-server
+  serviceName: fleet-server
+  template:
+    metadata:
+      labels:
+        app: fleet-server
+      annotations:
+        {{- if .Values.fleetServer.annotations.enabled }}
+        {{ toYaml .Values.fleetServer.annotations | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ .Values.fleetServer.serviceAccount.name }}
+      containers:
+        - name: fleet-server
+          image: "{{ .Values.fleetServer.image.repository }}:{{ .Values.fleetServer.image.tag }}"
+          imagePullPolicy: {{ .Values.fleetServer.image.pullPolicy }}
+          ports:
+            - containerPort: 8220
+              name: http
+          env:
+            - name: FLEET_SERVER_ENABLE
+              value: "true"
+            - name: FLEET_SERVER_ELASTICSEARCH_HOST
+              value: {{ .Values.elasticsearch.service.url | quote }}
+            - name: FLEET_SERVER_CERT
+              value: /tls/tls.crt
+            - name: FLEET_SERVER_KEY
+              value: /tls/tls.key
+          volumeMounts:
+            - name: fleet-data
+              mountPath: /usr/share/fleet-server/data
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+          resources:
+            limits:
+              cpu: {{ .Values.fleetServer.resources.limits.cpu }}
+              memory: {{ .Values.fleetServer.resources.limits.memory }}
+            requests:
+              cpu: {{ .Values.fleetServer.resources.requests.cpu }}
+              memory: {{ .Values.fleetServer.resources.requests.memory }}
+      volumes:
+        - name: tls
+          secret:
+            secretName: fleet-server-tls
+  volumeClaimTemplates:
+    - metadata:
+        name: fleet-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.fleetServer.persistence.size }}
+        storageClassName: {{ .Values.fleetServer.persistence.storageClassName | quote }}

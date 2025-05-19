@@ -1,0 +1,21 @@
+{{- if .Values.rules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: controller-manager-rules
+  labels:
+    role: alert-rules
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: controller.rules
+      rules:
+        - alert: ControllerManagerDown
+          expr: up{job="kube-controller-manager"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Controller Manager down"
+            description: "Controller Manager has not responded for more than 5 minutes."
+{{- end }}

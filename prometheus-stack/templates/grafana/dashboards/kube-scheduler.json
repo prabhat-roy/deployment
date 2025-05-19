@@ -1,0 +1,153 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Dashboard to monitor Kubernetes Scheduler metrics collected via Prometheus.",
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "iteration": 1684506000000,
+    "links": [],
+    "panels": [
+      {
+        "id": 1,
+        "title": "Scheduling Attempts per Second",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "sum(rate(scheduler_scheduling_attempts_total[5m])) by (policy)",
+            "legendFormat": "{{policy}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "reqps", "min": 0 }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Scheduling Duration (99th Percentile, ms)",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(scheduler_scheduling_duration_seconds_bucket[5m])) by (le)) * 1000",
+            "legendFormat": "Scheduling Duration",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "ms", "min": 0 }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Scheduling Failures per Second",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 5, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "sum(rate(scheduler_scheduling_failures_total[5m])) by (failure_type)",
+            "legendFormat": "{{failure_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "errors/s", "min": 0 }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Scheduling Attempts by Pod Priority",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 5, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "sum(rate(scheduler_scheduling_attempts_total[5m])) by (priority_class)",
+            "legendFormat": "{{priority_class}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "min": 0 }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Scheduler Pending Pods",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 10, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "kube_scheduler_scheduling_attempts_queue_length",
+            "legendFormat": "Pending Pods",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "min": 0 }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Scheduler Up Status",
+        "type": "stat",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 10, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "up{job=\"kube-scheduler\"}",
+            "legendFormat": "Up",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "red" },
+                { "value": 1, "color": "green" }
+              ]
+            },
+            "min": 0,
+            "max": 1
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["last"] },
+          "textMode": "value"
+        }
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": ["kubernetes", "scheduler", "monitoring"],
+    "templating": { "list": [] },
+    "time": { "from": "now-1h", "to": "now" },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Kubernetes Scheduler Metrics Dashboard",
+    "uid": "kube-scheduler-metrics",
+    "version": 1
+  }
+  

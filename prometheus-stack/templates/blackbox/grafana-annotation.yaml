@@ -1,0 +1,22 @@
+{{- if .Values.grafana.annotations.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "yourchart.fullname" . }}-blackbox-annotations
+  labels:
+    grafana_annotation: "1"
+    {{- include "yourchart.labels" . | nindent 4 }}
+  annotations:
+    grafana_folder: "Blackbox Alerts"
+data:
+  blackbox-annotations.yaml: |
+    apiVersion: 1
+    annotations:
+      - name: Blackbox Probe Failures
+        datasource: {{ .Values.grafana.annotations.datasources.0.name }}
+        enable: {{ .Values.grafana.annotations.datasources.0.annotations.0.enable }}
+        iconColor: {{ .Values.grafana.annotations.datasources.0.annotations.0.iconColor }}
+        showLine: {{ .Values.grafana.annotations.datasources.0.annotations.0.showLine }}
+        expr: {{ .Values.grafana.annotations.datasources.0.annotations.0.query | quote }}
+        tags: ["blackbox", "probe_failure"]
+{{- end }}

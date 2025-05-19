@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "elastic-stack.fullname" . }}-elasticsearch-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.elasticsearch.persistence.size }}
+  storageClassName: {{ .Values.elasticsearch.persistence.storageClass }}

@@ -1,0 +1,21 @@
+{{- if .Values.rules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: loki-rules
+  labels:
+    role: alert-rules
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: loki.rules
+      rules:
+        - alert: LokiRequestErrors
+          expr: rate(loki_request_duration_seconds_count{status_code=~"5.."}[5m]) > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Loki server 5xx errors"
+            description: "Loki server {{ $labels.instance }} is returning 5xx errors."
+{{- end }}

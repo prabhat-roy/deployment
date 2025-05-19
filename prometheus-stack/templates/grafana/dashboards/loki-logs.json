@@ -1,0 +1,125 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Dashboard to visualize Kubernetes logs collected by Loki.",
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "iteration": 1684506000000,
+    "links": [],
+    "panels": [
+      {
+        "id": 1,
+        "title": "Log Volume (lines/sec)",
+        "type": "timeseries",
+        "datasource": "Loki",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(rate({job=\"kubernetes-logs\"}[1m]))",
+            "legendFormat": "Total logs",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "lines/sec", "min": 0 }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Error Logs (lines/sec)",
+        "type": "timeseries",
+        "datasource": "Loki",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(rate({job=\"kubernetes-logs\", level=~\"error|err|warn|critical\"}[1m]))",
+            "legendFormat": "Error logs",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "lines/sec", "min": 0 }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Recent Logs",
+        "type": "logs",
+        "datasource": "Loki",
+        "gridPos": { "x": 0, "y": 6, "w": 24, "h": 10 },
+        "targets": [
+          {
+            "expr": "{job=\"kubernetes-logs\"} |= \"error\"",
+            "refId": "A",
+            "limit": 100,
+            "direction": "BACKWARD"
+          }
+        ],
+        "options": {
+          "showLabels": true,
+          "showTime": true,
+          "wrapLogMessages": false,
+          "sortOrder": "Descending"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Logs by Namespace",
+        "type": "bar-chart",
+        "datasource": "Loki",
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(rate({job=\"kubernetes-logs\"}[5m])) by (namespace)",
+            "legendFormat": "{{namespace}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "min": 0 }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Logs by Pod",
+        "type": "bar-chart",
+        "datasource": "Loki",
+        "gridPos": { "x": 12, "y": 16, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "topk(10, sum(rate({job=\"kubernetes-logs\"}[5m])) by (pod))",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "min": 0 }
+        }
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": ["kubernetes", "logs", "loki"],
+    "templating": { "list": [] },
+    "time": { "from": "now-1h", "to": "now" },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Loki Logs Dashboard",
+    "uid": "loki-logs-dashboard",
+    "version": 1
+  }
+  

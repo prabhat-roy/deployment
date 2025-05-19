@@ -1,0 +1,255 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Kubernetes cluster overview with node, pod, namespace, CPU, memory, network and workload monitoring.",
+    "editable": true,
+    "gnetId": 6417,
+    "graphTooltip": 0,
+    "id": null,
+    "iteration": 1684499856673,
+    "links": [],
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Total Nodes",
+        "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+        "id": 1,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "count(kube_node_info)",
+            "legendFormat": "",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "orange", "value": 3 },
+                { "color": "red", "value": 5 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Total Pods",
+        "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
+        "id": 2,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "count(kube_pod_info)",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "Running Pods",
+        "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
+        "id": 3,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "count(kube_pod_status_phase{phase='Running'})",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "Namespaces",
+        "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
+        "id": 4,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "count(kube_namespace_labels)",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "type": "gauge",
+        "title": "CPU Usage (Cluster)",
+        "gridPos": { "x": 0, "y": 4, "w": 6, "h": 6 },
+        "id": 5,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{image!=\"\",container!=\"POD\"}[5m]))",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": null,
+            "unit": "cores",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "orange", "value": 0.7 },
+                { "color": "red", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "gauge",
+        "title": "Memory Usage (Cluster)",
+        "gridPos": { "x": 6, "y": 4, "w": 6, "h": 6 },
+        "id": 6,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "sum(container_memory_working_set_bytes{image!=\"\",container!=\"POD\"})",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": null,
+            "unit": "bytes",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "green", "value": null },
+                { "color": "orange", "value": 0.7 },
+                { "color": "red", "value": 1 }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Pod CPU Usage Over Time",
+        "gridPos": { "x": 0, "y": 10, "w": 12, "h": 8 },
+        "id": 7,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "sum(rate(container_cpu_usage_seconds_total{image!=\"\",container!=\"POD\"}[1m])) by (pod)",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "Pod Memory Usage Over Time",
+        "gridPos": { "x": 12, "y": 10, "w": 12, "h": 8 },
+        "id": 8,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "sum(container_memory_working_set_bytes{image!=\"\",container!=\"POD\"}) by (pod)",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom"
+          },
+          "tooltip": {
+            "mode": "single"
+          }
+        }
+      },
+      {
+        "type": "table",
+        "title": "Pods Status by Namespace",
+        "gridPos": { "x": 0, "y": 18, "w": 24, "h": 8 },
+        "id": 9,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "count(kube_pod_status_phase) by (namespace, phase)",
+            "format": "table",
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "pivot",
+            "options": {
+              "dataKey": "namespace",
+              "groupBy": ["phase"],
+              "valueColumn": "Value"
+            }
+          }
+        ]
+      },
+      {
+        "type": "table",
+        "title": "Nodes Info",
+        "gridPos": { "x": 0, "y": 26, "w": 24, "h": 8 },
+        "id": 10,
+        "datasource": "Prometheus",
+        "targets": [
+          {
+            "expr": "kube_node_info",
+            "format": "table",
+            "refId": "A"
+          }
+        ]
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": ["kubernetes", "cluster", "overview"],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Kubernetes Cluster Overview",
+    "uid": "kubernetes-cluster-overview",
+    "version": 1
+  }
+  

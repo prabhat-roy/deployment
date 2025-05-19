@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "grafana.fullname" . }}-rolebinding
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "grafana.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ include "grafana.fullname" . }}-role
+  apiGroup: rbac.authorization.k8s.io

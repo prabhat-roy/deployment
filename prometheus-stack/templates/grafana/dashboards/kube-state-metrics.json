@@ -1,0 +1,284 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Comprehensive Kubernetes state metrics dashboard using kube-state-metrics exporter.",
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "iteration": 1684501300000,
+    "links": [],
+    "panels": [
+      {
+        "id": 1,
+        "title": "Nodes Status",
+        "type": "stat",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "count(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "green", "value": 1 }
+              ]
+            },
+            "min": 0
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["last"] },
+          "textMode": "value"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Pods by Phase",
+        "type": "piechart",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum by (phase) (kube_pod_status_phase)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Pods Restart Count",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 4, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum by (pod) (increase(kube_pod_container_status_restarts_total[1h]))",
+            "legendFormat": "{{pod}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "min": 0
+          }
+        },
+        "options": {
+          "legend": { "displayMode": "table", "placement": "bottom" }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Deployments Desired vs Available Replicas",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 10, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "kube_deployment_spec_replicas",
+            "legendFormat": "Desired ({{deployment}})",
+            "refId": "A"
+          },
+          {
+            "expr": "kube_deployment_status_replicas_available",
+            "legendFormat": "Available ({{deployment}})",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "DaemonSet Desired vs Available",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "kube_daemonset_status_desired_number_scheduled",
+            "legendFormat": "Desired ({{daemonset}})",
+            "refId": "A"
+          },
+          {
+            "expr": "kube_daemonset_status_number_available",
+            "legendFormat": "Available ({{daemonset}})",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "StatefulSet Desired vs Ready",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 22, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "kube_statefulset_replicas",
+            "legendFormat": "Desired ({{statefulset}})",
+            "refId": "A"
+          },
+          {
+            "expr": "kube_statefulset_status_ready_replicas",
+            "legendFormat": "Ready ({{statefulset}})",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Jobs Active, Failed, Succeeded",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "kube_job_status_active",
+            "legendFormat": "Active ({{job}})",
+            "refId": "A"
+          },
+          {
+            "expr": "kube_job_status_failed",
+            "legendFormat": "Failed ({{job}})",
+            "refId": "B"
+          },
+          {
+            "expr": "kube_job_status_succeeded",
+            "legendFormat": "Succeeded ({{job}})",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Persistent Volume Claims by Phase",
+        "type": "piechart",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum by (phase) (kube_persistentvolumeclaim_status_phase)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Container Restarts by Pod",
+        "type": "table",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 14, "w": 12, "h": 10 },
+        "targets": [
+          {
+            "expr": "increase(kube_pod_container_status_restarts_total[1h])",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showHeader": true,
+          "sortBy": [{ "field": "Value", "desc": true }],
+          "columns": [
+            { "text": "Pod", "value": "metric.pod" },
+            { "text": "Container", "value": "metric.container" },
+            { "text": "Restarts (last 1h)", "value": "value" }
+          ]
+        }
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": ["kubernetes", "state", "kube-state-metrics"],
+    "templating": {
+      "list": [
+        {
+          "name": "namespace",
+          "label": "Namespace",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(kube_pod_info, namespace)",
+          "includeAll": true,
+          "multi": true,
+          "refresh": 1,
+          "regex": "",
+          "sort": 0
+        },
+        {
+          "name": "pod",
+          "label": "Pod",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(kube_pod_info{namespace=~\"$namespace\"}, pod)",
+          "includeAll": true,
+          "multi": true,
+          "refresh": 1,
+          "regex": "",
+          "sort": 0
+        }
+      ]
+    },
+    "time": { "from": "now-6h", "to": "now" },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Kubernetes State Metrics Dashboard",
+    "uid": "kube-state-metrics-dashboard",
+    "version": 1
+  }
+  

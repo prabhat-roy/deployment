@@ -1,0 +1,218 @@
+prometheus:
+  replicaCount: 2
+  image:
+    repository: prom/prometheus
+    tag: v2.44.0
+    pullPolicy: IfNotPresent
+  retention: 15d
+  service:
+    headless: true
+    type: ClusterIP
+  storage:
+    size: 50Gi
+    storageClassName: "standard"
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 60
+    targetMemoryUtilizationPercentage: 80
+
+grafana:
+  replicaCount: 2
+  image:
+    repository: grafana/grafana
+    tag: 9.5.2
+    pullPolicy: IfNotPresent
+  adminUser: admin
+  adminPassword: admin123
+  service:
+    type: LoadBalancer
+  persistence:
+    size: 10Gi
+    storageClassName: "standard"
+  datasource:
+    prometheusUrl: http://prometheus:9090
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  dashboards:
+    alertManager: true
+    kubernetes: true
+    kubernetesLog: true
+    prometheus: true
+    nodeExporterFull: true
+    kubeStateMetrics: true
+    etcd: true
+    kubeAPIServer: true
+    kubeControllerManager: true
+    kubeScheduler: true
+    coredns: true
+    lokiLogs: true
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 2
+    targetCPUUtilizationPercentage: 50
+    targetMemoryUtilizationPercentage: 75
+  annotations:
+    enabled: true
+    datasources:
+      - name: Prometheus
+        datasourceUid: prometheus
+        annotations:
+          - name: blackbox-exporter-probes
+            enable: true
+            datasource: prometheus
+            iconColor: "#0000FF"
+            showLine: true
+            query: 'probe_success{job="blackbox-exporter"} == 0'
+
+loki:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: grafana/loki
+    tag: "2.8.2"
+    pullPolicy: IfNotPresent
+  serviceName: loki
+  servicePort: 3100
+  storageClass: "standard"
+  storage:
+    size: 10Gi
+  resources:
+    requests:
+      cpu: 250m
+      memory: 500Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 2
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 85
+
+alertmanager:
+  replicaCount: 1
+  image:
+    repository: quay.io/prometheus/alertmanager
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 9093
+  storage:
+    size: 2Gi
+  smtp:
+    host: smtp.example.com   # Injected from Jenkins
+    port: 587
+    from: alertmanager@example.com
+    to: team@example.com
+    username: alertuser
+    password: __REPLACE_ME__
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+
+nodeExporter:
+  enabled: true
+  image:
+    repository: quay.io/prometheus/node-exporter
+    tag: v1.8.1
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 9100
+    annotations: {}
+    labels: {}
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  serviceAccount:
+    create: true
+    name: node-exporter-sa
+  rbac:
+    create: true
+  podLabels: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations:
+    - key: "node-role.kubernetes.io/control-plane"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/master"
+      effect: "NoSchedule"
+  affinity: {}
+  networkPolicy:
+    enabled: true
+    ingress:
+      - from:
+          - podSelector:
+              matchLabels:
+                app.kubernetes.io/name: prometheus
+        ports:
+          - protocol: TCP
+            port: 9100
+  securityContext:
+    runAsUser: 65534
+    runAsGroup: 65534
+    runAsNonRoot: true
+    fsGroup: 65534
+  priorityClassName: ""
+
+kubeStateMetrics:
+  enabled: true
+  image:
+    repository: quay.io/coreos/kube-state-metrics
+    tag: v2.10.1
+    pullPolicy: IfNotPresent
+  serviceAccount:
+    name: kube-state-metrics-sa
+  service:
+    type: ClusterIP
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 200m
+      memory: 200Mi
+
+blackbox:
+  replicaCount: 1
+  image:
+    repository: prom/blackbox-exporter
+    tag: v0.22.0
+    pullPolicy: IfNotPresent
+  service:
+    port: 9115
+  hpa:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 60
+
+servicemonitors:
+  enabled: true
+
+rules:
+  enabled: true

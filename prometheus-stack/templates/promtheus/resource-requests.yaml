@@ -1,0 +1,13 @@
+# This file is optionally included via Helm template if you want to override resource requests and limits globally or per container
+
+{{- if .Values.prometheus.resources }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dummy-resources # This is a dummy resource for reference only; actual resource requests are inside StatefulSet container specs.
+spec:
+  containers:
+  - name: prometheus
+    resources:
+      {{- toYaml .Values.prometheus.resources | nindent 6 }}
+{{- end }}

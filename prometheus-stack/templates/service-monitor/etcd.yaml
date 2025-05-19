@@ -1,0 +1,21 @@
+{{- if .Values.servicemonitors.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: etcd
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      component: etcd
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  endpoints:
+    - port: etcd-metrics
+      interval: 15s
+      scheme: https
+      tlsConfig:
+        insecureSkipVerify: true
+{{- end }}

@@ -1,0 +1,27 @@
+{{- if and .Values.hpa.enabled .Values.hpa.grafana.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: grafana-hpa
+  namespace: {{ .Release.Namespace }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: grafana
+  minReplicas: {{ .Values.hpa.grafana.minReplicas }}
+  maxReplicas: {{ .Values.hpa.grafana.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.grafana.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.grafana.targetMemoryUtilizationPercentage }}
+{{- end }}

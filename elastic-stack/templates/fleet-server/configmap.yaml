@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fleet-server-config
+  labels:
+    app: fleet-server
+data:
+  fleet-server.yml: |-
+    fleet:
+      enabled: true
+      elasticsearch:
+        host: {{ .Values.elasticsearch.service.url | quote }}
+    server:
+      ssl:
+        enabled: true
+        certificate: /tls/tls.crt
+        key: /tls/tls.key

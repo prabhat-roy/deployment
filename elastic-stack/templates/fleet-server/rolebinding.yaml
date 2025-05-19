@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fleet-server-rolebinding
+  labels:
+    app: fleet-server
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.fleetServer.serviceAccount.name }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: fleet-server-role
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grafana.fullname" . }}-dashboards
+  labels:
+    app.kubernetes.io/name: {{ include "grafana.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    grafana_dashboard: "1"       # Enables Grafana dashboard provisioning from this ConfigMap
+data:
+  alert-manager.json: |-
+{{ (.Files.Get "grafana/dashboards/alert-manager.json") | indent 4 }}
+  kubernetes.json: |-
+{{ (.Files.Get "grafana/dashboards/kubernetes.json") | indent 4 }}
+  kubernetes-log.json: |-
+{{ (.Files.Get "grafana/dashboards/kubernetes-log.json") | indent 4 }}
+  prometheus.json: |-
+{{ (.Files.Get "grafana/dashboards/prometheus.json") | indent 4 }}
+  node-exporter-full.json: |-
+{{ (.Files.Get "grafana/dashboards/node-exporter-full.json") | indent 4 }}
+  kube-state-metrics.json: |-
+{{ (.Files.Get "grafana/dashboards/kube-state-metrics.json") | indent 4 }}
+  etcd.json: |-
+{{ (.Files.Get "grafana/dashboards/etcd.json") | indent 4 }}
+  kube-apiserver.json: |-
+{{ (.Files.Get "grafana/dashboards/kube-apiserver.json") | indent 4 }}
+  kube-controller-manager.json: |-
+{{ (.Files.Get "grafana/dashboards/kube-controller-manager.json") | indent 4 }}
+  kube-scheduler.json: |-
+{{ (.Files.Get "grafana/dashboards/kube-scheduler.json") | indent 4 }}
+  coredns.json: |-
+{{ (.Files.Get "grafana/dashboards/coredns.json") | indent 4 }}
+  loki-logs.json: |-
+{{ (.Files.Get "grafana/dashboards/loki-logs.json") | indent 4 }}

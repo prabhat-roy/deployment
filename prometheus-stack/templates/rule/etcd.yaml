@@ -1,0 +1,21 @@
+{{- if .Values.rules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: etcd-rules
+  labels:
+    role: alert-rules
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: etcd.rules
+      rules:
+        - alert: EtcdHighNumberOfFailedGRPCRequests
+          expr: increase(etcd_grpc_requests_failed_total[5m]) > 5
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High number of failed gRPC requests"
+            description: "Etcd instance {{ $labels.instance }} has high number of failed gRPC requests."
+{{- end }}

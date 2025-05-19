@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: loki
+  labels:
+    app: loki
+subjects:
+  - kind: ServiceAccount
+    name: loki
+roleRef:
+  kind: Role
+  name: loki
+  apiGroup: rbac.authorization.k8s.io

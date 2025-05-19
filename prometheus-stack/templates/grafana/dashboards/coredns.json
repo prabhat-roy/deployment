@@ -1,0 +1,141 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "description": "Dashboard for monitoring CoreDNS metrics collected by Prometheus.",
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "iteration": 1684506000000,
+    "links": [],
+    "panels": [
+      {
+        "id": 1,
+        "title": "Queries per Second",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(rate(coredns_dns_request_count_total[5m])) by (type)",
+            "legendFormat": "{{type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "reqps", "min": 0 }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Cache Hits and Misses",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+        "targets": [
+          {
+            "expr": "sum(rate(coredns_cache_hits_total[5m])) by (server)",
+            "legendFormat": "Hits - {{server}}",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(coredns_cache_misses_total[5m])) by (server)",
+            "legendFormat": "Misses - {{server}}",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "min": 0 }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Errors per Second",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 0, "y": 6, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "sum(rate(coredns_dns_request_errors_total[5m])) by (rcode)",
+            "legendFormat": "Error Code: {{rcode}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "errors/s", "min": 0 }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Request Duration (99th Percentile, ms)",
+        "type": "timeseries",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 12, "y": 6, "w": 12, "h": 5 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(coredns_dns_request_duration_seconds_bucket[5m])) by (le)) * 1000",
+            "legendFormat": "Duration",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": { "unit": "ms", "min": 0 }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Up Status",
+        "type": "stat",
+        "datasource": "Prometheus",
+        "gridPos": { "x": 24, "y": 0, "w": 4, "h": 3 },
+        "targets": [
+          {
+            "expr": "up{job=\"coredns\"}",
+            "legendFormat": "Up",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": { "mode": "thresholds" },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "value": null, "color": "red" },
+                { "value": 1, "color": "green" }
+              ]
+            },
+            "min": 0,
+            "max": 1
+          }
+        },
+        "options": {
+          "reduceOptions": { "calcs": ["last"] },
+          "textMode": "value"
+        }
+      }
+    ],
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "style": "dark",
+    "tags": ["kubernetes", "coredns", "dns", "monitoring"],
+    "templating": { "list": [] },
+    "time": { "from": "now-1h", "to": "now" },
+    "timepicker": {},
+    "timezone": "",
+    "title": "CoreDNS Metrics Dashboard",
+    "uid": "coredns-metrics",
+    "version": 1
+  }
+  
