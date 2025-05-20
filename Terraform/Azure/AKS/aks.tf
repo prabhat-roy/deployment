@@ -35,3 +35,37 @@ lifecycle {
     outbound_type     = "loadBalancer"
   }
 }
+
+
+resource "azurerm_kubernetes_cluster_node_pool" "custom" {
+  name                  = "customnp"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
+  vm_size               = "Standard_DS2_v2"
+  auto_scaling_enabled = true
+  min_count             = 0
+  max_count             = 2
+  mode                  = "User"
+  orchestrator_version  = azurerm_kubernetes_cluster.aks.kubernetes_version
+
+  node_labels = {
+    role = "custom"
+  }
+
+  depends_on = [azurerm_kubernetes_cluster.aks]
+}
+
+resource "null_resource" "delete_default_pool" {
+  count = var.remove_default_pool ? 1 : 0
+
+  provisioner "local-exec" {
+    command = <<EOT
+      az aks nodepool delete \
+        --resource-group ${var.resource_group} \
+        --cluster-name aks-cluster \
+        --name default \
+        --yes
+    EOT
+  }
+
+  depends_on = [azurerm_kubernetes_cluster_node_pool.custom]
+}
