@@ -8,11 +8,6 @@ variable "resource_group" {
   description = "Azure resource group name for ACR"
 }
 
-variable "acr_repo_names" {
-  type        = list(string)
-  description = "List of ACR repositories"
-}
-
 variable "subscription_id" {
   type = string
 }
