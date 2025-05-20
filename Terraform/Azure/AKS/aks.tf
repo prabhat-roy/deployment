@@ -1,7 +1,7 @@
 resource "azurerm_kubernetes_cluster" "aks" {
   name                = var.aks_cluster_name
-  location            = data.azurerm_resource_group.rg.location
-  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = var.location
+  resource_group_name = var.resource_group
   dns_prefix          = var.dns_prefix
   kubernetes_version = var.kubernetes_version
 
@@ -25,7 +25,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
 lifecycle {
     ignore_changes = [default_node_pool[0].node_count]
   }
-  
+
   network_profile {
     network_plugin    = "azure"
     load_balancer_sku = "standard"

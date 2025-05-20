@@ -2,6 +2,10 @@ variable "resource_group" {
   
 }
 
+variable "subscription_id" {
+  
+}
+
 variable "vnet" {
   
 }
