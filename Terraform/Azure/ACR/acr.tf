@@ -26,30 +26,30 @@ resource "null_resource" "update_jenkins_env" {
   }
 
     provisioner "local-exec" {
-    command = <<EOT
-#!/bin/bash
-ENV_FILE="./Jenkins.env"
-ACR_NAME="${azurerm_container_registry.acr.name}"
+    command = <<-EOT
+      #!/bin/bash
+      ENV_FILE="./Jenkins.env"
+      ACR_NAME="${azurerm_container_registry.acr.name}"
 
-# Use az to get the login server
-ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query "loginServer" --output tsv)
+      # Get ACR login server
+      ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query "loginServer" --output tsv)
 
-# Update or append ACR_NAME
-if grep -q "^ACR_NAME=" "\$ENV_FILE"; then
-  sed -i "s/^ACR_NAME=.*/ACR_NAME=\${ACR_NAME}/" "\$ENV_FILE"
-else
-  echo "ACR_NAME=\${ACR_NAME}" >> "\$ENV_FILE"
-fi
+      # Update or append ACR_NAME
+      if grep -q "^ACR_NAME=" "$ENV_FILE"; then
+        sed -i "s/^ACR_NAME=.*/ACR_NAME=\${ACR_NAME}/" "$ENV_FILE"
+      else
+        echo "ACR_NAME=\${ACR_NAME}" >> "$ENV_FILE"
+      fi
 
-# Update or append ACR_LOGIN_SERVER
-if grep -q "^ACR_LOGIN_SERVER=" "\$ENV_FILE"; then
-  sed -i "s|^ACR_LOGIN_SERVER=.*|ACR_LOGIN_SERVER=\${ACR_LOGIN_SERVER}|" "\$ENV_FILE"
-else
-  echo "ACR_LOGIN_SERVER=\${ACR_LOGIN_SERVER}" >> "\$ENV_FILE"
-fi
+      # Update or append ACR_LOGIN_SERVER
+      if grep -q "^ACR_LOGIN_SERVER=" "$ENV_FILE"; then
+        sed -i "s|^ACR_LOGIN_SERVER=.*|ACR_LOGIN_SERVER=\${ACR_LOGIN_SERVER}|" "$ENV_FILE"
+      else
+        echo "ACR_LOGIN_SERVER=\${ACR_LOGIN_SERVER}" >> "$ENV_FILE"
+      fi
 
-echo "✅ Jenkins.env updated with ACR_NAME=\${ACR_NAME} and ACR_LOGIN_SERVER=\${ACR_LOGIN_SERVER}"
-EOT
+      echo "✅ Jenkins.env updated with ACR_NAME=\${ACR_NAME} and ACR_LOGIN_SERVER=\${ACR_LOGIN_SERVER}"
+    EOT
     interpreter = ["bash", "-c"]
   }
 
