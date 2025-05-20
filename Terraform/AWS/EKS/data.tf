@@ -12,6 +12,11 @@ data "aws_subnets" "private" {
     name   = "vpc-id"
     values = [data.aws_vpc.eks_vpc.id]
   }
+filter {
+    name   = "tag:Name"
+    values = ["*private*"]
+  }
+
 
 }
 
@@ -22,6 +27,10 @@ data "aws_subnets" "public" {
     values = [data.aws_vpc.eks_vpc.id]
   }
 
+filter {
+    name   = "tag:Name"
+    values = ["*public*"]
+  }
 }
 
 # Get available AZs in the current region
