@@ -10,7 +10,11 @@ variable "vnet" {
   
 }
 
-variable "subnet" {
+variable "public_subnet" {
+  
+}
+
+variable "private_subnet" {
   
 }
 

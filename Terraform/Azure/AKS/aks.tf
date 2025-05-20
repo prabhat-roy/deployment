@@ -11,7 +11,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     node_count = 0
     os_sku = "Ubuntu"
     vm_size        = var.worker_node_size
-    vnet_subnet_id = data.azurerm_subnet.private_subnet.id
+    vnet_subnet_id = var.private_subnet
 
     auto_scaling_enabled = false
     orchestrator_version = var.kubernetes_version
