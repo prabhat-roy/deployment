@@ -17,15 +17,6 @@ filter {
     name   = "tag:Name"
     values = ["*Private*"]
   }
-
-filter {
-    name   = "tag:kubernetes.io/cluster/${var.cluster_name}"
-    values = ["shared"]
-  }
-filter {
-    name   = "tag:kubernetes.io/role/elb"
-    values = ["1"]
-  }
 }
 
 # Get public subnets in the VPC used for ELB
