@@ -25,20 +25,20 @@ resource "null_resource" "update_jenkins_env" {
     acr_name = azurerm_container_registry.acr.name
   }
 
-  provisioner "local-exec" {
+    provisioner "local-exec" {
     command = <<EOT
 #!/bin/bash
 ENV_FILE="./Jenkins.env"
 ACR_NAME="${azurerm_container_registry.acr.name}"
 
 # Get login server using Azure CLI (az CLI must be installed and logged in)
-ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query "loginServer" --output tsv)
+ACR_LOGIN_SERVER=$(az acr show --name "${azurerm_container_registry.acr.name}" --query "loginServer" --output tsv)
 
 # Update or append ACR_NAME
 if grep -q "^ACR_NAME=" "$ENV_FILE"; then
-  sed -i "s/^ACR_NAME=.*/ACR_NAME=${ACR_NAME}/" "$ENV_FILE"
+  sed -i "s/^ACR_NAME=.*/ACR_NAME=${azurerm_container_registry.acr.name}/" "$ENV_FILE"
 else
-  echo "ACR_NAME=${ACR_NAME}" >> "$ENV_FILE"
+  echo "ACR_NAME=${azurerm_container_registry.acr.name}" >> "$ENV_FILE"
 fi
 
 # Update or append ACR_LOGIN_SERVER
@@ -48,10 +48,11 @@ else
   echo "ACR_LOGIN_SERVER=${ACR_LOGIN_SERVER}" >> "$ENV_FILE"
 fi
 
-echo "✅ Jenkins.env updated with ACR_NAME=${ACR_NAME} and ACR_LOGIN_SERVER=${ACR_LOGIN_SERVER}"
+echo "✅ Jenkins.env updated with ACR_NAME=${azurerm_container_registry.acr.name} and ACR_LOGIN_SERVER=${ACR_LOGIN_SERVER}"
 EOT
     interpreter = ["bash", "-c"]
   }
+
 
   depends_on = [azurerm_container_registry.acr]
 }
