@@ -14,7 +14,7 @@ data "aws_subnets" "private" {
   }
 filter {
     name   = "tag:Name"
-    values = ["*private*"]
+    values = ["*Private*"]
   }
 
 
@@ -29,7 +29,7 @@ data "aws_subnets" "public" {
 
 filter {
     name   = "tag:Name"
-    values = ["*public*"]
+    values = ["*Public*"]
   }
 }
 
