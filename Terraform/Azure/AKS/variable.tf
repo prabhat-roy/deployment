@@ -29,3 +29,7 @@ variable "dns_prefix" {
 variable "kubernetes_version" {
   
 }
+
+variable "worker_node_size" {
+  type = string
+}
