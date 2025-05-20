@@ -9,8 +9,8 @@ resource "random_id" "acr_suffix" {
 # Create the Azure Container Registry (ACR)
 resource "azurerm_container_registry" "acr" {
   name                = "kubernetes${random_id.acr_suffix.hex}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  resource_group_name = var.azure_resource_group
+  location            = var.azure_location
   sku                 = "Standard"
   admin_enabled       = true
 
