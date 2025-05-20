@@ -2,22 +2,6 @@ variable "resource_group" {
   
 }
 
-variable "subscription_id" {
-  
-}
-
-variable "vnet" {
-  
-}
-
-variable "public_subnet" {
-  
-}
-
-variable "private_subnet" {
-  
-}
-
 variable "azure_region" {
   
 }
