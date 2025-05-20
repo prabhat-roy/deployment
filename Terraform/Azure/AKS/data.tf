@@ -7,7 +7,13 @@ data "azurerm_virtual_network" "vnet" {
   resource_group_name = data.azurerm_resource_group.rg.name
 }
 
-data "azurerm_subnet" "subnet" {
+data "azurerm_subnet" "public_subnet" {
+  name = "public-subnet"
+  resource_group_name = data.azurerm_resource_group.rg.name
+  virtual_network_name = data.azurerm_virtual_network.vnet.name
+}
+
+data "azurerm_subnet" "private_subnet" {
   name = "private-subnet"
   resource_group_name = data.azurerm_resource_group.rg.name
   virtual_network_name = data.azurerm_virtual_network.vnet.name

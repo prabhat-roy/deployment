@@ -3,6 +3,10 @@ resource "aws_launch_template" "eks_nodes" {
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
   key_name = var.key_name
+  
+  iam_instance_profile {
+    name = aws_iam_instance_profile.karpenter_instance_profile.name
+  }
 
   block_device_mappings {
     device_name = "/dev/xvda"
@@ -21,9 +25,12 @@ resource "aws_launch_template" "eks_nodes" {
     instance_metadata_tags      = "enabled"
   }
 
-  network_interfaces {
-    subnet_id = element(data.aws_subnets.private.ids, 0)
-    associate_public_ip_address = false
+  tag_specifications {
+  resource_type = "instance"
+  tags = {
+    "Name"                            = "karpenter-node"
+    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
   }
+}
 
 }

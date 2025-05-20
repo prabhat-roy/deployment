@@ -5,7 +5,7 @@ resource "azurerm_network_security_group" "jenkins_nsg" {
 }
 
 resource "azurerm_network_security_rule" "ssh" {
-  name                        = "AllowSSH"
+  name                        = "Allow-SSH"
   priority                    = 100
   direction                   = "Inbound"
   access                      = "Allow"
@@ -19,7 +19,7 @@ resource "azurerm_network_security_rule" "ssh" {
 }
 
 resource "azurerm_network_security_rule" "jenkins" {
-  name                        = "AllowHTTP"
+  name                        = "Allow-Jenkins"
   priority                    = 200
   direction                   = "Inbound"
   access                      = "Allow"
@@ -33,7 +33,7 @@ resource "azurerm_network_security_rule" "jenkins" {
 }
 
 resource "azurerm_network_security_rule" "sonarqube" {
-  name                        = "AllowHTTPS"
+  name                        = "Allow-Sonarqube"
   priority                    = 300
   direction                   = "Inbound"
   access                      = "Allow"

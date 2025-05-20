@@ -1,0 +1,19 @@
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: general
+spec:
+  requirements:
+    - key: "node.kubernetes.io/instance-type"
+      operator: In
+      values: ["t2.micro", "t2.small", "t2.medium", "t2.large", "t2.xlarge", "t3.medium", "t3.large", "t3a.medium", "m5.large"]  # Add more types here
+  provider:
+    launchTemplate: <your-launch-template-name>
+    subnetSelector:
+      karpenter.sh/discovery: "eks-cluster"
+    securityGroupSelector:
+      karpenter.sh/discovery: <your-cluster-name>
+  limits:
+    resources:
+      cpu: "1000"
+  ttlSecondsAfterEmpty: 30

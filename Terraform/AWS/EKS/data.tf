@@ -8,10 +8,6 @@ data "aws_vpc" "eks_vpc" {
 
 # Get private subnets in the VPC tagged for EKS
 data "aws_subnets" "private" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.eks_vpc.id]
-  }
 
 filter {
     name   = "tag:Name"
@@ -21,10 +17,6 @@ filter {
 
 # Get public subnets in the VPC used for ELB
 data "aws_subnets" "public" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.eks_vpc.id]
-  }
 
 filter {
     name   = "tag:Name"
@@ -56,13 +48,4 @@ data "aws_ami" "ubuntu" {
     name   = "virtualization-type"
     values = ["hvm"]
   }
-}
-
-
-output "private_subnets" {
-  value = data.aws_subnets.private.ids
-}
-
-output "public_subnets" {
-  value = data.aws_subnets.public.ids
 }

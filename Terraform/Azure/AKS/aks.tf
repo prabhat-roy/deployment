@@ -8,16 +8,13 @@ resource "azurerm_kubernetes_cluster" "aks" {
 
   default_node_pool {
     name           = "default"
+    node_count = 0
     os_sku = "Ubuntu"
     vm_size        = var.worker_node_size
-    vnet_subnet_id = data.azurerm_subnet.subnet.id
+    vnet_subnet_id = data.azurerm_subnet.private_subnet.id
 
-    auto_scaling_enabled = true
-    min_count           = var.min_node_count
-    max_count           = var.max_node_count
-
-    os_disk_size_gb = 20
-    type            = "VirtualMachineScaleSets"
+    auto_scaling_enabled = false
+    orchestrator_version = var.kubernetes_version
 
   }
 
@@ -25,6 +22,10 @@ resource "azurerm_kubernetes_cluster" "aks" {
     type = "SystemAssigned"
   }
 
+lifecycle {
+    ignore_changes = [default_node_pool[0].node_count]
+  }
+  
   network_profile {
     network_plugin    = "azure"
     load_balancer_sku = "standard"
