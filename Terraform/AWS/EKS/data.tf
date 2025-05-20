@@ -67,3 +67,12 @@ data "aws_ami" "ubuntu" {
     values = ["hvm"]
   }
 }
+
+
+output "private_subnets" {
+  value = data.aws_subnets.private.ids
+}
+
+output "public_subnets" {
+  value = data.aws_subnets.public.ids
+}
