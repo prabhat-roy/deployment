@@ -45,7 +45,7 @@ cd "$TF_DIR"
 
 # Format and validate
 echo "🧹 Running terraform fmt..."
-terraform fmt -check
+terraform fmt -recursive
 
 echo "🔍 Running terraform validate..."
 terraform validate
