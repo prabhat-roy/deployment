@@ -29,3 +29,7 @@ variable "worker_node_size" {
 variable "default_node_count" {
   type    = number
 }
+
+variable "remove_default_pool" {
+    type = bool
+}
