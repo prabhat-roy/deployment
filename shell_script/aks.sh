@@ -1,7 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-ACTION=$1
+RAW_ACTION=$1
+ACTION="${RAW_ACTION,,}"  # Convert to lowercase
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -21,26 +22,19 @@ else
   exit 1
 fi
 
-# Validate required variables
-if [[ -z "${SUBSCRIPTION_ID:-}" ]]; then
-  echo "❌ SUBSCRIPTION_ID is not set"
-  exit 1
-fi
+# Validate required env vars
+: "${SUBSCRIPTION_ID:?❌ SUBSCRIPTION_ID is not set}"
+: "${RESOURCE_GROUP:?❌ RESOURCE_GROUP is not set}"
+: "${AZURE_REGION:?❌ AZURE_REGION is not set}"
 
-if [[ -z "${RESOURCE_GROUP:-}" ]]; then
-  echo "❌ RESOURCE_GROUP is not set"
-  exit 1
-fi
-
-if [[ -z "${AZURE_REGION:-}" ]]; then
-  echo "❌ AZURE_REGION is not set"
-  exit 1
+# Normalize "apply" to "create"
+if [[ "$ACTION" == "apply" ]]; then
+  ACTION="create"
 fi
 
 if [[ "$ACTION" == "create" ]]; then
   echo "🚀 Creating Azure Kubernetes Service (AKS) Cluster..."
 
-  # Generate a unique name
   AKS_NAME="akscluster$(openssl rand -hex 3)"
 
   echo "🔧 AKS_NAME        = $AKS_NAME"
@@ -48,13 +42,6 @@ if [[ "$ACTION" == "create" ]]; then
   echo "🔧 LOCATION        = $AZURE_REGION"
   echo "🔧 SUBSCRIPTION_ID = $SUBSCRIPTION_ID"
 
-  # Ensure resource group exists
-  az group create \
-    --name "$RESOURCE_GROUP" \
-    --location "$AZURE_REGION" \
-    --subscription "$SUBSCRIPTION_ID"
-
-  # Create AKS cluster
   az aks create \
     --resource-group "$RESOURCE_GROUP" \
     --name "$AKS_NAME" \
@@ -96,7 +83,7 @@ elif [[ "$ACTION" == "destroy" ]]; then
   echo "✅ AKS-related lines removed from jenkins.env."
 
 else
-  echo "❌ Invalid action: $ACTION"
+  echo "❌ Invalid action: $RAW_ACTION"
   echo "Usage: ./aks.sh create|destroy"
   exit 1
 fi
