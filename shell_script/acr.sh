@@ -51,7 +51,7 @@ if [[ "$ACTION" == "create" ]]; then
   terraform apply -auto-approve \
     -var "subscription_id=$SUBSCRIPTION_ID" \
     -var "resource_group=$RESOURCE_GROUP" \
-    -var "location=$AZURE_REGION"
+    -var "azure_region=$AZURE_REGION"
 
   # Get outputs
   ACR_NAME=$(terraform output -raw acr_name)
@@ -71,7 +71,7 @@ elif [[ "$ACTION" == "destroy" ]]; then
   terraform destroy -auto-approve \
     -var "subscription_id=$SUBSCRIPTION_ID" \
     -var "resource_group=$RESOURCE_GROUP" \
-    -var "location=$AZURE_REGION"
+    -var "azure_region=$AZURE_REGION"
 
   echo "🧹 Cleaning up jenkins.env..."
   sed -i.bak '/^ACR_NAME=/d;/^ACR_RESOURCE_ID=/d' "$ENV_FILE"
