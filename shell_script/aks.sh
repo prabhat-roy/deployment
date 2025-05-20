@@ -46,7 +46,7 @@ terraform validate
 
 # Initialize Terraform
 echo "🔧 Running terraform init..."
-terraform init -input=false
+terraform init -upgrade
 
 if [[ "$ACTION" == "apply" ]]; then
   echo "🚀 Creating AKS cluster and custom node pool..."
