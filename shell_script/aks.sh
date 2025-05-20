@@ -49,23 +49,28 @@ echo "🔧 Running terraform init..."
 terraform init -input=false
 
 if [[ "$ACTION" == "apply" ]]; then
-  echo "🚀 Applying Terraform with 1 default node..."
-  terraform apply -auto-approve \
-  -var="subscription_id=${SUBSCRIPTION_ID}" \
-  -var="resource_group=${RESOURCE_GROUP}" \
-  -var="azure_region=${AZURE_REGION}" \
-  -var="default_node_count=1"
+  echo "🚀 Creating AKS cluster and custom node pool..."
 
-  echo "🧵 Scaling default node pool to 0 nodes..."
   terraform apply -auto-approve \
-  -var="subscription_id=${SUBSCRIPTION_ID}" \
-  -var="resource_group=${RESOURCE_GROUP}" \
-  -var="azure_region=${AZURE_REGION}" \
-  -var="default_node_count=0"
+    -var="subscription_id=${SUBSCRIPTION_ID}" \
+    -var="resource_group=${RESOURCE_GROUP}" \
+    -var="azure_region=${AZURE_REGION}" \
+    -var="remove_default_pool=false"
 
-  echo "✅ Cluster created and scaled to 0 nodes."
+  echo "🧵 Deleting default node pool..."
+  terraform apply -auto-approve \
+    -var="subscription_id=${SUBSCRIPTION_ID}" \
+    -var="resource_group=${RESOURCE_GROUP}" \
+    -var="azure_region=${AZURE_REGION}" \
+    -var="remove_default_pool=true"
+
+  echo "✅ Cluster ready with custom node pool only."
 elif [[ "$ACTION" == "destroy" ]]; then
-  echo "🔥 Destroying AKS cluster..."
-  terraform destroy -auto-approve
+  echo "🔥 Destroying AKS cluster and node pools..."
+  terraform destroy -auto-approve \
+    -var="subscription_id=${SUBSCRIPTION_ID}" \
+    -var="resource_group=${RESOURCE_GROUP}" \
+    -var="azure_region=${AZURE_REGION}" \
+    -var="remove_default_pool=false"
   echo "✅ Cluster destroyed."
 fi
