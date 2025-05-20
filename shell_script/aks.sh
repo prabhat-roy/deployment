@@ -6,7 +6,7 @@ ACTION=$1  # allowed: apply or destroy
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ENV_FILE="${PROJECT_ROOT}/jenkins.env"
-TF_DIR="${PROJECT_ROOT}/Terraform/AKS"
+TF_DIR="${PROJECT_ROOT}/Terraform/Azure/AKS"
 
 echo "📁 SCRIPT_DIR     = $SCRIPT_DIR"
 echo "📁 PROJECT_ROOT   = $PROJECT_ROOT"
