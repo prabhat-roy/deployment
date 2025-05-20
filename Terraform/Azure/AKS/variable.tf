@@ -25,3 +25,7 @@ variable "kubernetes_version" {
 variable "worker_node_size" {
   type = string
 }
+
+variable "default_node_count" {
+  type    = number
+}

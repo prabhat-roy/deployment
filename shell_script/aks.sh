@@ -35,14 +35,6 @@ if [[ "$ACTION" != "apply" && "$ACTION" != "destroy" ]]; then
   exit 1
 fi
 
-# Export Terraform variables
-export TF_VAR_subscription_id="$SUBSCRIPTION_ID"
-export TF_VAR_azure_region="$AZURE_REGION"
-export TF_VAR_resource_group="$RESOURCE_GROUP"
-export TF_VAR_subscription_id="$SUBSCRIPTION_ID"
-
-
-# Move to Terraform directory
 cd "$TF_DIR"
 
 # Format and validate
@@ -56,8 +48,16 @@ terraform validate
 echo "🔧 Running terraform init..."
 terraform init -input=false
 
-# Run the Terraform action
-echo "🚀 Running terraform $ACTION..."
-terraform "$ACTION" -auto-approve
+if [[ "$ACTION" == "apply" ]]; then
+  echo "🚀 Applying Terraform with 1 default node..."
+  terraform apply -auto-approve -var="default_node_count=1"
 
-echo "✅ Terraform $ACTION completed successfully."
+  echo "🧵 Scaling default node pool to 0 nodes..."
+  terraform apply -auto-approve -var="default_node_count=0"
+
+  echo "✅ Cluster created and scaled to 0 nodes."
+elif [[ "$ACTION" == "destroy" ]]; then
+  echo "🔥 Destroying AKS cluster..."
+  terraform destroy -auto-approve
+  echo "✅ Cluster destroyed."
+fi
