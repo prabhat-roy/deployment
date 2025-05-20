@@ -21,26 +21,34 @@ fi
 if [[ "${ACTION}" == "create" ]]; then
   echo "🚀 Creating Azure Container Registry..."
 
-  # Use subscription from env if available
+  # Check required environment variables
   if [[ -z "${SUBSCRIPTION_ID:-}" ]]; then
     echo "❌ SUBSCRIPTION_ID is not set in env or jenkins.env"
     exit 1
   fi
 
+  if [[ -z "${RESOURCE_GROUP:-}" ]]; then
+    echo "❌ RESOURCE_GROUP is not set in env or jenkins.env"
+    exit 1
+  fi
+
+  if [[ -z "${AZURE_REGION:-}" ]]; then
+    echo "❌ AZURE_REGION is not set in env or jenkins.env"
+    exit 1
+  fi
+
   # Create a unique ACR name
   ACR_NAME="kubernetes$(openssl rand -hex 4)"
-  RESOURCE_GROUP="kubernetes-deployment"
-  LOCATION="East US"
 
-  echo "🔧 ACR_NAME       = $ACR_NAME"
-  echo "🔧 RESOURCE_GROUP = $RESOURCE_GROUP"
-  echo "🔧 LOCATION       = $LOCATION"
+  echo "🔧 ACR_NAME        = $ACR_NAME"
+  echo "🔧 RESOURCE_GROUP  = $RESOURCE_GROUP"
+  echo "🔧 LOCATION        = $AZURE_REGION"
   echo "🔧 SUBSCRIPTION_ID = $SUBSCRIPTION_ID"
 
   az acr create \
     --name "$ACR_NAME" \
     --resource-group "$RESOURCE_GROUP" \
-    --location "$LOCATION" \
+    --location "$AZURE_REGION" \
     --sku Standard \
     --admin-enabled true \
     --subscription "$SUBSCRIPTION_ID"
