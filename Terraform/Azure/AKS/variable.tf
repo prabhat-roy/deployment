@@ -18,7 +18,7 @@ variable "private_subnet" {
   
 }
 
-variable "location" {
+variable "azure_region" {
   
 }
 
