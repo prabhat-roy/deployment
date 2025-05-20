@@ -40,6 +40,29 @@ terraform plan
 
 if [[ "$ACTION" == "create" ]]; then
   terraform apply -auto-approve
+
+  # After creation, grab Terraform outputs
+  ACR_NAME=$(terraform output -raw acr_name)
+  ACR_LOGIN_SERVER=$(terraform output -raw acr_login_server)
+
+  echo "📝 Updating Jenkins.env with ACR info..."
+
+  # Update or add ACR_NAME
+  if grep -q "^ACR_NAME=" ../../Jenkins.env; then
+    sed -i "s/^ACR_NAME=.*/ACR_NAME=${ACR_NAME}/" ../../Jenkins.env
+  else
+    echo "ACR_NAME=${ACR_NAME}" >> ../../Jenkins.env
+  fi
+
+  # Update or add ACR_LOGIN_SERVER
+  if grep -q "^ACR_LOGIN_SERVER=" ../../Jenkins.env; then
+    sed -i "s/^ACR_LOGIN_SERVER=.*/ACR_LOGIN_SERVER=${ACR_LOGIN_SERVER}/" ../../Jenkins.env
+  else
+    echo "ACR_LOGIN_SERVER=${ACR_LOGIN_SERVER}" >> ../../Jenkins.env
+  fi
+
+  echo "✅ Jenkins.env updated with ACR_NAME and ACR_LOGIN_SERVER."
+  
 elif [[ "$ACTION" == "destroy" ]]; then
   terraform destroy -auto-approve
 fi
