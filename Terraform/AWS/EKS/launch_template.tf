@@ -22,7 +22,7 @@ resource "aws_launch_template" "eks_nodes" {
   }
 
   network_interfaces {
-    subnet_id = element(data.aws_subnet_ids.private.ids, 0)
+    subnet_id = element(data.aws_subnets.private.ids, 0)
     associate_public_ip_address = false
   }
 
