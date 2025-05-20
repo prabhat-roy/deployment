@@ -13,7 +13,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
     vm_size        = var.worker_node_size
     vnet_subnet_id = data.azurerm_subnet.private_subnet.id
 
-    auto_scaling_enabled = false
+    auto_scaling_enabled = true
+    min_count             = 0
+    max_count             = 0
     orchestrator_version = var.kubernetes_version
 
   }
