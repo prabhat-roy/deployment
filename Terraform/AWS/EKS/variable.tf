@@ -17,3 +17,7 @@ variable "instance_type" {
 variable "volume_size" {
   type = number
 }
+
+variable "key_name" {
+  type = string
+}

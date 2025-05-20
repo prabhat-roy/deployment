@@ -2,6 +2,7 @@ resource "aws_launch_template" "eks_nodes" {
   name_prefix   = "eks-nodes-"
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
+  key_name = var.key_name
 
   block_device_mappings {
     device_name = "/dev/xvda"
@@ -20,8 +21,9 @@ resource "aws_launch_template" "eks_nodes" {
     instance_metadata_tags      = "enabled"
   }
 
-  iam_instance_profile {
-    name = aws_iam_instance_profile.eks_nodes.name
+  network_interfaces {
+    subnet_id = element(data.aws_subnet_ids.private.ids, 0)
+    associate_public_ip_address = false
   }
 
 }

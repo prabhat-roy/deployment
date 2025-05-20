@@ -1,20 +1,3 @@
-resource "aws_vpc" "vpc" {
-  cidr_block           = var.aws_vpc_cidr
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-
-  tags = {
-    Name = "VPC"
-  }
-}
-
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.vpc.id
-
-  tags = {
-    Name = "Internet Gateway"
-  }
-}
 resource "aws_subnet" "public" {
   for_each = {
     for i, az in data.aws_availability_zones.available.names :
@@ -29,6 +12,8 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true
   tags = {
     Name = "Public Subnet ${each.key}"
+    "kubernetes.io/role/elb"       = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
 resource "aws_route_table" "public" {
@@ -48,23 +33,6 @@ resource "aws_route" "public" {
   gateway_id             = aws_internet_gateway.igw.id
 }
 
-resource "aws_eip" "nat" {
-  domain = "vpc"
-  tags = {
-    Name = "NAT EIP"
-  }
-  depends_on = [aws_internet_gateway.igw]
-}
-resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public["az1"].id
-
-  tags = {
-    Name = "NAT Gateway"
-  }
-
-}
-
 resource "aws_subnet" "private" {
   for_each = {
     for i, az in data.aws_availability_zones.available.names :
@@ -78,6 +46,8 @@ resource "aws_subnet" "private" {
   availability_zone = each.value.az
   tags = {
     Name = "Private Subnet ${each.key}"
+    "kubernetes.io/role/internal-elb" = "1"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
 resource "aws_route_table" "private" {

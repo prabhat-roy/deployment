@@ -6,32 +6,24 @@ data "aws_vpc" "eks_vpc" {
     }
 }
 
-data "aws_subnets" "public" {
-    filter {
-      name = "tag:Name"
-      values = ["Public*"]
-    }
+data "aws_subnet_ids" "private" {
+  vpc_id = data.aws_vpc.eks_vpc.id
+
+  tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+  }
 }
 
-data "aws_subnets" "private" {
-    filter {
-      name = "tag:Name"
-      values = ["Private*"]
-    }
+data "aws_subnet_ids" "public" {
+  vpc_id = data.aws_vpc.eks_vpc.id
+
+  tags = {
+    "kubernetes.io/role/elb" = "1"
+  }
 }
 
 data "aws_availability_zones" "available" {
   state = "available"
-}
-
-data "aws_subnet" "private_metadata" {
-  for_each = toset(data.aws_subnets.private.ids)
-  id       = each.value
-}
-
-data "aws_subnet" "public_metadata" {
-  for_each = toset(data.aws_subnets.public.ids)
-  id       = each.value
 }
 
 data "aws_ami" "ubuntu" {

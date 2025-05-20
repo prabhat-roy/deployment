@@ -28,3 +28,7 @@ variable "disk_size" {
   description = "Size of the root volume in GB."
   type        = number  
 }
+
+variable "cluster_name" {
+  type = string
+}
