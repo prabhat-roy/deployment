@@ -13,15 +13,6 @@ data "aws_subnets" "private" {
     values = [data.aws_vpc.eks_vpc.id]
   }
 
-  filter {
-    name   = "tag:kubernetes.io/cluster/${var.cluster_name}"
-    values = ["shared"]
-  }
-
-  filter {
-    name   = "tag:Name"
-    values = ["*private*"]
-  }
 }
 
 # Get public subnets in the VPC used for ELB
@@ -31,15 +22,6 @@ data "aws_subnets" "public" {
     values = [data.aws_vpc.eks_vpc.id]
   }
 
-  filter {
-    name   = "tag:kubernetes.io/role/elb"
-    values = ["1"]
-  }
-
-  filter {
-    name   = "tag:Name"
-    values = ["*public*"]
-  }
 }
 
 # Get available AZs in the current region
