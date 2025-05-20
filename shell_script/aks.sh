@@ -50,10 +50,18 @@ terraform init -input=false
 
 if [[ "$ACTION" == "apply" ]]; then
   echo "🚀 Applying Terraform with 1 default node..."
-  terraform apply -auto-approve -var="default_node_count=1"
+  terraform apply -auto-approve \
+  -var="subscription_id=${SUBSCRIPTION_ID}" \
+  -var="resource_group=${RESOURCE_GROUP}" \
+  -var="azure_region=${AZURE_REGION}" \
+  -var="default_node_count=1"
 
   echo "🧵 Scaling default node pool to 0 nodes..."
-  terraform apply -auto-approve -var="default_node_count=0"
+  terraform apply -auto-approve \
+  -var="subscription_id=${SUBSCRIPTION_ID}" \
+  -var="resource_group=${RESOURCE_GROUP}" \
+  -var="azure_region=${AZURE_REGION}" \
+  -var="default_node_count=0"
 
   echo "✅ Cluster created and scaled to 0 nodes."
 elif [[ "$ACTION" == "destroy" ]]; then
