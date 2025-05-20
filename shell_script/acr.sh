@@ -6,9 +6,11 @@ ACTION=$1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ENV_FILE="${PROJECT_ROOT}/jenkins.env"
+TF_DIR="${PROJECT_ROOT}/Terraform/Azure/ACR"
 
 echo "📁 SCRIPT_DIR     = $SCRIPT_DIR"
 echo "📁 PROJECT_ROOT   = $PROJECT_ROOT"
+echo "📁 TF_DIR         = $TF_DIR"
 echo "📝 ENV_FILE       = $ENV_FILE"
 
 # Load environment variables
@@ -22,71 +24,57 @@ else
 fi
 
 # Ensure required variables are present
-if [[ -z "${SUBSCRIPTION_ID:-}" ]]; then
-  echo "❌ SUBSCRIPTION_ID is not set"
-  exit 1
-fi
+for var in SUBSCRIPTION_ID RESOURCE_GROUP AZURE_REGION; do
+  if [[ -z "${!var:-}" ]]; then
+    echo "❌ $var is not set"
+    exit 1
+  fi
+done
 
-if [[ -z "${RESOURCE_GROUP:-}" ]]; then
-  echo "❌ RESOURCE_GROUP is not set"
-  exit 1
-fi
+# Terraform commands
+cd "$TF_DIR"
 
-if [[ -z "${AZURE_REGION:-}" ]]; then
-  echo "❌ AZURE_REGION is not set"
-  exit 1
-fi
+echo "🧹 Running terraform fmt..."
+terraform fmt
 
-if [[ "${ACTION}" == "create" ]]; then
-  echo "🚀 Creating Azure Container Registry..."
+echo "🔍 Running terraform validate..."
+terraform validate
 
-  # Generate a unique ACR name
-  ACR_NAME="kubernetes$(openssl rand -hex 4)"
+echo "🚀 Running terraform init..."
+terraform init -upgrade
 
-  echo "🔧 ACR_NAME        = $ACR_NAME"
-  echo "🔧 RESOURCE_GROUP  = $RESOURCE_GROUP"
-  echo "🔧 LOCATION        = $AZURE_REGION"
-  echo "🔧 SUBSCRIPTION_ID = $SUBSCRIPTION_ID"
+echo "💡 Terraform action: $ACTION"
 
-  az acr create \
-    --name "$ACR_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --location "$AZURE_REGION" \
-    --sku Standard \
-    --admin-enabled true \
-    --subscription "$SUBSCRIPTION_ID"
+if [[ "$ACTION" == "create" ]]; then
+  echo "🚀 Creating ACR with Terraform..."
 
-  echo "✅ ACR created successfully."
+  terraform apply -auto-approve \
+    -var "subscription_id=$SUBSCRIPTION_ID" \
+    -var "resource_group=$RESOURCE_GROUP" \
+    -var "location=$AZURE_REGION"
+
+  # Get outputs
+  ACR_NAME=$(terraform output -raw acr_name)
+  ACR_RESOURCE_ID=$(terraform output -raw acr_resource_id)
 
   echo "🔄 Updating jenkins.env..."
   {
     echo "ACR_NAME=$ACR_NAME"
-    echo "ACR_RESOURCE_ID=$(az acr show --name "$ACR_NAME" --resource-group "$RESOURCE_GROUP" --subscription "$SUBSCRIPTION_ID" --query id -o tsv)"
+    echo "ACR_RESOURCE_ID=$ACR_RESOURCE_ID"
   } >> "$ENV_FILE"
 
-  echo "✅ jenkins.env updated with ACR details."
+  echo "✅ ACR created and jenkins.env updated."
 
-elif [[ "${ACTION}" == "destroy" ]]; then
-  echo "🔥 Destroying Azure Container Registry..."
+elif [[ "$ACTION" == "destroy" ]]; then
+  echo "🔥 Destroying ACR with Terraform..."
 
-  if [[ -z "${ACR_NAME:-}" ]]; then
-    echo "❌ ACR_NAME is not set in env. Cannot delete."
-    exit 1
-  fi
-
-  az acr delete \
-    --name "$ACR_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --yes \
-    --subscription "$SUBSCRIPTION_ID"
-
-  echo "✅ ACR deleted successfully."
+  terraform destroy -auto-approve \
+    -var "subscription_id=$SUBSCRIPTION_ID" \
+    -var "resource_group=$RESOURCE_GROUP" \
+    -var "location=$AZURE_REGION"
 
   echo "🧹 Cleaning up jenkins.env..."
-
-  # Remove ACR lines from jenkins.env
   sed -i.bak '/^ACR_NAME=/d;/^ACR_RESOURCE_ID=/d' "$ENV_FILE"
-
   echo "✅ ACR-related lines removed from jenkins.env."
 
 else
