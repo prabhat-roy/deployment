@@ -39,6 +39,7 @@ fi
 export TF_VAR_subscription_id="$SUBSCRIPTION_ID"
 export TF_VAR_azure_region="$AZURE_REGION"
 export TF_VAR_resource_group="$RESOURCE_GROUP"
+export TF_VAR_subscription_id="$SUBSCRIPTION_ID"
 
 
 # Move to Terraform directory
