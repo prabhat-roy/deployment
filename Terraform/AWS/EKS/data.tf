@@ -1,42 +1,67 @@
+# Get the VPC by tag name
 data "aws_vpc" "eks_vpc" {
-    filter {
-      name = "tag:Name"
-      values = ["VPC"]
-
-    }
-}
-
-data "aws_subnet_ids" "private" {
-  vpc_id = data.aws_vpc.eks_vpc.id
-
-  tags = {
-    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+  filter {
+    name   = "tag:Name"
+    values = ["VPC"]
   }
 }
 
-data "aws_subnet_ids" "public" {
-  vpc_id = data.aws_vpc.eks_vpc.id
+# Get private subnets in the VPC tagged for EKS
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.eks_vpc.id]
+  }
 
-  tags = {
-    "kubernetes.io/role/elb" = "1"
+  filter {
+    name   = "tag:kubernetes.io/cluster/${var.cluster_name}"
+    values = ["shared"]
+  }
+
+  filter {
+    name   = "tag:Name"
+    values = ["*private*"]
   }
 }
 
+# Get public subnets in the VPC used for ELB
+data "aws_subnets" "public" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.eks_vpc.id]
+  }
+
+  filter {
+    name   = "tag:kubernetes.io/role/elb"
+    values = ["1"]
+  }
+
+  filter {
+    name   = "tag:Name"
+    values = ["*public*"]
+  }
+}
+
+# Get available AZs in the current region
 data "aws_availability_zones" "available" {
   state = "available"
 }
 
+# Get the latest Ubuntu AMI with HVM and gp3
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["amazon"]
+
   filter {
     name   = "name"
     values = ["ubuntu/images/hvm-ssd-gp3/ubuntu*"]
   }
+
   filter {
     name   = "architecture"
     values = ["x86_64"]
   }
+
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
