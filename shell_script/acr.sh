@@ -29,7 +29,7 @@ echo "🛠️ Writing terraform.tfvars..."
 cat > Terraform/Azure/ACR/terraform.tfvars <<EOF
 acr_repo_names = ${terraform_list}
 azure_region   = "${LOCATION}"
-resource_group = "${AZURE_RESOURCE_GROUP}"
+resource_group = "${RESOURCE_GROUP_NAME}"
 EOF
 
 echo "🚀 Running Terraform (${ACTION^^})..."
