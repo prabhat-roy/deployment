@@ -26,22 +26,6 @@ variable "dns_prefix" {
   
 }
 
-variable "node_count" {
-  
-}
-
-variable "worker_node_size" {
-  
-}
-
 variable "kubernetes_version" {
-  
-}
-
-variable "min_node_count" {
-  
-}
-
-variable "max_node_count" {
   
 }
