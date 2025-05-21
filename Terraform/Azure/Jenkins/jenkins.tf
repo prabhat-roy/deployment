@@ -52,19 +52,19 @@ resource "null_resource" "jenkins_provision" {
   # Copy install_git.sh
   provisioner "file" {
     source      = "../../../shell_script/install_git.sh"
-    destination = "/tmp/git.sh"
+    destination = "/tmp/install_git.sh"
   }
 
   # Copy install_openjdk21.sh
   provisioner "file" {
     source      = "../../../shell_script/install_openjdk21.sh"
-    destination = "/tmp/openjdk21.sh"
+    destination = "/tmp/install_openjdk21.sh"
   }
 
   # Copy install_jenkins.sh script
   provisioner "file" {
     source      = "../../../shell_script/install_jenkins.sh"
-    destination = "/tmp/jenkins.sh"
+    destination = "/tmp/install_jenkins.sh"
   }
 
   # Make executable and run with full logging
