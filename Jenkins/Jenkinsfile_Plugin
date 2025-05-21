@@ -15,7 +15,7 @@ pipeline {
             steps {
                 script {
                     def pluginInstallerClass = load 'groovy/install_jenkins_plugin.groovy'
-                    def installer = new pluginInstallerClass(this)
+                    def installer = new pluginInstallerClass.JenkinsPluginInstaller(this)
                     installer.installPlugins()
                 }
             }

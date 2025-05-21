@@ -26,6 +26,11 @@ class JenkinsPluginInstaller implements Serializable {
                 .collect { it.replaceAll('#.*', '').trim() }
                 .findAll { it }
 
+            if (!plugins) {
+                steps.echo "⚠️ No plugins to install. Check the file: ${pluginFile}"
+                return
+            }
+
             steps.echo "\n📦 Installing plugins from: ${pluginFile}"
 
             boolean pluginInstalled = false
@@ -56,6 +61,15 @@ class JenkinsPluginInstaller implements Serializable {
                     }
                 }
             }
+
+            if (pluginInstalled) {
+                steps.echo "\n🔁 One or more plugins were installed. A Jenkins restart may be required."
+            } else {
+                steps.echo "\n✅ All plugins were already installed."
+            }
         }
     }
 }
+
+// Always return this to allow calling it after `load`
+return this
