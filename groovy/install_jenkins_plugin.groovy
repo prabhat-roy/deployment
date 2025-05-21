@@ -71,5 +71,5 @@ class JenkinsPluginInstaller implements Serializable {
     }
 }
 
-// Always return this to allow calling it after `load`
-return this
+// Instantiate the class here and return it directly
+return new JenkinsPluginInstaller(this)
