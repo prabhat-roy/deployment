@@ -14,7 +14,7 @@ pipeline {
         stage('Inject Environment Variables') {
             steps {
                 script {
-                    def envLoader = load 'groovy/EnvLoader.groovy'
+                    def envLoader = load 'groovy/env_oader.groovy'
                     def envVars = envLoader.loadEnvVars("Jenkins.env")
                     envVars.each { key, val ->
                         env."${key}" = val
