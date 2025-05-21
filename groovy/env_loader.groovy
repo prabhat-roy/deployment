@@ -5,8 +5,8 @@ class EnvLoader implements Serializable {
         this.steps = steps
     }
 
-    Map loadEnvVars(String filePath = 'Jenkins.env') {
-        Map envVars = [:]
+    def loadEnvVars(String filePath = 'Jenkins.env') {
+        def envVars = [:]
 
         try {
             if (!steps.fileExists(filePath)) {
@@ -42,4 +42,5 @@ class EnvLoader implements Serializable {
     }
 }
 
-return this
+// Instantiate the class and return the object
+return new EnvLoader(this)
