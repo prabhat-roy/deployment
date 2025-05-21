@@ -17,12 +17,12 @@ pipeline {
             steps {
                 script {
                     def pipelineFileMap = [
-                        plugin_install       : 'jenkins/plugin_install.Jenkinsfile',
-                        tools_install        : 'jenkins/tools_install.Jenkinsfile',
-                        sonarqube_owasp_setup: 'jenkins/sonarqube_owasp_setup.Jenkinsfile',
-                        repo_k8s_cluster     : 'jenkins/repo_k8s_cluster.Jenkinsfile',
-                        monitoring_stack     : 'jenkins/monitoring_stack.Jenkinsfile',
-                        app_deploy           : 'jenkins/app_deploy.Jenkinsfile'
+                        plugin_install       : 'Jenkins/plugin_install.Jenkinsfile',
+                        tools_install        : 'Jenkins/tools_install.Jenkinsfile',
+                        sonarqube_owasp_setup: 'Jenkins/sonarqube_owasp_setup.Jenkinsfile',
+                        repo_k8s_cluster     : 'Jenkins/repo_k8s_cluster.Jenkinsfile',
+                        monitoring_stack     : 'Jenkins/monitoring_stack.Jenkinsfile',
+                        app_deploy           : 'Jenkins/app_deploy.Jenkinsfile'
                     ]
 
                     def selected = params.PIPELINE
