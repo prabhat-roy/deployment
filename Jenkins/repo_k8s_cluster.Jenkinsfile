@@ -1,3 +1,4 @@
+def call(action) {
 pipeline {
     agent any
 
@@ -7,7 +8,7 @@ pipeline {
 
     stages {
 
-        stage('Manage Repository') {
+        stage('Manage Repository - ${action}') {
             steps {
                 script {
                     def cloudRepo = load 'groovy/cloud_repo.groovy'
@@ -25,7 +26,7 @@ pipeline {
             }
         }
 
-        stage('Manage Kubernetes Cluster') {
+        stage('Manage Kubernetes Cluster - ${action}') {
             steps {
                 script {
                     def kubernetesCluster = load 'groovy/kubernetes_cluster.groovy'
@@ -43,7 +44,7 @@ pipeline {
             }
         }
 
-        stage('Update Kubeconfig') {
+        stage('Update Kubeconfig - ${action}') {
             steps {
                 script {
                     def kubeconfigUpdate = load 'groovy/kubeconfig_update.groovy'
@@ -60,7 +61,7 @@ pipeline {
             }
         }
 
-        stage('Repo Login') {
+        stage('Repo Login - ${action}') {
             steps {
                 script {
                     def repoLogin = load 'groovy/repo_login.groovy'
@@ -77,7 +78,7 @@ pipeline {
             }
         }
 
-        stage('Manage Karpenter Autoscaler') {
+        stage('Manage Karpenter Autoscaler - ${action}') {
             steps {
                 script {
                     def karpenterAutoscaler = load 'groovy/karpenter_autoscaler.groovy'
@@ -110,4 +111,5 @@ pipeline {
             }
         }
     }
+}
 }

@@ -2,8 +2,16 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'PIPELINE', choices: ['plugin_install', 'tools_install', 'sonarqube_owasp_setup', 'repo_k8s_cluster', 'monitoring_stack', 'app_deploy'], description: 'Select pipeline to run')
-        choice(name: 'ACTION', choices: ['create', 'destroy'], description: 'Choose action mode')
+        choice(name: 'PIPELINE', choices: [
+            'plugin_install',
+            'tools_install',
+            'sonarqube_owasp_setup',
+            'repo_k8s_cluster',
+            'monitoring_stack',
+            'app_deploy'
+        ], description: 'Select pipeline to run')
+
+        choice(name: 'ACTION', choices: ['create', 'destroy', 'none'], description: 'Choose action mode (set to none if not required)')
     }
 
     stages {
@@ -26,17 +34,22 @@ pipeline {
                     ]
 
                     def selected = params.PIPELINE
-                    if (!pipelineFileMap.containsKey(selected)) {
+                    def selectedFile = pipelineFileMap[selected]
+
+                    if (!selectedFile) {
                         error "Unknown pipeline selected: ${selected}"
                     }
 
-                    echo "Loading pipeline script: ${pipelineFileMap[selected]}"
+                    echo "Loading and executing pipeline: ${selectedFile}"
 
-                    // load returns the loaded script, so call it as a function if it defines one
-                    def pipelineScript = load(pipelineFileMap[selected])
+                    def pipelineScript = load(selectedFile)
 
-                    // If the pipeline script defines a call() method, call it to run the pipeline
-                    pipelineScript.call(params.ACTION)
+                    // Dynamically decide whether to pass an action or not
+                    if (params.ACTION == 'none') {
+                        pipelineScript.call()
+                    } else {
+                        pipelineScript.call(params.ACTION)
+                    }
                 }
             }
         }

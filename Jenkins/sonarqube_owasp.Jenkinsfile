@@ -1,3 +1,4 @@
+def call(action) {
 pipeline {
     agent any
 
@@ -15,7 +16,7 @@ pipeline {
             }
         }
 
-        stage('Manage SonarQube') {
+        stage('Manage SonarQube - ${action}') {
             steps {
                 script {
                     def sonarqubeInstaller = load 'groovy/sonarqube.groovy'
@@ -31,7 +32,7 @@ pipeline {
             }
         }
 
-        stage('Manage OWASP ZAP') {
+        stage('Manage OWASP ZAP - ${action}') {
             steps {
                 script {
                     def owaspInstaller = load 'groovy/owasp.groovy'
@@ -48,3 +49,5 @@ pipeline {
         }
     }
 }
+}
+

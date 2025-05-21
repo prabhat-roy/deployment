@@ -1,3 +1,4 @@
+def call(action) {
 pipeline {
     agent any
 
@@ -7,7 +8,7 @@ pipeline {
 
     stages {
 
-        stage('Elastic Stack Setup') {
+        stage('Elastic Stack Setup - ${action}') {
             steps {
                 script {
                     def elasticInstaller = load 'groovy/elastic_stack.groovy'
@@ -24,7 +25,7 @@ pipeline {
             }
         }
 
-        stage('Prometheus Stack Setup') {
+        stage('Prometheus Stack Setup - ${action}') {
             steps {
                 script {
                     def prometheusInstaller = load 'groovy/prometheus_stack.groovy'
@@ -51,4 +52,5 @@ pipeline {
             }
         }
     }
+}
 }
