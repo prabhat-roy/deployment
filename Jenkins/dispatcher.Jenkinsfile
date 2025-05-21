@@ -1,101 +1,44 @@
 pipeline {
     agent any
 
-    // Parameters to choose which pipeline and action (create/destroy)
     parameters {
-        choice(name: 'PIPELINE', choices: [
-            'plugin_install', 
-            'tools_install', 
-            'sonarqube_owasp_setup', 
-            'repo_k8s_cluster', 
-            'monitoring_stack', 
-            'app_deploy'
-        ], description: 'Select pipeline to run')
-
+        choice(name: 'PIPELINE', choices: ['plugin_install', 'tools_install', 'sonarqube_owasp_setup', 'repo_k8s_cluster', 'monitoring_stack', 'app_deploy'], description: 'Select pipeline to run')
         choice(name: 'ACTION', choices: ['create', 'destroy'], description: 'Choose action mode')
     }
 
-    environment {
-        ENV_FILE = 'jenkins.env'  // env file in root workspace
-    }
-
     stages {
-        stage('Load Existing Environment') {
+        stage('Checkout') {
             steps {
-                script {
-                    if (fileExists(env.ENV_FILE)) {
-                        def props = readProperties file: env.ENV_FILE
-                        props.each { k, v -> env."${k}" = v }
-                        echo "Loaded environment variables from ${env.ENV_FILE}"
-                    } else {
-                        echo "No ${env.ENV_FILE} found. Starting fresh."
-                    }
-                }
+                checkout scm
             }
         }
 
-        stage('Dispatch Selected Pipeline') {
+        stage('Run Selected Pipeline') {
             steps {
                 script {
-                    echo "Dispatching pipeline '${params.PIPELINE}' with action '${params.ACTION}'"
-
-                    // Map of pipeline names to job names
-                    def pipelineJobMap = [
-                        plugin_install       : 'plugin_install_pipeline',
-                        tools_install        : 'tools_install_pipeline',
-                        sonarqube_owasp_setup: 'sonarqube_owasp_pipeline',
-                        repo_k8s_cluster     : 'repo_k8s_cluster_pipeline',
-                        monitoring_stack     : 'monitoring_stack_pipeline',
-                        app_deploy           : 'app_deploy_pipeline'
+                    def pipelineFileMap = [
+                        plugin_install       : 'jenkins/plugin_install.Jenkinsfile',
+                        tools_install        : 'jenkins/tools_install.Jenkinsfile',
+                        sonarqube_owasp_setup: 'jenkins/sonarqube_owasp_setup.Jenkinsfile',
+                        repo_k8s_cluster     : 'jenkins/repo_k8s_cluster.Jenkinsfile',
+                        monitoring_stack     : 'jenkins/monitoring_stack.Jenkinsfile',
+                        app_deploy           : 'jenkins/app_deploy.Jenkinsfile'
                     ]
 
-                    if (!pipelineJobMap.containsKey(params.PIPELINE)) {
-                        error "Unknown pipeline selected: ${params.PIPELINE}"
+                    def selected = params.PIPELINE
+                    if (!pipelineFileMap.containsKey(selected)) {
+                        error "Unknown pipeline selected: ${selected}"
                     }
 
-                    def jobName = pipelineJobMap[params.PIPELINE]
+                    echo "Loading pipeline script: ${pipelineFileMap[selected]}"
 
-                    // Trigger downstream job with parameters
-                    build job: jobName,
-                        parameters: [
-                            string(name: 'ACTION', value: params.ACTION),
-                            // Pass the env file as a parameter (optional, mainly for info)
-                            string(name: 'ENV_FILE', value: env.ENV_FILE)
-                        ],
-                        wait: true
+                    // load returns the loaded script, so call it as a function if it defines one
+                    def pipelineScript = load(pipelineFileMap[selected])
+
+                    // If the pipeline script defines a call() method, call it to run the pipeline
+                    pipelineScript.call(params.ACTION)
                 }
             }
-        }
-
-        stage('Retrieve Updated Environment') {
-            steps {
-                script {
-                    echo "Retrieving updated environment file '${env.ENV_FILE}' from downstream pipeline..."
-
-                    // Copy artifact: updated jenkins.env from downstream job workspace root
-                    step([
-                        $class: 'CopyArtifact',
-                        projectName: pipelineJobMap[params.PIPELINE],
-                        filter: env.ENV_FILE,
-                        flatten: true
-                    ])
-
-                    if (fileExists(env.ENV_FILE)) {
-                        echo "Successfully updated ${env.ENV_FILE} collected."
-                    } else {
-                        echo "Warning: Updated ${env.ENV_FILE} NOT found after downstream pipeline."
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "Dispatcher pipeline finished successfully."
-        }
-        failure {
-            echo "Dispatcher pipeline failed."
         }
     }
 }
