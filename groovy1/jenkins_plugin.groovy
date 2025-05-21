@@ -44,15 +44,6 @@ def InstallPlugin() {
                 }
             }
         }
-
-        // if (pluginInstalled) {
-        //     echo "🔄 Restarting Jenkins (plugins were installed)..."
-        //     sh '''
-        //         java -jar /tmp/jenkins-cli.jar -s $JENKINS_URL -auth $JENKINS_USER:$JENKINS_PASS safe-restart
-        //     '''
-        // } else {
-        //     echo "✅ All plugins already installed. No restart needed."
-        // }
     }
 }
 return this

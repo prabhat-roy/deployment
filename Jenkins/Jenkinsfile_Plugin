@@ -1,0 +1,24 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                script {
+                    echo "📥 Checking out source code..."
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Install Jenkins Plugins') {
+            steps {
+                script {
+                    def pluginInstallerClass = load 'groovy/install_jenkins_plugin.groovy'
+                    def installer = new pluginInstallerClass(this)
+                    installer.installPlugins()
+                }
+            }
+        }
+    }
+}

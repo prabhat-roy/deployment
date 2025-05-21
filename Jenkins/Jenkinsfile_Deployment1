@@ -1,0 +1,197 @@
+pipeline {
+    agent any
+    parameters {
+        choice(
+            name: 'ACTION',
+            choices: ['create', 'destroy'], 
+            description: 'Choose whether to create or destroy kubernetes resources.'
+        )
+    }
+    stages {
+        stage('Git Checkout') {
+            steps {
+                script {
+                    checkout scm
+                    }
+                }
+            }
+        stage('Load Environment Variables') {
+            steps {
+                script {
+                    echo "📦 Attempting to copy Jenkins.env from 'tools' pipeline..."
+                    copyArtifacts projectName: 'tools', filter: 'Jenkins.env', target: './', optional: false
+
+                    if (!fileExists('Jenkins.env')) {
+                        error "❌ Jenkins.env file not found after copyArtifacts. Failing the build."
+                    }
+
+                    echo "📖 Reading and injecting environment variables from Jenkins.env..."
+                    def props = readProperties file: 'Jenkins.env'
+
+                    props.each { k, v ->
+                        env."${k}" = v
+                        echo "✅ Injected: ${k}=${v}"
+                    }
+
+                    echo "🌍 All environment variables successfully loaded from Jenkins.env"
+                }
+            }
+        }
+        // stage('Trivy Source Code Scan') {
+        //     steps {
+        //         script {
+        //             def trivyScan = load 'groovy/trivy_fs.groovy'
+        //             trivyScan.scanAndArchiveFS()
+        //         }
+        //     }
+        // }
+        stage('Pylint Scan') {
+            steps {
+                script {
+                    def pylintScript = load 'groovy/pylint.groovy'
+                    pylintScript.runPylintScan()
+                }
+            }
+        }
+        // stage('ESLint Scan') {
+        //     steps {
+        //         script {
+        //             def eslintScan = load 'groovy/eslint.groovy'  // Load the ESLint scan script
+        //             eslintScan.runESLintAndArchiveReports()  // Run the ESLint scan and archive the reports
+        //         }
+        //     }
+        // }
+        // stage('Flake8 Scan') {
+        //     steps {
+        //         script {
+        //             def flake8Scan = load 'groovy/flake8.groovy'  // Load the Flake8 scan Groovy script
+        //             flake8Scan.runFlake8AndArchiveReports()       // Run the scan and archive the reports
+        //         }
+        //     }
+        // }
+        // stage('FOSSA Scan') {
+        //     steps {
+        //         script {
+        //             withCredentials([string(credentialsId: 'fossa-api-key', variable: 'FOSSA_API_KEY')]) {
+        //                 def fossaScan = load 'groovy/fossa.groovy'
+        //                 fossaScan.runFossaScanAndArchiveReports(FOSSA_API_KEY)
+        //             }
+        //         }
+        //     }
+        // }
+        // stage('GitGuardian Scan') {
+        //     steps {
+        //         script {
+        //             withCredentials([string(credentialsId: 'gitguardian-api-key', variable: 'GITGUARDIAN_API_KEY')]) {
+        //                 def gitguardianScan = load 'groovy/git_guardian.groovy'  // Load the GitGuardian scan Groovy script
+        //                 gitguardianScan.runGitGuardianScanAndArchiveReports(GITGUARDIAN_API_KEY)  // Run the scan and archive the report
+        //             }
+        //         }
+        //     }
+        // }
+        // stage('Gitleaks Scan') {
+        //     steps {
+        //         script {
+        //             def gitleaksScan = load 'groovy/gitleaks.groovy'
+        //             gitleaksScan.runGitleaksScanAndArchiveReports()
+        //         }
+        //     }
+        // }
+        // stage('GolangCI-Lint Scan') {
+        //     steps {
+        //         script {
+        //             def golangciScan = load 'groovy/golangci.groovy'
+        //             golangciScan.runGolangCILintAndArchiveReports()
+        //         }
+        //     }
+        // }
+        // stage('Pyflakes Scan') {
+        //     steps {
+        //         script {
+        //             def pyflakesScript = load 'groovy/pyflakes.groovy'
+        //             pyflakesScript.runPyflakesScan()
+        //         }
+        //     }
+        // }
+        // stage('Run Tox') {
+        //     steps {
+        //         script {
+        //             def toxScript = load 'groovy/tox.groovy'
+        //             toxScript.runToxScan()
+        //         }
+        //     }
+        // }
+        // stage('Run TruffleHog') {
+        //     steps {
+        //         script {
+        //             def truffleHogScript = load 'groovy/truffle_hog.groovy'
+        //             truffleHogScript.runTruffleHog()
+        //         }
+        //     }
+        // }
+        // stage('ShellCheck Scan') {
+        //     steps {
+        //         script {
+        //             def shellCheckScript = load 'groovy/shell_check.groovy'
+        //             shellCheckScript.runShellCheck()
+        //         }
+        //     }
+        // }
+        // stage('License Checker Scan') {
+        //     steps {
+        //         script {
+        //             def licenseCheckScript = load 'groovy/license_check.groovy'
+        //             licenseCheckScript.runLicenseChecker()
+        //         }
+        //     }
+        // }
+        // stage('Run OpenSCAP Security Audit') {
+        //     steps {
+        //         script {
+        //             def openSCAPCheckScript = load 'groovy/open_scap_heck.groovy'
+        //             openSCAPCheckScript.runOpenSCAPAudit()
+        //         }
+        //     }
+        // }
+        // stage('KICS Scan (Infrastructure as Code Security)') {
+        //     steps {
+        //         script {
+        //             def kicsScript = load 'groovy/kics_security_scan.groovy'
+        //             kicsScript.runKicsScan()
+        //         }
+        //     }
+        // }
+        // stage('KICS Scan (Code Cleanliness)') {
+        //     steps {
+        //         script {
+        //             def kicsCleanScript = load 'groovy/kics_cleanliness.groovy'
+        //             kicsCleanScript.runKicsCleanScan()
+        //         }
+        //     }
+        // }
+        // stage('Terrascan Scan (Terraform Security)') {
+        //     steps {
+        //         script {
+        //             def terrascanScript = load 'groovy/terrascan.groovy'
+        //             terrascanScript.runTerrascanScan()
+        //         }
+        //     }
+        // }
+        // stage('tfsec Scan (Terraform Security)') {
+        //     steps {
+        //         script {
+        //             def tfsecScript = load 'groovy/tfsec.groovy'
+        //             tfsecScript.runTfsecScan()
+        //         }
+        //     }
+        // }
+        // stage('Create Docker Images') {
+        //     steps {
+        //         script {
+        //             def dockerBuild = load 'groovy/docker_build.groovy'
+        //             dockerBuild.createDockerBuild()
+        //         }
+        //     }
+        // }
+    }
+}

@@ -1,0 +1,96 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'ACTION', choices: ['create', 'destroy'], description: 'Choose create or destroy action')
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                script {
+                    echo "📥 Checking out source code..."
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Load Environment Variables') {
+            steps {
+                script {
+                    echo "📦 Attempting to copy Jenkins.env from 'Kubernetes' pipeline..."
+                    copyArtifacts projectName: 'Kubernetes', filter: 'Jenkins.env', target: './', optional: false
+
+                    if (!fileExists('Jenkins.env')) {
+                        error "❌ Jenkins.env file not found after copyArtifacts. Failing the build."
+                    }
+
+                    echo "📖 Reading and injecting environment variables from Jenkins.env..."
+                    def props = readProperties file: 'Jenkins.env'
+
+                    props.each { k, v ->
+                        env."${k}" = v
+                        echo "✅ Injected: ${k}=${v}"
+                    }
+
+                    echo "🌍 All environment variables successfully loaded from Jenkins.env"
+                }
+            }
+        }
+
+        stage('Elastic Stack Setup - ${action}') {
+            steps {
+                script {
+                    def elasticInstaller = load 'groovy/elastic_stack.groovy'
+                    if (params.ACTION == 'create') {
+                        echo "🔧 Creating Elastic Stack..."
+                        elasticInstaller.installElasticStack()
+                    } else if (params.ACTION == 'destroy') {
+                        echo "🗑️ Destroying Elastic Stack..."
+                        elasticInstaller.deleteElasticStack()
+                    } else {
+                        error "Invalid ACTION parameter: ${params.ACTION}"
+                    }
+                }
+            }
+        }
+
+        stage('Prometheus Stack Setup - ${action}') {
+            steps {
+                script {
+                    def prometheusInstaller = load 'groovy/prometheus_stack.groovy'
+                    if (params.ACTION == 'create') {
+                        echo "🔧 Creating Prometheus Stack..."
+                        prometheusInstaller.installPrometheusStack()
+                    } else if (params.ACTION == 'destroy') {
+                        echo "🗑️ Destroying Prometheus Stack..."
+                        prometheusInstaller.deletePrometheusStack()
+                    } else {
+                        error "Invalid ACTION parameter: ${params.ACTION}"
+                    }
+                }
+            }
+        }
+
+        stage('Archive Jenkins.env') {
+            steps {
+                script {
+                    // Archive Jenkins.env for visibility and stash for next pipeline usage
+                    archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
+                    stash name: 'env-file', includes: 'Jenkins.env'
+                }
+            }
+        }
+
+        stage('Clean Workspace') {
+            steps {
+                script {
+                    // Remove all workspace files for a clean start in next run
+                    deleteDir()
+                    echo "Workspace deleted."
+                }
+            }
+        }
+    }
+}
+

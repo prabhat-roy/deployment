@@ -2,10 +2,13 @@ pipeline {
     agent any
 
     stages {
+
+        // === GIT & DETECTION ===
+
         stage('Git Checkout') {
             steps {
                 script {
-                    echo "📥 Checking out source code..."
+                    // Checkout code from the configured SCM
                     checkout scm
                 }
             }
@@ -17,15 +20,6 @@ pipeline {
                     // Load and execute the cloud detection utility
                     def cloudScript = load 'groovy/detect_cloud.groovy'
                     cloudScript.detectAndSaveCloudProvider()
-                }
-            }
-        }
-
-        stage('Install docker') {
-            steps {
-                script {
-                    def dockerInstaller = load 'groovy/install_docker.groovy'
-                    dockerInstaller.installDocker()
                 }
             }
         }
@@ -59,6 +53,8 @@ pipeline {
             }
         }
 
+
+
         stage('Inject Environment Variables') {
             steps {
                 script {
@@ -72,6 +68,8 @@ pipeline {
                 }
             }
         }
+
+        // === SYSTEM UTILITIES INSTALLATION ===
 
         stage('Install Curl') {
             steps {
@@ -123,6 +121,8 @@ pipeline {
             }
         }
 
+        // === LANGUAGE RUNTIME ENVIRONMENTS ===
+
         stage('Install Python') {
             steps {
                 script {
@@ -132,8 +132,8 @@ pipeline {
                 }
             }
         }
-        
-       stage('Install Node.js') {
+
+        stage('Install Node.js') {
             steps {
                 script {
                     // Install Node.js runtime
@@ -142,6 +142,8 @@ pipeline {
                 }
             }
         }
+
+        // === INFRASTRUCTURE & CLI TOOLS ===
 
         stage('Install Cloud CLI Tool') {
             steps {
@@ -173,6 +175,8 @@ pipeline {
             }
         }
 
+        // === ENVIRONMENT FILE HANDOFF ===
+
         stage('Archive Jenkins.env') {
             steps {
                 script {
@@ -183,26 +187,36 @@ pipeline {
             }
         }
 
+        // === OPTIONAL TOOLS ===
+        // These can be uncommented when needed for static analysis or scanning
+
+        // stage('Install SonarQube') {
+        //     steps {
+        //         script {
+        //             def sonarqubeInstaller = load 'groovy/sonarqube.groovy'
+        //             sonarqubeInstaller.installSonarqube()
+        //         }
+        //     }
+        // }
+
+        // stage('Install OWASP ZAP') {
+        //     steps {
+        //         script {
+        //             def owaspInstaller = load 'groovy/owasp.groovy'
+        //             owaspInstaller.installOwasp()
+        //         }
+        //     }
+        // }
+
+        // === CLEANUP ===
+
         stage('Clean Workspace') {
             steps {
                 script {
-                    // Remove all workspace files for a clean start in next run
+                    // Remove all workspace files
                     deleteDir()
                     echo "Workspace deleted."
                 }
-            }
-        }
-
-        stage('Graceful Jenkins Restart') {
-            when {
-                expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-            }
-            steps {
-                echo "⚙️ Scheduling Jenkins restart via systemctl..."
-                sh '''
-                    nohup bash -c "sleep 10 && sudo systemctl restart jenkins" > /var/log/jenkins-restart.log 2>&1 &
-                    echo "✅ Jenkins will restart gracefully in 10 seconds (in background)."
-                '''
             }
         }
     }
