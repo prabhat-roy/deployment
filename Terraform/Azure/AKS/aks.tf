@@ -3,19 +3,19 @@ resource "azurerm_kubernetes_cluster" "aks" {
   location            = var.azure_region
   resource_group_name = var.resource_group
   dns_prefix          = var.dns_prefix
-  kubernetes_version = var.kubernetes_version
+  kubernetes_version  = var.kubernetes_version
 
 
   default_node_pool {
     name           = "default"
-    node_count = var.default_node_count
-    os_sku = "Ubuntu"
+    node_count     = var.default_node_count
+    os_sku         = "Ubuntu"
     vm_size        = var.worker_node_size
     vnet_subnet_id = data.azurerm_subnet.private_subnet.id
 
     auto_scaling_enabled = true
- min_count           = 1
-  max_count           = 1
+    min_count            = 1
+    max_count            = 1
     orchestrator_version = var.kubernetes_version
 
   }
@@ -24,7 +24,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     type = "SystemAssigned"
   }
 
-lifecycle {
+  lifecycle {
     ignore_changes = [default_node_pool[0].node_count]
   }
 
@@ -41,7 +41,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "custom" {
   name                  = "customnp"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
   vm_size               = "Standard_DS2_v2"
-  auto_scaling_enabled = true
+  auto_scaling_enabled  = true
   min_count             = 0
   max_count             = 2
   mode                  = "User"

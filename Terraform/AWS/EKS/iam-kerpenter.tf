@@ -4,7 +4,7 @@ resource "aws_iam_instance_profile" "karpenter_instance_profile" {
 }
 
 resource "aws_iam_role" "karpenter_node_role" {
-  name = "karpenter-node-role"
+  name               = "karpenter-node-role"
   assume_role_policy = file("ec2-role.json")
 }
 

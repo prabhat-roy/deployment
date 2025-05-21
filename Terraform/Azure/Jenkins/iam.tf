@@ -9,7 +9,7 @@ resource "azurerm_role_definition" "jenkins_role" {
       # VM operations
       "Microsoft.Compute/virtualMachines/start/action",
       "Microsoft.Compute/virtualMachines/deallocate/action",
-      
+
       # Resource group and deployments
       "Microsoft.Resources/subscriptions/resourceGroups/*",
       "Microsoft.Resources/deployments/*",

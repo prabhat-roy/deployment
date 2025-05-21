@@ -1,24 +1,24 @@
 resource "google_project_service" "container" {
-  service = "container.googleapis.com"
-  project = var.project_id
+  service            = "container.googleapis.com"
+  project            = var.project_id
   disable_on_destroy = false
 }
 
 resource "google_project_service" "compute" {
-  service = "compute.googleapis.com"
-  project = var.project_id
+  service            = "compute.googleapis.com"
+  project            = var.project_id
   disable_on_destroy = true
 }
 
 resource "google_project_service" "iam" {
-  service = "iam.googleapis.com"
-  project = var.project_id
+  service            = "iam.googleapis.com"
+  project            = var.project_id
   disable_on_destroy = true
 }
 
 resource "google_project_service" "cloudresourcemanager" {
-  service = "cloudresourcemanager.googleapis.com"
-  project = var.project_id
+  service            = "cloudresourcemanager.googleapis.com"
+  project            = var.project_id
   disable_on_destroy = true
 }
 
@@ -37,12 +37,12 @@ resource "google_container_cluster" "gke_cluster" {
     master_ipv4_cidr_block  = "10.100.0.0/28"
   }
 
- master_authorized_networks_config {
-  cidr_blocks {
-    cidr_block   = "10.10.0.0/16"
-    display_name = "jenkins-subnet"
+  master_authorized_networks_config {
+    cidr_blocks {
+      cidr_block   = "10.10.0.0/16"
+      display_name = "jenkins-subnet"
+    }
   }
-}
 
   remove_default_node_pool = true
   initial_node_count       = 0
@@ -58,11 +58,11 @@ resource "google_container_node_pool" "primary_nodes" {
     machine_type = var.worker_node_size
     image_type   = "UBUNTU"
     disk_type    = "pd-ssd"
-     disk_size_gb = var.disk_size
+    disk_size_gb = var.disk_size
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
     tags = ["gke-node"]
   }
-  
+
 }

@@ -29,16 +29,16 @@ variable "disk_size_gb" {
 }
 
 variable "admin_user" {
-  type        = string 
+  type        = string
   description = "Admin username for VM login"
 }
 
 variable "aks_name" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "acr_name" {
-  type = string
+  type    = string
   default = ""
 }

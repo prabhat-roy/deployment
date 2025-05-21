@@ -11,6 +11,19 @@ pipeline {
             }
         }
 
+        stage('Inject Environment Variables') {
+            steps {
+                script {
+                    def envLoader = new EnvLoader(this)
+                    def envVars = envLoader.loadEnvVars("Jenkins.env")
+                    envVars.each { key, val ->
+                        env."${key}" = val
+                        echo "Injected: ${key}=${val}"
+                    }
+                }
+            }
+        }
+        
         stage('Install Jenkins Plugins') {
             steps {
                 script {

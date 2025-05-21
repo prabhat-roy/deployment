@@ -2,8 +2,8 @@ resource "aws_launch_template" "eks_nodes" {
   name_prefix   = "eks-nodes-"
   image_id      = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
-  key_name = var.key_name
-  
+  key_name      = var.key_name
+
   iam_instance_profile {
     name = aws_iam_instance_profile.karpenter_instance_profile.name
   }
@@ -26,11 +26,11 @@ resource "aws_launch_template" "eks_nodes" {
   }
 
   tag_specifications {
-  resource_type = "instance"
-  tags = {
-    "Name"                            = "karpenter-node"
-    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+    resource_type = "instance"
+    tags = {
+      "Name"                                      = "karpenter-node"
+      "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+    }
   }
-}
 
 }

@@ -38,35 +38,35 @@ resource "null_resource" "jenkins_provision" {
     destination = "/tmp/update_upgrade_os.sh"
   }
 
-  # Copy git.sh
+  # Copy install_git.sh
   provisioner "file" {
-    source      = "../../../shell_script/git.sh"
+    source      = "../../../shell_script/install_git.sh"
     destination = "/tmp/git.sh"
   }
 
-  # Copy openjdk21.sh
+  # Copy install_openjdk21.sh
   provisioner "file" {
-    source      = "../../../shell_script/openjdk21.sh"
+    source      = "../../../shell_script/install_openjdk21.sh"
     destination = "/tmp/openjdk21.sh"
   }
 
-  # Copy jenkins.sh script
+  # Copy install_jenkins.sh script
   provisioner "file" {
-    source      = "../../../shell_script/jenkins.sh"
+    source      = "../../../shell_script/install_jenkins.sh"
     destination = "/tmp/jenkins.sh"
   }
 
   # Make executable and run with full logging
   provisioner "remote-exec" {
     inline = [
-      "chmod +x /tmp/jenkins.sh",
-      "chmod +x /tmp/git.sh",
+      "chmod +x /tmp/install_jenkins.sh",
+      "chmod +x /tmp/install_git.sh",
       "chmod +x /tmp/update_upgrade_os.sh",
-      "chmod +x /tmp/openjdk21.sh",
+      "chmod +x /tmp/install_openjdk21.sh",
       "sudo /tmp/update_upgrade_os.sh 2>&1 | tee /tmp/update_upgrade_os.log",
-      "sudo /tmp/git.sh 2>&1 | tee /tmp/git.log",
-      "sudo /tmp/openjdk21.sh 2>&1 | tee /tmp/openjdk21.log",
-      "sudo /tmp/jenkins.sh 2>&1 | tee /tmp/jenkins_install_full.log"
+      "sudo /tmp/install_git.sh 2>&1 | tee /tmp/git.log",
+      "sudo /tmp/install_openjdk21.sh 2>&1 | tee /tmp/openjdk21.log",
+      "sudo /tmp/install_jenkins.sh 2>&1 | tee /tmp/jenkins_install_full.log"
     ]
   }
 }

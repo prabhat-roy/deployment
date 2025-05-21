@@ -1,5 +1,5 @@
 resource "aws_iam_role" "eks_cluster_role" {
-  name = "eks-cluster-role"
+  name               = "eks-cluster-role"
   assume_role_policy = file("eks-cluster-assume-role-policy.json")
 }
 

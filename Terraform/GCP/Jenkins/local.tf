@@ -8,19 +8,19 @@ locals {
 
   sa_roles = [
     "roles/compute.admin",
-  "roles/compute.networkAdmin",
-  "roles/compute.securityAdmin",
-  "roles/storage.admin",
-  "roles/iam.serviceAccountUser",
-  "roles/iam.serviceAccountAdmin",
-  "roles/iam.roleViewer",
-  "roles/resourcemanager.projectIamAdmin",
-  "roles/container.admin",
-  "roles/artifactregistry.admin",
-  "roles/logging.logWriter",
-  "roles/monitoring.metricWriter",
-  "roles/serviceusage.serviceUsageAdmin",
-  "roles/dns.admin"
+    "roles/compute.networkAdmin",
+    "roles/compute.securityAdmin",
+    "roles/storage.admin",
+    "roles/iam.serviceAccountUser",
+    "roles/iam.serviceAccountAdmin",
+    "roles/iam.roleViewer",
+    "roles/resourcemanager.projectIamAdmin",
+    "roles/container.admin",
+    "roles/artifactregistry.admin",
+    "roles/logging.logWriter",
+    "roles/monitoring.metricWriter",
+    "roles/serviceusage.serviceUsageAdmin",
+    "roles/dns.admin"
   ]
 
   public_key_path  = startswith(var.public_key, "~") ? abspath(replace(var.public_key, "~", var.HOME)) : abspath(var.public_key)

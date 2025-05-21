@@ -49,10 +49,10 @@ resource "google_compute_firewall" "sonarqube" {
 }
 
 resource "google_compute_firewall" "allow_jenkins_to_gke_master" {
-  name    = "allow-jenkins-to-gke-master"
-  network = google_compute_network.vpc.name
-   direction = "EGRESS"
-   destination_ranges = ["10.100.0.0/28"]
+  name               = "allow-jenkins-to-gke-master"
+  network            = google_compute_network.vpc.name
+  direction          = "EGRESS"
+  destination_ranges = ["10.100.0.0/28"]
 
   allow {
     protocol = "tcp"
@@ -60,5 +60,5 @@ resource "google_compute_firewall" "allow_jenkins_to_gke_master" {
   }
 
   source_ranges = [google_compute_instance.jenkins.network_interface[0].network_ip] # Jenkins private IP
-  target_tags   = ["gke-master"] # You may need to add this tag to the master (or allow for master subnet)
+  target_tags   = ["gke-master"]                                                    # You may need to add this tag to the master (or allow for master subnet)
 }

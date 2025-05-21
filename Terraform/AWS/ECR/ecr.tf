@@ -14,7 +14,7 @@ resource "aws_ecr_repository" "repos" {
   force_delete = true
 
   tags = {
-    CreatedBy   = "Terraform"
-  
+    CreatedBy = "Terraform"
+
   }
 }

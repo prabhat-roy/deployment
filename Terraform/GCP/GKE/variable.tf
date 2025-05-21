@@ -1,10 +1,10 @@
 variable "worker_node_size" {
-    description = "Machine type for GKE worker nodes"
-  type = string
+  description = "Machine type for GKE worker nodes"
+  type        = string
 }
 
 variable "gcp_region" {
-  
+
 }
 variable "vpc_name" {
   description = "Name of the existing VPC network"
@@ -12,7 +12,7 @@ variable "vpc_name" {
 }
 
 variable "project_id" {
-  
+
 }
 variable "private_subnet_name" {
   type = string

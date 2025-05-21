@@ -26,7 +26,7 @@ variable "private_key_path" {
 
 variable "disk_size" {
   description = "Size of the root volume in GB."
-  type        = number  
+  type        = number
 }
 
 variable "cluster_name" {

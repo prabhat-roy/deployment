@@ -11,8 +11,8 @@ resource "aws_subnet" "public" {
   availability_zone       = each.value.az
   map_public_ip_on_launch = true
   tags = {
-    Name = "Public Subnet ${each.key}"
-    "kubernetes.io/role/elb"       = "1"
+    Name                                        = "Public Subnet ${each.key}"
+    "kubernetes.io/role/elb"                    = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   }
 }
@@ -45,10 +45,10 @@ resource "aws_subnet" "private" {
   cidr_block        = each.value.cidr_block
   availability_zone = each.value.az
   tags = {
-    Name = "Private Subnet ${each.key}"
-    "kubernetes.io/role/internal-elb" = "1"
+    Name                                        = "Private Subnet ${each.key}"
+    "kubernetes.io/role/internal-elb"           = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-    "karpenter.sh/discovery"                   = var.cluster_name
+    "karpenter.sh/discovery"                    = var.cluster_name
   }
 }
 resource "aws_route_table" "private" {

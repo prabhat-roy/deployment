@@ -9,7 +9,7 @@ data "aws_vpc" "eks_vpc" {
 # Get private subnets in the VPC tagged for EKS
 data "aws_subnets" "private" {
 
-filter {
+  filter {
     name   = "tag:Name"
     values = ["*Private*"]
   }
@@ -18,7 +18,7 @@ filter {
 # Get public subnets in the VPC used for ELB
 data "aws_subnets" "public" {
 
-filter {
+  filter {
     name   = "tag:Name"
     values = ["*Public*"]
   }

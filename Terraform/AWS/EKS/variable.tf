@@ -7,7 +7,7 @@ variable "cluster_name" {
 }
 
 variable "eks_version" {
-  
+
 }
 
 variable "instance_type" {
