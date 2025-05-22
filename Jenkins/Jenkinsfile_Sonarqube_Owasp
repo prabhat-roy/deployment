@@ -38,7 +38,7 @@ pipeline {
             }
         }
 
-        stage("Manage SonarQube - ${params.action}") {
+        stage('Manage SonarQube - ' + params.action) {
             steps {
                 script {
                     def sonarqubeInstaller = load 'groovy/install_sonarqube.groovy'
@@ -53,21 +53,21 @@ pipeline {
             }
         }
 
-        stage('Manage OWASP ZAP - ${action}') {
-            steps {
-                script {
-                    def owaspInstaller = load 'groovy/install_owasp.groovy'
+        // stage('Manage OWASP ZAP - ${action}') {
+        //     steps {
+        //         script {
+        //             def owaspInstaller = load 'groovy/install_owasp.groovy'
 
-                    if (params.action == 'create') {
-                        owaspInstaller.installOwasp()
-                    } else if (params.action == 'destroy') {
-                        owaspInstaller.cleanupOwasp()
-                    } else {
-                        error "Invalid action: ${params.action}"
-                    }
-                }
-            }
-        }
+        //             if (params.action == 'create') {
+        //                 owaspInstaller.installOwasp()
+        //             } else if (params.action == 'destroy') {
+        //                 owaspInstaller.cleanupOwasp()
+        //             } else {
+        //                 error "Invalid action: ${params.action}"
+        //             }
+        //         }
+        //     }
+        // }
 
         stage('Archive Jenkins.env') {
             steps {
