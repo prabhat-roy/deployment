@@ -1,7 +1,8 @@
-// groovy/tool_configuration.groovy
+// Fix: Escape $ in shell script strings or use triple quotes with ${}
+
+// Updated groovy/tool_configuration.groovy
 
 import jenkins.model.Jenkins
-import hudson.tools.ToolInstallation
 import hudson.tools.JDK
 import hudson.tasks.Maven$MavenInstallation
 import hudson.tasks.Ant$AntInstallation
@@ -21,13 +22,13 @@ class ToolConfiguration {
     def toolConfiguration() {
         def tools = [:]
 
-        // Detect tools with shell commands
-        def jdkHome = steps.sh(script: "dirname $(dirname $(readlink -f $(which java)))", returnStdout: true).trim()
-        def mavenHome = steps.sh(script: "dirname $(dirname $(readlink -f $(which mvn)))", returnStdout: true).trim()
-        def gradleHome = steps.sh(script: "dirname $(dirname $(readlink -f $(which gradle)))", returnStdout: true).trim()
-        def antHome = steps.sh(script: "dirname $(dirname $(readlink -f $(which ant)))", returnStdout: true).trim()
-        def nodeHome = steps.sh(script: "dirname $(readlink -f $(which node))", returnStdout: true).trim()
-        def dockerHome = steps.sh(script: "dirname $(readlink -f $(which docker))", returnStdout: true).trim()
+        // Use triple-double quotes and ${} to escape $ in shell commands
+        def jdkHome = steps.sh(script: """dirname \$(dirname \$(readlink -f \$(which java)))""", returnStdout: true).trim()
+        def mavenHome = steps.sh(script: """dirname \$(dirname \$(readlink -f \$(which mvn)))""", returnStdout: true).trim()
+        def gradleHome = steps.sh(script: """dirname \$(dirname \$(readlink -f \$(which gradle)))""", returnStdout: true).trim()
+        def antHome = steps.sh(script: """dirname \$(dirname \$(readlink -f \$(which ant)))""", returnStdout: true).trim()
+        def nodeHome = steps.sh(script: """dirname \$(readlink -f \$(which node))""", returnStdout: true).trim()
+        def dockerHome = steps.sh(script: """dirname \$(readlink -f \$(which docker))""", returnStdout: true).trim()
 
         tools['jdk'] = [name: 'jdk', home: jdkHome]
         tools['maven'] = [name: 'maven', home: mavenHome]
@@ -39,38 +40,32 @@ class ToolConfiguration {
         steps.echo "Detected tools: ${tools}"
 
         def jenkinsInstance = Jenkins.get()
-        
-        // Configure JDK
+
         def jdkDescriptor = jenkinsInstance.getDescriptorByType(JDK.DescriptorImpl)
         def jdks = [new JDK(tools['jdk'].name, tools['jdk'].home)]
         jdkDescriptor.setInstallations(jdks.toArray(new JDK[0]))
         jdkDescriptor.save()
 
-        // Configure Maven
         def mavenDescriptor = jenkinsInstance.getDescriptorByType(MavenInstallation.class)
         def mavenTools = [new MavenInstallation(tools['maven'].name, tools['maven'].home, null)]
         mavenDescriptor.setInstallations(mavenTools.toArray(new MavenInstallation[0]))
         mavenDescriptor.save()
 
-        // Configure Gradle
         def gradleDescriptor = jenkinsInstance.getDescriptorByType(GradleInstallation.class)
         def gradleTools = [new GradleInstallation(tools['gradle'].name, tools['gradle'].home, null)]
         gradleDescriptor.setInstallations(gradleTools.toArray(new GradleInstallation[0]))
         gradleDescriptor.save()
 
-        // Configure Ant
         def antDescriptor = jenkinsInstance.getDescriptorByType(AntInstallation.class)
         def antTools = [new AntInstallation(tools['ant'].name, tools['ant'].home, null)]
         antDescriptor.setInstallations(antTools.toArray(new AntInstallation[0]))
         antDescriptor.save()
 
-        // Configure NodeJS
         def nodeDescriptor = jenkinsInstance.getDescriptorByType(NodeJSInstallation.class)
         def nodeTools = [new NodeJSInstallation(tools['nodejs'].name, tools['nodejs'].home, [], null)]
         nodeDescriptor.setInstallations(nodeTools.toArray(new NodeJSInstallation[0]))
         nodeDescriptor.save()
 
-        // Configure Docker
         def dockerDescriptor = jenkinsInstance.getDescriptorByType(DockerTool.class)
         def dockerTools = [new DockerTool(tools['docker'].name, tools['docker'].home)]
         dockerDescriptor.setInstallations(dockerTools.toArray(new DockerTool[0]))
