@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+# set -x  # Uncomment for debug trace
 
 # Default empty variables
 JENKINS_URL=""
@@ -71,8 +72,14 @@ check_installed() {
 install_gradle() {
     echo "📥 Installing Gradle ${LATEST_VERSION}..."
     sudo mkdir -p "$GRADLE_DIR"
-    curl -fsSL "$GRADLE_ZIP_URL" -o /tmp/gradle.zip
-    sudo unzip -q /tmp/gradle.zip -d "$GRADLE_DIR"
+    if ! curl -fsSL "$GRADLE_ZIP_URL" -o /tmp/gradle.zip; then
+        echo "❌ Failed to download Gradle zip from $GRADLE_ZIP_URL"
+        exit 1
+    fi
+    if ! sudo unzip -q /tmp/gradle.zip -d "$GRADLE_DIR"; then
+        echo "❌ Failed to unzip Gradle package"
+        exit 1
+    fi
     sudo ln -sf "$GRADLE_DIR/gradle-${LATEST_VERSION}/bin/gradle" /usr/bin/gradle
     gradle -v
 }
@@ -101,11 +108,14 @@ add_gradle_to_jenkins() {
 EOF
 )
 
-    curl -X POST "${JENKINS_URL}/descriptorByName/hudson.plugins.gradle.GradleInstallation/configure" \
+    if ! curl -X POST "${JENKINS_URL}/descriptorByName/hudson.plugins.gradle.GradleInstallation/configure" \
          -H "Content-Type: text/xml" \
          -H "$CRUMB" \
          -u "${JENKINS_USER}:${JENKINS_PASS}" \
-         --data-binary "${TOOL_PAYLOAD}"
+         --data-binary "${TOOL_PAYLOAD}"; then
+        echo "❌ Failed to register Gradle tool in Jenkins."
+        exit 1
+    fi
 
     echo "✅ Gradle-${LATEST_VERSION} registered in Jenkins tools."
 }
