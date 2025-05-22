@@ -99,7 +99,7 @@ pipeline {
        stage('Install Node.js') {
             steps {
                 script {
-                    def nodejsInstaller = load 'groovy/nodejs.groovy'
+                    def nodejsInstaller = load 'groovy/install_nodejs.groovy'
                     nodejsInstaller.installNodejs()
                 }
             }
@@ -109,7 +109,7 @@ pipeline {
             steps {
                 script {
                     // Install AWS CLI / Azure CLI / GCP CLI depending on cloud provider
-                    def cliInstaller = load 'groovy/cloud_cli.groovy'
+                    def cliInstaller = load 'groovy/install_cloud_cli.groovy'
                     cliInstaller.installCloudCLI()
                 }
             }
@@ -118,7 +118,7 @@ pipeline {
         stage('Install Terraform') {
             steps {
                 script {
-                    def terraformInstaller = load 'groovy/terraform.groovy'
+                    def terraformInstaller = load 'groovy/install_terraform.groovy'
                     terraformInstaller.installTerraform()
                 }
             }
