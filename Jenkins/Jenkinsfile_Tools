@@ -23,178 +23,177 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Detect Cloud Provider') {
             steps {
                 script {
-                    // Load and execute the cloud detection utility
                     def cloudScript = load 'groovy/detect_cloud.groovy'
                     cloudScript.detectAndSaveCloudProvider()
                 }
             }
         }
 
-        stage('Install docker') {
-            steps {
-                script {
-                    def dockerInstaller = load 'groovy/install_docker.groovy'
-                    dockerInstaller.installDocker()
-                }
-            }
-        }
+        // stage('Install docker') {
+        //     steps {
+        //         script {
+        //             def dockerInstaller = load 'groovy/install_docker.groovy'
+        //             dockerInstaller.installDocker()
+        //         }
+        //     }
+        // }
 
-        stage('Detect Microservices') {
-            steps {
-                script {
-                    def envWriter = load 'groovy/env_writer.groovy'
+    //     stage('Detect Microservices') {
+    //         steps {
+    //             script {
+    //                 def envWriter = load 'groovy/env_writer.groovy'
 
-                    // Detect all folders in src/
-                    def services = sh(
-                        script: "find src -mindepth 1 -maxdepth 1 -type d -exec basename {} \\; | sort | tr '\\n' ',' | sed 's/,\$//'",
-                        returnStdout: true
-                    ).trim()
+    //                 // Detect all folders in src/
+    //                 def services = sh(
+    //                     script: "find src -mindepth 1 -maxdepth 1 -type d -exec basename {} \\; | sort | tr '\\n' ',' | sed 's/,\$//'",
+    //                     returnStdout: true
+    //                 ).trim()
 
-                    // Detect only those with Dockerfile
-                    def dockerServices = sh(
-                        script: "find src -mindepth 1 -maxdepth 1 -type d -exec sh -c '[ -f \"{}/Dockerfile\" ] && basename {}' \\; | sort | tr '\\n' ',' | sed 's/,\$//'",
-                        returnStdout: true
-                    ).trim()
+    //                 // Detect only those with Dockerfile
+    //                 def dockerServices = sh(
+    //                     script: "find src -mindepth 1 -maxdepth 1 -type d -exec sh -c '[ -f \"{}/Dockerfile\" ] && basename {}' \\; | sort | tr '\\n' ',' | sed 's/,\$//'",
+    //                     returnStdout: true
+    //                 ).trim()
 
-                    echo "📦 All services: ${services}"
-                    echo "🐳 Dockerized services: ${dockerServices}"
+    //                 echo "📦 All services: ${services}"
+    //                 echo "🐳 Dockerized services: ${dockerServices}"
 
-                    // Write both to the env file
-                    envWriter.writeEnvVars([
-                        'SERVICES': services,
-                        'DOCKER_SERVICES': dockerServices
-                    ])
-                }
-            }
-        }
+    //                 // Write both to the env file
+    //                 envWriter.writeEnvVars([
+    //                     'SERVICES': services,
+    //                     'DOCKER_SERVICES': dockerServices
+    //                 ])
+    //             }
+    //         }
+    //     }
 
-        stage('Inject Environment Variables') {
-            steps {
-                script {
-                    // Load variables from Jenkins.env and inject them into pipeline environment
-                    def envLoader = load 'groovy/env_loader.groovy'
-                    def envVars = envLoader.loadEnvVars("Jenkins.env")
-                    envVars.each { key, val ->
-                        env."${key}" = val
-                        echo "Injected: ${key}=${val}"
-                    }
-                }
-            }
-        }
+    //     stage('Inject Environment Variables') {
+    //         steps {
+    //             script {
+    //                 // Load variables from Jenkins.env and inject them into pipeline environment
+    //                 def envLoader = load 'groovy/env_loader.groovy'
+    //                 def envVars = envLoader.loadEnvVars("Jenkins.env")
+    //                 envVars.each { key, val ->
+    //                     env."${key}" = val
+    //                     echo "Injected: ${key}=${val}"
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        stage('Install Curl') {
-            steps {
-                script {
-                    // Install curl command-line tool
-                    def curlInstaller = load 'groovy/curl.groovy'
-                    curlInstaller.installCurl()
-                }
-            }
-        }
+    //     stage('Install Curl') {
+    //         steps {
+    //             script {
+    //                 // Install curl command-line tool
+    //                 def curlInstaller = load 'groovy/curl.groovy'
+    //                 curlInstaller.installCurl()
+    //             }
+    //         }
+    //     }
 
-        stage('Install Wget') {
-            steps {
-                script {
-                    // Install wget command-line tool
-                    def wgetInstaller = load 'groovy/wget.groovy'
-                    wgetInstaller.installWget()
-                }
-            }
-        }
+    //     stage('Install Wget') {
+    //         steps {
+    //             script {
+    //                 // Install wget command-line tool
+    //                 def wgetInstaller = load 'groovy/wget.groovy'
+    //                 wgetInstaller.installWget()
+    //             }
+    //         }
+    //     }
 
-        stage('Install Unzip') {
-            steps {
-                script {
-                    // Install unzip utility
-                    def unzipInstaller = load 'groovy/unzip.groovy'
-                    unzipInstaller.installUnzip()
-                }
-            }
-        }
+    //     stage('Install Unzip') {
+    //         steps {
+    //             script {
+    //                 // Install unzip utility
+    //                 def unzipInstaller = load 'groovy/unzip.groovy'
+    //                 unzipInstaller.installUnzip()
+    //             }
+    //         }
+    //     }
 
-        stage('Install GnuPG') {
-            steps {
-                script {
-                    // Install GnuPG (GNU Privacy Guard) for secure communication
-                    def gnupgInstaller = load 'groovy/gnupg.groovy'
-                    gnupgInstaller.installGnupg()
-                }
-            }
-        }
+    //     stage('Install GnuPG') {
+    //         steps {
+    //             script {
+    //                 // Install GnuPG (GNU Privacy Guard) for secure communication
+    //                 def gnupgInstaller = load 'groovy/gnupg.groovy'
+    //                 gnupgInstaller.installGnupg()
+    //             }
+    //         }
+    //     }
 
-        stage('Install Make') {
-            steps {
-                script {
-                    // Install GNU Make tool
-                    def makeInstaller = load 'groovy/make.groovy'
-                    makeInstaller.installMake()
-                }
-            }
-        }
+    //     stage('Install Make') {
+    //         steps {
+    //             script {
+    //                 // Install GNU Make tool
+    //                 def makeInstaller = load 'groovy/make.groovy'
+    //                 makeInstaller.installMake()
+    //             }
+    //         }
+    //     }
 
-        stage('Install Python') {
-            steps {
-                script {
-                    // Install Python runtime
-                    def pythonInstaller = load 'groovy/python.groovy'
-                    pythonInstaller.installPython()
-                }
-            }
-        }
+    //     stage('Install Python') {
+    //         steps {
+    //             script {
+    //                 // Install Python runtime
+    //                 def pythonInstaller = load 'groovy/python.groovy'
+    //                 pythonInstaller.installPython()
+    //             }
+    //         }
+    //     }
         
-       stage('Install Node.js') {
-            steps {
-                script {
-                    // Install Node.js runtime
-                    def nodejsInstaller = load 'groovy/nodejs.groovy'
-                    nodejsInstaller.installNodejs()
-                }
-            }
-        }
+    //    stage('Install Node.js') {
+    //         steps {
+    //             script {
+    //                 // Install Node.js runtime
+    //                 def nodejsInstaller = load 'groovy/nodejs.groovy'
+    //                 nodejsInstaller.installNodejs()
+    //             }
+    //         }
+    //     }
 
-        stage('Install Cloud CLI Tool') {
-            steps {
-                script {
-                    // Install AWS CLI / Azure CLI / GCP CLI depending on cloud provider
-                    def cliInstaller = load 'groovy/cloud_cli.groovy'
-                    cliInstaller.installCloudCLI()
-                }
-            }
-        }
+    //     stage('Install Cloud CLI Tool') {
+    //         steps {
+    //             script {
+    //                 // Install AWS CLI / Azure CLI / GCP CLI depending on cloud provider
+    //                 def cliInstaller = load 'groovy/cloud_cli.groovy'
+    //                 cliInstaller.installCloudCLI()
+    //             }
+    //         }
+    //     }
 
-        stage('Install Terraform') {
-            steps {
-                script {
-                    // Install Terraform CLI
-                    def terraformInstaller = load 'groovy/terraform.groovy'
-                    terraformInstaller.installTerraform()
-                }
-            }
-        }
+    //     stage('Install Terraform') {
+    //         steps {
+    //             script {
+    //                 // Install Terraform CLI
+    //                 def terraformInstaller = load 'groovy/terraform.groovy'
+    //                 terraformInstaller.installTerraform()
+    //             }
+    //         }
+    //     }
 
-        stage('Install Kubernetes CLI Tools') {
-            steps {
-                script {
-                    // Install kubectl, helm, kustomize, etc.
-                    def kubernetesInstaller = load 'groovy/install_kubernetes.groovy'
-                    kubernetesInstaller.installKubernetes()
-                }
-            }
-        }
+    //     stage('Install Kubernetes CLI Tools') {
+    //         steps {
+    //             script {
+    //                 // Install kubectl, helm, kustomize, etc.
+    //                 def kubernetesInstaller = load 'groovy/install_kubernetes.groovy'
+    //                 kubernetesInstaller.installKubernetes()
+    //             }
+    //         }
+    //     }
 
-        stage('Archive Jenkins.env') {
-            steps {
-                script {
-                    // Archive Jenkins.env for visibility and stash for next pipeline usage
-                    archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
-                    stash name: 'env-file', includes: 'Jenkins.env'
-                }
-            }
-        }
+    //     stage('Archive Jenkins.env') {
+    //         steps {
+    //             script {
+    //                 // Archive Jenkins.env for visibility and stash for next pipeline usage
+    //                 archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
+    //                 stash name: 'env-file', includes: 'Jenkins.env'
+    //             }
+    //         }
+    //     }
 
         stage('Clean Workspace') {
             steps {
