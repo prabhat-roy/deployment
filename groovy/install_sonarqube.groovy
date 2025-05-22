@@ -28,7 +28,7 @@ class SonarqubeInstaller implements Serializable {
         '''
 
         steps.echo "⏳ Waiting for SonarQube to be ready..."
-        steps.sleep 60
+        steps.sleep 300
 
         def adminUser = 'admin'
         def adminPass = 'admin'
