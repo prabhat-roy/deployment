@@ -1,17 +1,46 @@
 #!/bin/bash
 set -euo pipefail
 
-# Parse arguments
+# Default empty variables
+JENKINS_URL=""
+JENKINS_USER=""
+JENKINS_PASS=""
+
+# Parse arguments (supports both --arg val and --arg=val)
 while [[ "$#" -gt 0 ]]; do
   case $1 in
-    --jenkins-url) JENKINS_URL="$2"; shift ;;
-    --username) JENKINS_USER="$2"; shift ;;
-    --password) JENKINS_PASS="$2"; shift ;;
-    *) echo "❌ Unknown parameter passed: $1"; exit 1 ;;
+    --jenkins-url)
+      JENKINS_URL="$2"
+      shift 2
+      ;;
+    --jenkins-url=*)
+      JENKINS_URL="${1#*=}"
+      shift
+      ;;
+    --username)
+      JENKINS_USER="$2"
+      shift 2
+      ;;
+    --username=*)
+      JENKINS_USER="${1#*=}"
+      shift
+      ;;
+    --password)
+      JENKINS_PASS="$2"
+      shift 2
+      ;;
+    --password=*)
+      JENKINS_PASS="${1#*=}"
+      shift
+      ;;
+    *)
+      echo "❌ Unknown parameter passed: $1"
+      exit 1
+      ;;
   esac
-  shift
 done
 
+# Validate required arguments
 : "${JENKINS_URL:?Missing --jenkins-url}"
 : "${JENKINS_USER:?Missing --username}"
 : "${JENKINS_PASS:?Missing --password}"
@@ -23,6 +52,11 @@ get_latest_version() {
 }
 
 LATEST_VERSION=$(get_latest_version)
+if [[ -z "$LATEST_VERSION" ]]; then
+    echo "❌ Could not fetch the latest Gradle version."
+    exit 1
+fi
+
 GRADLE_ZIP_URL="https://services.gradle.org/distributions/gradle-${LATEST_VERSION}-bin.zip"
 
 check_installed() {
@@ -48,6 +82,11 @@ add_gradle_to_jenkins() {
 
     CRUMB=$(curl -s -u "${JENKINS_USER}:${JENKINS_PASS}" \
         "${JENKINS_URL}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
+
+    if [[ -z "$CRUMB" ]]; then
+        echo "❌ Failed to get Jenkins crumb for CSRF protection."
+        exit 1
+    fi
 
     TOOL_PAYLOAD=$(cat <<EOF
 <jenkins>
