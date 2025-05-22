@@ -42,6 +42,15 @@ pipeline {
             }
         }
 
+            stage('Install Curl') {
+            steps {
+                script {
+                    def curlInstaller = load 'groovy/install_curl.groovy'
+                    curlInstaller.installCurl()
+                }
+            }
+        }
+
         stage('Install docker') {
             steps {
                 script {
@@ -51,31 +60,8 @@ pipeline {
             }
         }
 
-    //     
-
-    //     stage('Inject Environment Variables') {
-    //         steps {
-    //             script {
-    //                 // Load variables from Jenkins.env and inject them into pipeline environment
-    //                 def envLoader = load 'groovy/env_loader.groovy'
-    //                 def envVars = envLoader.loadEnvVars("Jenkins.env")
-    //                 envVars.each { key, val ->
-    //                     env."${key}" = val
-    //                     echo "Injected: ${key}=${val}"
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     stage('Install Curl') {
-    //         steps {
-    //             script {
-    //                 // Install curl command-line tool
-    //                 def curlInstaller = load 'groovy/curl.groovy'
-    //                 curlInstaller.installCurl()
-    //             }
-    //         }
-    //     }
+    
+    
 
     //     stage('Install Wget') {
     //         steps {
