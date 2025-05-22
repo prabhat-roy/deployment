@@ -28,10 +28,39 @@ class SonarqubeInstaller implements Serializable {
         '''
 
         steps.echo "⏳ Waiting for SonarQube to be ready..."
-        steps.sleep 300
 
-        def adminUser = 'admin'
-        def adminPass = 'admin'
+        // Retry checking SonarQube readiness up to 10 times with 30s sleep intervals
+        steps.retry(10) {
+            steps.sleep 30
+            def code = steps.sh(script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:9000", returnStdout: true).trim()
+            if (code != '200') {
+                error "SonarQube not ready yet (HTTP status: ${code})"
+            }
+        }
+
+        // Change default admin password (admin/admin) to a new secure password
+        def defaultUser = 'admin'
+        def defaultPass = 'admin'
+        def newPass = 'jenkinsadmin123'  // Change this to your desired password
+
+        def changePassResponse = steps.sh(
+            script: """curl -s -o /dev/null -w '%{http_code}' -u ${defaultUser}:${defaultPass} \\
+                -X POST '${getSonarQubeUrl()}/api/users/change_password' \\
+                -d 'login=${defaultUser}&previousPassword=${defaultPass}&password=${newPass}'""",
+            returnStdout: true
+        ).trim()
+
+        if (changePassResponse == '204') {
+            steps.echo "🔐 Default admin password changed successfully."
+        } else if (changePassResponse == '400') {
+            steps.echo "⚠️ Password change failed. It may have already been updated."
+        } else {
+            steps.echo "⚠️ Unexpected response when changing password: ${changePassResponse}"
+        }
+
+        // Use the new password for token generation
+        def adminUser = defaultUser
+        def adminPass = newPass
         def tokenName = "jenkins-sonar-token-${System.currentTimeMillis()}"
 
         def tokenJson = steps.sh(
@@ -84,10 +113,10 @@ class SonarqubeInstaller implements Serializable {
         def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
 
         def existing = CredentialsProvider.lookupCredentials(
-            UsernamePasswordCredentialsImpl.class, jenkins, null, null
+            com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl.class, jenkins, null, null
         ).find { it.id == id }
 
-        def credential = new UsernamePasswordCredentialsImpl(
+        def credential = new com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl(
             CredentialsScope.GLOBAL, id, "SonarQube token", username, secret
         )
 
@@ -111,7 +140,7 @@ class SonarqubeInstaller implements Serializable {
         def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
 
         def existing = CredentialsProvider.lookupCredentials(
-            UsernamePasswordCredentialsImpl.class, jenkins, null, null
+            com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl.class, jenkins, null, null
         ).find { it.id == id }
 
         if (existing) {
@@ -128,7 +157,7 @@ class SonarqubeInstaller implements Serializable {
             steps.error "❌ Jenkins instance not found!"
         }
 
-        def descriptor = jenkins.getDescriptorByType(SonarGlobalConfiguration.class)
+        def descriptor = jenkins.getDescriptorByType(hudson.plugins.sonar.SonarGlobalConfiguration.class)
         if (descriptor == null) {
             steps.error "❌ SonarQube plugin not found. Please install the SonarQube plugin."
         }
@@ -139,7 +168,7 @@ class SonarqubeInstaller implements Serializable {
             return
         }
 
-        def sonarInstallation = new SonarInstallation(
+        def sonarInstallation = new hudson.plugins.sonar.SonarInstallation(
             "LocalSonarQube",                  // name
             getSonarQubeUrl(),                // serverUrl
             credentialId,                     // server authentication token ID
@@ -147,7 +176,7 @@ class SonarqubeInstaller implements Serializable {
         )
 
         def newList = descriptor.installations + sonarInstallation
-        descriptor.setInstallations(newList as SonarInstallation[])
+        descriptor.setInstallations(newList as hudson.plugins.sonar.SonarInstallation[])
         descriptor.save()
 
         steps.echo "✅ SonarQube server 'LocalSonarQube' configured in Jenkins."
@@ -160,7 +189,7 @@ class SonarqubeInstaller implements Serializable {
             return
         }
 
-        def descriptor = jenkins.getDescriptorByType(SonarGlobalConfiguration.class)
+        def descriptor = jenkins.getDescriptorByType(hudson.plugins.sonar.SonarGlobalConfiguration.class)
         if (descriptor == null) {
             steps.echo "⚠️ SonarQube plugin not found. Skipping removal."
             return
@@ -168,7 +197,7 @@ class SonarqubeInstaller implements Serializable {
 
         def newList = descriptor.installations.findAll { it.name != "LocalSonarQube" }
         if (newList.size() != descriptor.installations.size()) {
-            descriptor.setInstallations(newList as SonarInstallation[])
+            descriptor.setInstallations(newList as hudson.plugins.sonar.SonarInstallation[])
             descriptor.save()
             steps.echo "🗑️ SonarQube server 'LocalSonarQube' removed from Jenkins."
         } else {
