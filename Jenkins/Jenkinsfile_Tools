@@ -69,6 +69,61 @@ pipeline {
             }
         }
         
+        stage('Install GnuPG') {
+            steps {
+                script {
+                    def gnupgInstaller = load 'groovy/install_gnupg.groovy'
+                    gnupgInstaller.installGnupg()
+                }
+            }
+        }
+
+        stage('Install Make') {
+            steps {
+                script {
+                    def makeInstaller = load 'groovy/install_make.groovy'
+                    makeInstaller.installMake()
+                }
+            }
+        }
+
+        stage('Install Python') {
+            steps {
+                script {
+                    def pythonInstaller = load 'groovy/install_python.groovy'
+                    pythonInstaller.installPython()
+                }
+            }
+        }
+        
+       stage('Install Node.js') {
+            steps {
+                script {
+                    def nodejsInstaller = load 'groovy/nodejs.groovy'
+                    nodejsInstaller.installNodejs()
+                }
+            }
+        }
+
+        stage('Install Cloud CLI Tool') {
+            steps {
+                script {
+                    // Install AWS CLI / Azure CLI / GCP CLI depending on cloud provider
+                    def cliInstaller = load 'groovy/cloud_cli.groovy'
+                    cliInstaller.installCloudCLI()
+                }
+            }
+        }
+
+        stage('Install Terraform') {
+            steps {
+                script {
+                    def terraformInstaller = load 'groovy/terraform.groovy'
+                    terraformInstaller.installTerraform()
+                }
+            }
+        }
+
         stage('Install docker') {
             steps {
                 script {
@@ -85,66 +140,7 @@ pipeline {
 
     
 
-    //     stage('Install GnuPG') {
-    //         steps {
-    //             script {
-    //                 // Install GnuPG (GNU Privacy Guard) for secure communication
-    //                 def gnupgInstaller = load 'groovy/gnupg.groovy'
-    //                 gnupgInstaller.installGnupg()
-    //             }
-    //         }
-    //     }
-
-    //     stage('Install Make') {
-    //         steps {
-    //             script {
-    //                 // Install GNU Make tool
-    //                 def makeInstaller = load 'groovy/make.groovy'
-    //                 makeInstaller.installMake()
-    //             }
-    //         }
-    //     }
-
-    //     stage('Install Python') {
-    //         steps {
-    //             script {
-    //                 // Install Python runtime
-    //                 def pythonInstaller = load 'groovy/python.groovy'
-    //                 pythonInstaller.installPython()
-    //             }
-    //         }
-    //     }
-        
-    //    stage('Install Node.js') {
-    //         steps {
-    //             script {
-    //                 // Install Node.js runtime
-    //                 def nodejsInstaller = load 'groovy/nodejs.groovy'
-    //                 nodejsInstaller.installNodejs()
-    //             }
-    //         }
-    //     }
-
-    //     stage('Install Cloud CLI Tool') {
-    //         steps {
-    //             script {
-    //                 // Install AWS CLI / Azure CLI / GCP CLI depending on cloud provider
-    //                 def cliInstaller = load 'groovy/cloud_cli.groovy'
-    //                 cliInstaller.installCloudCLI()
-    //             }
-    //         }
-    //     }
-
-    //     stage('Install Terraform') {
-    //         steps {
-    //             script {
-    //                 // Install Terraform CLI
-    //                 def terraformInstaller = load 'groovy/terraform.groovy'
-    //                 terraformInstaller.installTerraform()
-    //             }
-    //         }
-    //     }
-
+    
     //     stage('Install Kubernetes CLI Tools') {
     //         steps {
     //             script {
