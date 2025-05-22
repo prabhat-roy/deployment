@@ -6,10 +6,8 @@ class GradleInstaller implements Serializable {
     }
 
     void installGradle() {
-        steps.sh """
-            chmod +x shell_script/install_gradle.sh
-            shell_script/install_gradle.sh
-        """
+        steps.sh "chmod +x shell_script/install_gradle.sh"
+        steps.sh "shell_script/install_gradle.sh"
     }
 }
 
