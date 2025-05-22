@@ -6,15 +6,38 @@ JENKINS_URL=""
 JENKINS_USER=""
 JENKINS_PASS=""
 
-# Parse arguments
+# Parse arguments (supports both --arg val and --arg=val)
 while [[ "$#" -gt 0 ]]; do
   case $1 in
-    --jenkins-url) JENKINS_URL="$2"; shift ;;
-    --username) JENKINS_USER="$2"; shift ;;
-    --password) JENKINS_PASS="$2"; shift ;;
-    *) echo "❌ Unknown parameter passed: $1"; exit 1 ;;
+    --jenkins-url)
+      JENKINS_URL="$2"
+      shift 2
+      ;;
+    --jenkins-url=*)
+      JENKINS_URL="${1#*=}"
+      shift
+      ;;
+    --username)
+      JENKINS_USER="$2"
+      shift 2
+      ;;
+    --username=*)
+      JENKINS_USER="${1#*=}"
+      shift
+      ;;
+    --password)
+      JENKINS_PASS="$2"
+      shift 2
+      ;;
+    --password=*)
+      JENKINS_PASS="${1#*=}"
+      shift
+      ;;
+    *)
+      echo "❌ Unknown parameter passed: $1"
+      exit 1
+      ;;
   esac
-  shift
 done
 
 # Validate required arguments
