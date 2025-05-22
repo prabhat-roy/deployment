@@ -213,6 +213,14 @@ pipeline {
             }
         }
 
+        stage('Tools configuration') {
+            steps {
+                script {
+                    def toolConfiguration = load 'groovy/tool_configuration.groovy'
+                    toolConfiguration.toolConfiguration()
+                }
+            }
+        }
 
         stage('Archive Jenkins.env') {
             steps {
