@@ -318,8 +318,8 @@ pipeline {
         stage('OWASP Dependency-Check') {
             steps {
                 script {
-                    def owasp = load 'groovy/owasp_scan.groovy'
-                    owasp.runDependencyCheck()
+                    def depkScan = load 'groovy/scan_owasp_dependency_check.groovy'
+                    depScan.canAndArchiveSource()
                 }
             }
         }
