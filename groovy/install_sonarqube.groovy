@@ -1,11 +1,10 @@
-// File: groovy/install_sonarqube.groovy
-
 import hudson.model.*
 import jenkins.model.*
 import com.cloudbees.plugins.credentials.*
 import com.cloudbees.plugins.credentials.domains.*
 import com.cloudbees.plugins.credentials.impl.*
 import com.cloudbees.plugins.credentials.CredentialsScope
+import hudson.plugins.sonar.*
 
 class SonarqubeInstaller implements Serializable {
     def steps
@@ -19,55 +18,48 @@ class SonarqubeInstaller implements Serializable {
     }
 
     void installSonarqube() {
-        steps.echo "Starting SonarQube installation..."
+        steps.echo "🔧 Starting SonarQube installation..."
 
-        // Pull latest SonarQube image
         steps.sh 'docker pull sonarqube:latest'
 
-        // Run SonarQube container detached on port 9000
         steps.sh '''
             docker rm -f sonarqube || true
             docker run -d --name sonarqube -p 9000:9000 sonarqube:latest
         '''
 
-        // Wait for SonarQube to start (adjust if needed)
-        steps.echo "Waiting 60 seconds for SonarQube to start..."
+        steps.echo "⏳ Waiting for SonarQube to be ready..."
         steps.sleep 60
 
         def adminUser = 'admin'
         def adminPass = 'admin'
         def tokenName = "jenkins-sonar-token-${System.currentTimeMillis()}"
 
-        // Generate token via API
         def tokenJson = steps.sh(
             script: """curl -s -u ${adminUser}:${adminPass} -X POST "${getSonarQubeUrl()}/api/user_tokens/generate?name=${tokenName}" """,
             returnStdout: true
         ).trim()
 
         def token = parseToken(tokenJson)
-
         if (!token) {
-            steps.error "Failed to generate SonarQube token"
+            steps.error "❌ Failed to generate SonarQube token"
         }
 
-        steps.echo "SonarQube token generated."
+        steps.echo "✅ Token generated successfully."
 
-        createCredential("sonarqube-token", "admin", token)
-        configureSonarQubeServer(token)
+        createCredential("sonarqube-token", adminUser, token)
+        configureSonarQubeServer("sonarqube-token")
 
-        steps.echo "SonarQube installation and Jenkins configuration completed."
+        steps.echo "🎉 SonarQube installation and Jenkins integration completed."
     }
 
     void cleanupSonarqube() {
-        steps.echo "Stopping and removing SonarQube container..."
-        steps.sh '''
-            docker rm -f sonarqube || true
-        '''
+        steps.echo "🧹 Cleaning up SonarQube resources..."
+        steps.sh 'docker rm -f sonarqube || true'
 
         removeCredential("sonarqube-token")
         removeSonarQubeServer()
 
-        steps.echo "SonarQube cleanup completed."
+        steps.echo "✅ Cleanup completed."
     }
 
     private String getSonarQubeUrl() {
@@ -85,112 +77,102 @@ class SonarqubeInstaller implements Serializable {
     private void createCredential(String id, String username, String secret) {
         def jenkins = Jenkins.getInstanceOrNull()
         if (jenkins == null) {
-            steps.error "Jenkins instance not found!"
+            steps.error "❌ Jenkins instance not found!"
         }
+
         def domain = Domain.global()
         def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
 
-        def existing = com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials(
-            com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl.class,
-            jenkins,
-            null,
-            null
+        def existing = CredentialsProvider.lookupCredentials(
+            UsernamePasswordCredentialsImpl.class, jenkins, null, null
         ).find { it.id == id }
 
-        if (existing != null) {
-            store.updateCredentials(domain, existing, new UsernamePasswordCredentialsImpl(
-                CredentialsScope.GLOBAL, id, "SonarQube token", username, secret
-            ))
-            steps.echo "Credential '${id}' updated."
+        def credential = new UsernamePasswordCredentialsImpl(
+            CredentialsScope.GLOBAL, id, "SonarQube token", username, secret
+        )
+
+        if (existing) {
+            store.updateCredentials(domain, existing, credential)
+            steps.echo "🔄 Updated Jenkins credential '${id}'."
         } else {
-            def cred = new UsernamePasswordCredentialsImpl(
-                CredentialsScope.GLOBAL, id, "SonarQube token", username, secret
-            )
-            store.addCredentials(domain, cred)
-            steps.echo "Credential '${id}' created."
+            store.addCredentials(domain, credential)
+            steps.echo "✅ Created Jenkins credential '${id}'."
         }
     }
 
     private void removeCredential(String id) {
         def jenkins = Jenkins.getInstanceOrNull()
         if (jenkins == null) {
-            steps.echo "Jenkins instance not found!"
+            steps.echo "❌ Jenkins instance not found!"
             return
         }
+
         def domain = Domain.global()
         def store = jenkins.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
 
-        def existing = com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials(
-            com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl.class,
-            jenkins,
-            null,
-            null
+        def existing = CredentialsProvider.lookupCredentials(
+            UsernamePasswordCredentialsImpl.class, jenkins, null, null
         ).find { it.id == id }
 
-        if (existing != null) {
+        if (existing) {
             store.removeCredentials(domain, existing)
-            steps.echo "Credential '${id}' removed."
+            steps.echo "🗑️ Removed Jenkins credential '${id}'."
         } else {
-            steps.echo "Credential '${id}' not found."
+            steps.echo "ℹ️ Credential '${id}' not found."
         }
     }
 
-    private void configureSonarQubeServer(String token) {
+    private void configureSonarQubeServer(String credentialId) {
         def jenkins = Jenkins.getInstanceOrNull()
         if (jenkins == null) {
-            steps.error "Jenkins instance not found!"
+            steps.error "❌ Jenkins instance not found!"
         }
 
-        def descriptor = jenkins.getDescriptor("hudson.plugins.sonar.SonarGlobalConfiguration")
+        def descriptor = jenkins.getDescriptorByType(SonarGlobalConfiguration.class)
         if (descriptor == null) {
-            steps.echo "SonarQube plugin not installed."
+            steps.error "❌ SonarQube plugin not found. Please install the SonarQube plugin."
+        }
+
+        def existing = descriptor.installations.find { it.name == "LocalSonarQube" }
+        if (existing != null) {
+            steps.echo "ℹ️ SonarQube server 'LocalSonarQube' already configured."
             return
         }
 
-        def servers = descriptor.getServers() ?: []
-
-        if (servers.any { it.name == "LocalSonarQube" }) {
-            steps.echo "SonarQube server 'LocalSonarQube' already configured."
-            return
-        }
-
-        def server = new hudson.plugins.sonar.SonarInstallation(
-            "LocalSonarQube",
-            getSonarQubeUrl(),
-            token,
-            null,
-            null,
-            null
+        def sonarInstallation = new SonarInstallation(
+            "LocalSonarQube",                  // name
+            getSonarQubeUrl(),                // serverUrl
+            credentialId,                     // server authentication token ID
+            "", "", "", []                    // optional fields: sonarLogin, sonarPassword, etc.
         )
-        servers.add(server)
-        descriptor.setServers(servers)
+
+        def newList = descriptor.installations + sonarInstallation
+        descriptor.setInstallations(newList as SonarInstallation[])
         descriptor.save()
 
-        steps.echo "SonarQube server 'LocalSonarQube' configured."
+        steps.echo "✅ SonarQube server 'LocalSonarQube' configured in Jenkins."
     }
 
     private void removeSonarQubeServer() {
         def jenkins = Jenkins.getInstanceOrNull()
         if (jenkins == null) {
-            steps.echo "Jenkins instance not found!"
+            steps.echo "❌ Jenkins instance not found!"
             return
         }
 
-        def descriptor = jenkins.getDescriptor("hudson.plugins.sonar.SonarGlobalConfiguration")
+        def descriptor = jenkins.getDescriptorByType(SonarGlobalConfiguration.class)
         if (descriptor == null) {
-            steps.echo "SonarQube plugin not installed."
+            steps.echo "⚠️ SonarQube plugin not found. Skipping removal."
             return
         }
 
-        def servers = descriptor.getServers() ?: []
-        def newServers = servers.findAll { it.name != "LocalSonarQube" }
-
-        if (servers.size() != newServers.size()) {
-            descriptor.setServers(newServers)
+        def newList = descriptor.installations.findAll { it.name != "LocalSonarQube" }
+        if (newList.size() != descriptor.installations.size()) {
+            descriptor.setInstallations(newList as SonarInstallation[])
             descriptor.save()
-            steps.echo "SonarQube server 'LocalSonarQube' removed."
+            steps.echo "🗑️ SonarQube server 'LocalSonarQube' removed from Jenkins."
         } else {
-            steps.echo "SonarQube server 'LocalSonarQube' not found."
+            steps.echo "ℹ️ SonarQube server 'LocalSonarQube' not found."
         }
     }
 }
