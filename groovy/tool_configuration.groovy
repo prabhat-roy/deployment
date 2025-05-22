@@ -8,58 +8,87 @@ class ToolConfiguration {
     }
 
     def toolConfiguration() {
-        def jenkinsUrl = env.JENKINS_URL ?: "http://localhost:8080"
-        def credsId = env.JENKINS_CREDS_ID ?: "jenkins-cred"
+        def tools = [:]
 
-        def tools = [
-            jdk    : [name: "jdk",    detectCmd: "java -XshowSettings:properties -version 2>&1 | grep 'java.home' | awk '{print \$3}'"],
-            maven  : [name: "maven",  detectCmd: "mvn -version | head -1 | awk '{print \$3}'", detectHomeCmd: "dirname \$(dirname \$(which mvn))"],
-            gradle : [name: "gradle", detectCmd: "gradle -v | grep Gradle | awk '{print \$2}'", detectHomeCmd: "dirname \$(dirname \$(which gradle))"],
-            ant    : [name: "ant",    detectCmd: "ant -version | awk '{print \$4}'", detectHomeCmd: "dirname \$(dirname \$(which ant))"],
-            nodejs : [name: "nodejs", detectCmd: "node -v | sed 's/v//'", detectHomeCmd: "dirname \$(dirname \$(which node))"],
-            docker : [name: "docker", detectCmd: "docker --version | awk '{print \$3}' | sed 's/,//'", detectHomeCmd: "dirname \$(which docker)"]
-        ]
+        // Detect JDK
+        def jdkHome = steps.sh(script: "readlink -f \$(which java) | sed 's:/bin/java::'", returnStdout: true).trim()
+        def jdkVersion = steps.sh(script: "java -version 2>&1 | head -n 1", returnStdout: true).trim()
+        tools['jdk'] = [name: 'jdk', home: jdkHome, version: jdkVersion]
 
-        def toolLocations = []
+        // Detect Maven
+        def mavenHome = steps.sh(script: "readlink -f \$(which mvn) | sed 's:/bin/mvn::'", returnStdout: true).trim()
+        def mavenVersion = steps.sh(script: "mvn -version | head -n 1", returnStdout: true).trim()
+        tools['maven'] = [name: 'maven', home: mavenHome, version: mavenVersion]
 
-        tools.each { key, tool ->
-            def version = ""
-            def home = ""
+        // Detect Gradle
+        def gradleHome = steps.sh(script: "readlink -f \$(which gradle) | sed 's:/bin/gradle::'", returnStdout: true).trim()
+        def gradleVersion = steps.sh(script: "gradle -version | grep Gradle | head -n 1", returnStdout: true).trim()
+        tools['gradle'] = [name: 'gradle', home: gradleHome, version: gradleVersion]
 
-            try {
-                version = steps.sh(script: tool.detectCmd, returnStdout: true).trim()
-                if (tool.containsKey('detectHomeCmd')) {
-                    home = steps.sh(script: tool.detectHomeCmd, returnStdout: true).trim()
-                }
-            } catch (e) {
-                steps.echo "Failed to detect ${tool.name} version or home: ${e}"
+        // Detect Ant
+        def antHome = steps.sh(script: "readlink -f \$(which ant) | sed 's:/bin/ant::'", returnStdout: true).trim()
+        def antVersion = steps.sh(script: "ant -version 2>&1 | head -n 1", returnStdout: true).trim()
+        tools['ant'] = [name: 'ant', home: antHome, version: antVersion]
+
+        // Detect NodeJS
+        def nodeHome = steps.sh(script: "dirname \$(readlink -f \$(which node))", returnStdout: true).trim()
+        def nodeVersion = steps.sh(script: "node -v", returnStdout: true).trim()
+        tools['nodejs'] = [name: 'nodejs', home: nodeHome, version: nodeVersion]
+
+        // Detect Docker
+        def dockerHome = steps.sh(script: "dirname \$(readlink -f \$(which docker))", returnStdout: true).trim()
+        def dockerVersion = steps.sh(script: "docker --version", returnStdout: true).trim()
+        tools['docker'] = [name: 'docker', home: dockerHome, version: dockerVersion]
+
+        steps.echo "Detected tools: ${tools}"
+
+        // Configure Jenkins tools
+        def jenkinsInstance = jenkins.model.Jenkins.get()
+        def globalToolConfig = jenkinsInstance.getDescriptorByType(jenkins.model.Jenkins.instance.getDescriptorByType(hudson.tools.ToolDescriptor).getClass())
+
+        def jenkinsTools = jenkinsInstance.getDescriptorByType(jenkins.model.Jenkins.instance.getDescriptorByType(hudson.tools.ToolInstallation).getClass())
+        def existingTools = jenkinsInstance.getDescriptorByType(hudson.tools.ToolInstallation.DescriptorImpl.class)?.installations ?: []
+
+        // Clear and add detected tools
+        def newTools = []
+        tools.each { key, value ->
+            def toolClass
+            switch(key) {
+                case 'jdk':
+                    toolClass = hudson.tools.JDK
+                    break
+                case 'maven':
+                    toolClass = hudson.tasks.Maven$MavenInstallation
+                    break
+                case 'gradle':
+                    toolClass = org.jenkinsci.plugins.gradle.GradleInstallation
+                    break
+                case 'ant':
+                    toolClass = hudson.tasks.Ant$AntInstallation
+                    break
+                case 'nodejs':
+                    toolClass = jenkins.plugins.nodejs.tools.NodeJSInstallation
+                    break
+                case 'docker':
+                    toolClass = com.nirima.jenkins.plugins.docker.DockerTool
+                    break
+                default:
+                    toolClass = null
             }
-
-            if (version && home) {
-                steps.echo "Detected ${tool.name}: version=${version}, home=${home}"
-                toolLocations << [name: tool.name, home: home]
-            } else {
-                steps.echo "Skipping ${tool.name} because version or home not found."
+            if(toolClass != null){
+                def tool = toolClass.newInstance(value.name, value.home, [])
+                newTools << tool
             }
         }
 
-        def xmlrpc = new URL("${jenkinsUrl}/descriptorByName/hudson.tools.ToolDescriptor/configSubmit")
-        def authString = steps.sh(script: "echo -n :${credsId} | base64", returnStdout: true).trim()
+        // Update Jenkins global tools configuration (example for JDK only)
+        def jdkDescriptor = jenkinsInstance.getDescriptorByType(hudson.model.JDK.DescriptorImpl)
+        jdkDescriptor.setInstallations(newTools.findAll{ it instanceof hudson.tools.JDK } as hudson.tools.ToolInstallation[])
+        jdkDescriptor.save()
 
-        // Because interacting with Jenkins API to update tools requires complex config xml manipulation
-        // and authentication, usually this should be done outside pipeline or by script console.
+        // Similarly, update other tools descriptors as needed...
 
-        // This pipeline just outputs detected tools info.
-
-        steps.echo "Detected Tools and paths to configure in Jenkins: ${toolLocations}"
-
-        // You can extend here with your Jenkins CLI or REST API calls
-        // to create or update the tool configurations.
-
-        // Example placeholder:
-        // toolLocations.each { tool ->
-        //     steps.echo "Would configure tool ${tool.name} with path ${tool.home}"
-        // }
+        steps.echo "Jenkins tools configured successfully"
     }
 }
 
