@@ -10,25 +10,38 @@ fi
 
 echo "📦 Installing latest Apache Ant..."
 
-# Get latest Ant version tarball link
-ANT_URL=$(curl -s https://downloads.apache.org/ant/ | grep -oP 'href="ant-[0-9.]+-bin.tar.gz"' | sort -V | tail -n 1 | cut -d'"' -f2)
-FULL_URL="https://downloads.apache.org/ant/${ANT_URL}"
+BINARY_BASE_URL="https://downloads.apache.org/ant/binaries"
 INSTALL_DIR="/opt/ant"
 TEMP_DIR="/tmp/ant-install"
 
-# Prepare install directories
+echo "🌐 Downloading Apache Ant binaries directory listing..."
+HTML=$(curl -s "$BINARY_BASE_URL/")
+
+echo "🔍 Parsing available Ant versions..."
+# Extract filenames like apache-ant-1.10.15-bin.tar.gz from the HTML and get the highest version
+LATEST_ANT=$(echo "$HTML" | grep -o 'apache-ant-[0-9.]\+-bin.tar.gz' | \
+    sed 's/apache-ant-\(.*\)-bin.tar.gz/\1/' | sort -V | tail -n 1)
+
+if [[ -z "$LATEST_ANT" ]]; then
+    echo "❌ Could not find latest Apache Ant version."
+    exit 1
+fi
+
+ARCHIVE="apache-ant-${LATEST_ANT}-bin.tar.gz"
+FULL_URL="${BINARY_BASE_URL}/${ARCHIVE}"
+
+echo "📥 Downloading Apache Ant version: $LATEST_ANT"
+echo "🌐 URL: $FULL_URL"
+
 sudo mkdir -p "$INSTALL_DIR"
 mkdir -p "$TEMP_DIR"
 cd "$TEMP_DIR"
 
-# Download and extract Ant
-echo "📥 Downloading Apache Ant from $FULL_URL"
 curl -O "$FULL_URL"
-tar -xzf "$ANT_URL" --strip-components=1 -C "$INSTALL_DIR"
+sudo tar -xzf "$ARCHIVE" -C "$INSTALL_DIR" --strip-components=1
 
-# Symlink the ant binary
+echo "🔗 Creating symlink for ant binary..."
 sudo ln -sf "$INSTALL_DIR/bin/ant" /usr/local/bin/ant
 
-# Final check
-echo "✅ Apache Ant installed at $INSTALL_DIR"
+echo "✅ Apache Ant installed successfully!"
 ant -version
