@@ -53,7 +53,7 @@ pipeline {
         //     }
         // }
 
-        stage("Manage OWASP Dependency-Check - ${params.action}") {
+        stage('Manage OWASP Dependency-Check') {
             steps {
                 script {
                     def depCheckInstaller = load 'groovy/install_dependency_check.groovy'
