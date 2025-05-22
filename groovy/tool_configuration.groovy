@@ -1,3 +1,14 @@
+// groovy/tool_configuration.groovy
+
+import jenkins.model.Jenkins
+import hudson.tools.ToolInstallation
+import hudson.tools.JDK
+import hudson.tasks.Maven$MavenInstallation
+import hudson.tasks.Ant$AntInstallation
+import org.jenkinsci.plugins.gradle.GradleInstallation
+import jenkins.plugins.nodejs.tools.NodeJSInstallation
+import com.nirima.jenkins.plugins.docker.DockerTool
+
 class ToolConfiguration {
     def steps
     def env
@@ -10,85 +21,62 @@ class ToolConfiguration {
     def toolConfiguration() {
         def tools = [:]
 
-        // Detect JDK
-        def jdkHome = steps.sh(script: "readlink -f \$(which java) | sed 's:/bin/java::'", returnStdout: true).trim()
-        def jdkVersion = steps.sh(script: "java -version 2>&1 | head -n 1", returnStdout: true).trim()
-        tools['jdk'] = [name: 'jdk', home: jdkHome, version: jdkVersion]
+        // Detect tools with shell commands
+        def jdkHome = steps.sh(script: "dirname $(dirname $(readlink -f $(which java)))", returnStdout: true).trim()
+        def mavenHome = steps.sh(script: "dirname $(dirname $(readlink -f $(which mvn)))", returnStdout: true).trim()
+        def gradleHome = steps.sh(script: "dirname $(dirname $(readlink -f $(which gradle)))", returnStdout: true).trim()
+        def antHome = steps.sh(script: "dirname $(dirname $(readlink -f $(which ant)))", returnStdout: true).trim()
+        def nodeHome = steps.sh(script: "dirname $(readlink -f $(which node))", returnStdout: true).trim()
+        def dockerHome = steps.sh(script: "dirname $(readlink -f $(which docker))", returnStdout: true).trim()
 
-        // Detect Maven
-        def mavenHome = steps.sh(script: "readlink -f \$(which mvn) | sed 's:/bin/mvn::'", returnStdout: true).trim()
-        def mavenVersion = steps.sh(script: "mvn -version | head -n 1", returnStdout: true).trim()
-        tools['maven'] = [name: 'maven', home: mavenHome, version: mavenVersion]
-
-        // Detect Gradle
-        def gradleHome = steps.sh(script: "readlink -f \$(which gradle) | sed 's:/bin/gradle::'", returnStdout: true).trim()
-        def gradleVersion = steps.sh(script: "gradle -version | grep Gradle | head -n 1", returnStdout: true).trim()
-        tools['gradle'] = [name: 'gradle', home: gradleHome, version: gradleVersion]
-
-        // Detect Ant
-        def antHome = steps.sh(script: "readlink -f \$(which ant) | sed 's:/bin/ant::'", returnStdout: true).trim()
-        def antVersion = steps.sh(script: "ant -version 2>&1 | head -n 1", returnStdout: true).trim()
-        tools['ant'] = [name: 'ant', home: antHome, version: antVersion]
-
-        // Detect NodeJS
-        def nodeHome = steps.sh(script: "dirname \$(readlink -f \$(which node))", returnStdout: true).trim()
-        def nodeVersion = steps.sh(script: "node -v", returnStdout: true).trim()
-        tools['nodejs'] = [name: 'nodejs', home: nodeHome, version: nodeVersion]
-
-        // Detect Docker
-        def dockerHome = steps.sh(script: "dirname \$(readlink -f \$(which docker))", returnStdout: true).trim()
-        def dockerVersion = steps.sh(script: "docker --version", returnStdout: true).trim()
-        tools['docker'] = [name: 'docker', home: dockerHome, version: dockerVersion]
+        tools['jdk'] = [name: 'jdk', home: jdkHome]
+        tools['maven'] = [name: 'maven', home: mavenHome]
+        tools['gradle'] = [name: 'gradle', home: gradleHome]
+        tools['ant'] = [name: 'ant', home: antHome]
+        tools['nodejs'] = [name: 'nodejs', home: nodeHome]
+        tools['docker'] = [name: 'docker', home: dockerHome]
 
         steps.echo "Detected tools: ${tools}"
 
-        // Configure Jenkins tools
-        def jenkinsInstance = jenkins.model.Jenkins.get()
-        def globalToolConfig = jenkinsInstance.getDescriptorByType(jenkins.model.Jenkins.instance.getDescriptorByType(hudson.tools.ToolDescriptor).getClass())
-
-        def jenkinsTools = jenkinsInstance.getDescriptorByType(jenkins.model.Jenkins.instance.getDescriptorByType(hudson.tools.ToolInstallation).getClass())
-        def existingTools = jenkinsInstance.getDescriptorByType(hudson.tools.ToolInstallation.DescriptorImpl.class)?.installations ?: []
-
-        // Clear and add detected tools
-        def newTools = []
-        tools.each { key, value ->
-            def toolClass
-            switch(key) {
-                case 'jdk':
-                    toolClass = hudson.tools.JDK
-                    break
-                case 'maven':
-                    toolClass = hudson.tasks.Maven$MavenInstallation
-                    break
-                case 'gradle':
-                    toolClass = org.jenkinsci.plugins.gradle.GradleInstallation
-                    break
-                case 'ant':
-                    toolClass = hudson.tasks.Ant$AntInstallation
-                    break
-                case 'nodejs':
-                    toolClass = jenkins.plugins.nodejs.tools.NodeJSInstallation
-                    break
-                case 'docker':
-                    toolClass = com.nirima.jenkins.plugins.docker.DockerTool
-                    break
-                default:
-                    toolClass = null
-            }
-            if(toolClass != null){
-                def tool = toolClass.newInstance(value.name, value.home, [])
-                newTools << tool
-            }
-        }
-
-        // Update Jenkins global tools configuration (example for JDK only)
-        def jdkDescriptor = jenkinsInstance.getDescriptorByType(hudson.model.JDK.DescriptorImpl)
-        jdkDescriptor.setInstallations(newTools.findAll{ it instanceof hudson.tools.JDK } as hudson.tools.ToolInstallation[])
+        def jenkinsInstance = Jenkins.get()
+        
+        // Configure JDK
+        def jdkDescriptor = jenkinsInstance.getDescriptorByType(JDK.DescriptorImpl)
+        def jdks = [new JDK(tools['jdk'].name, tools['jdk'].home)]
+        jdkDescriptor.setInstallations(jdks.toArray(new JDK[0]))
         jdkDescriptor.save()
 
-        // Similarly, update other tools descriptors as needed...
+        // Configure Maven
+        def mavenDescriptor = jenkinsInstance.getDescriptorByType(MavenInstallation.class)
+        def mavenTools = [new MavenInstallation(tools['maven'].name, tools['maven'].home, null)]
+        mavenDescriptor.setInstallations(mavenTools.toArray(new MavenInstallation[0]))
+        mavenDescriptor.save()
 
-        steps.echo "Jenkins tools configured successfully"
+        // Configure Gradle
+        def gradleDescriptor = jenkinsInstance.getDescriptorByType(GradleInstallation.class)
+        def gradleTools = [new GradleInstallation(tools['gradle'].name, tools['gradle'].home, null)]
+        gradleDescriptor.setInstallations(gradleTools.toArray(new GradleInstallation[0]))
+        gradleDescriptor.save()
+
+        // Configure Ant
+        def antDescriptor = jenkinsInstance.getDescriptorByType(AntInstallation.class)
+        def antTools = [new AntInstallation(tools['ant'].name, tools['ant'].home, null)]
+        antDescriptor.setInstallations(antTools.toArray(new AntInstallation[0]))
+        antDescriptor.save()
+
+        // Configure NodeJS
+        def nodeDescriptor = jenkinsInstance.getDescriptorByType(NodeJSInstallation.class)
+        def nodeTools = [new NodeJSInstallation(tools['nodejs'].name, tools['nodejs'].home, [], null)]
+        nodeDescriptor.setInstallations(nodeTools.toArray(new NodeJSInstallation[0]))
+        nodeDescriptor.save()
+
+        // Configure Docker
+        def dockerDescriptor = jenkinsInstance.getDescriptorByType(DockerTool.class)
+        def dockerTools = [new DockerTool(tools['docker'].name, tools['docker'].home)]
+        dockerDescriptor.setInstallations(dockerTools.toArray(new DockerTool[0]))
+        dockerDescriptor.save()
+
+        steps.echo "Jenkins tools configured successfully."
     }
 }
 
