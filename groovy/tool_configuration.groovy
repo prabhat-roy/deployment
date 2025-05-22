@@ -1,243 +1,158 @@
-import groovy.xml.*
-import groovy.json.*
-import jenkins.model.*
-import hudson.model.*
-import java.util.regex.*
+import groovy.json.JsonSlurper
 
-class JenkinsToolConfigurator implements Serializable {
+class ToolConfiguration {
+
     def steps
-    def jenkinsUrl
-    def credsId
+    def env
 
-    JenkinsToolConfigurator(steps) {
+    ToolConfiguration(steps, env) {
         this.steps = steps
-        this.jenkinsUrl = System.getenv('JENKINS_URL') ?: 'http://localhost:8080'
-        this.credsId = System.getenv('JENKINS_CREDS_ID') ?: 'jenkins-cred'
+        this.env = env
     }
 
     def toolConfiguration() {
-        steps.echo "Starting Jenkins tool configuration..."
+        // Load Jenkins credentials
+        def jenkinsUrl = env.JENKINS_URL
+        def credsId = env.JENKINS_CREDS_ID
 
-        def detectedTools = [
-            ant   : [:],
-            maven : [:],
-            gradle: [:],
-            nodejs: [:],
-            docker: [:],
-            jdk   : [:]
-        ]
+        steps.echo "Starting tool configuration via Jenkins REST API"
 
-        // Detect Ant
-        detectTool('ant', 'ant -version', ~/Apache Ant \(.*\) version ([\d.]+)/, /which ant/, detectedTools.ant)
+        // Fetch Jenkins credentials from withCredentials block
+        steps.withCredentials([steps.usernamePassword(credentialsId: credsId, usernameVariable: 'JENKINS_USER', passwordVariable: 'JENKINS_TOKEN')]) {
+            def user = steps.env.JENKINS_USER
+            def token = steps.env.JENKINS_TOKEN
 
-        // Detect Maven
-        detectTool('maven', 'mvn -version', ~/Apache Maven ([\d.]+)/, /which mvn/, detectedTools.maven)
+            // For demo, print user (do NOT print token in real use)
+            steps.echo "Using Jenkins user: ${user}"
 
-        // Detect Gradle
-        detectTool('gradle', 'gradle -version', ~/Gradle ([\d.]+)/, /which gradle/, detectedTools.gradle)
+            // Define the tools you want to configure
+            def tools = [
+                maven: getMavenToolInfo(),
+                ant: getAntToolInfo(),
+                gradle: getGradleToolInfo(),
+                nodejs: getNodejsToolInfo(),
+                docker: getDockerToolInfo(),
+                jdk: getJdkToolInfo()
+            ]
 
-        // Detect NodeJS
-        detectTool('nodejs', 'node -v', ~/v([\d.]+)/, /which node/, detectedTools.nodejs)
+            // You will fetch current config.xml from Jenkins, modify the tool section, and POST it back
+            def configXmlFile = 'config.xml'
+            def updatedConfigXmlFile = 'config_updated.xml'
 
-        // Detect Docker
-        detectTool('docker', 'docker --version', ~/Docker version ([\d.]+)/, /which docker/, detectedTools.docker)
+            // Download current Jenkins config.xml
+            def downloadCmd = """
+                curl -s -u ${user}:${token} ${jenkinsUrl}/config.xml -o ${configXmlFile}
+            """
+            steps.sh(downloadCmd)
 
-        // Detect JDK (special)
-        def (jdkVersion, jdkPath) = detectJDK()
-        if (jdkVersion && jdkPath) {
-            detectedTools.jdk["jdk-${jdkVersion}"] = jdkPath
-        }
+            // Parse the config.xml file using Groovy XML parser
+            def configXml = new XmlParser().parse(configXmlFile)
 
-        steps.echo "Detected tools and versions: ${detectedTools}"
+            // Modify or add tools to configXml
+            configureToolsInXml(configXml, tools)
 
-        // Fetch Jenkins current config.xml
-        def configXml = fetchConfigXml()
+            // Write updated XML back to file
+            def writer = new StringWriter()
+            new XmlNodePrinter(new PrintWriter(writer)).print(configXml)
+            steps.writeFile file: updatedConfigXmlFile, text: writer.toString()
 
-        // Update tools in config.xml
-        def updatedXml = updateToolsInConfig(configXml, detectedTools)
+            // POST updated config.xml back to Jenkins to apply tool config changes
+            def postCmd = """
+                curl -s -X POST -u ${user}:${token} \\
+                -H "Content-Type: application/xml" \\
+                --data-binary @${updatedConfigXmlFile} \\
+                ${jenkinsUrl}/config.xml
+            """
+            steps.sh(postCmd)
 
-        // Post updated config.xml to Jenkins
-        def status = postConfigXml(updatedXml)
-
-        if (status == 200 || status == 302) {
-            steps.echo "Tools configured successfully in Jenkins!"
-        } else {
-            steps.error "Failed to update Jenkins config.xml, HTTP status: ${status}"
+            steps.echo "Tools configured successfully."
         }
     }
 
-    // Helper to detect tools generically
-    private void detectTool(String toolName, String versionCmd, Pattern versionPattern, String pathCmd, Map outMap) {
+    private Map getMavenToolInfo() {
+        def version = getInstalledVersion('mvn', ['-v'])
+        def location = getCommandLocation('mvn')
+        return [name: "Maven_${version}", home: location]
+    }
+
+    private Map getAntToolInfo() {
+        def version = getInstalledVersion('ant', ['-version'])
+        def location = getCommandLocation('ant')
+        return [name: "Ant_${version}", home: location]
+    }
+
+    private Map getGradleToolInfo() {
+        def version = getInstalledVersion('gradle', ['-v'])
+        def location = getCommandLocation('gradle')
+        return [name: "Gradle_${version}", home: location]
+    }
+
+    private Map getNodejsToolInfo() {
+        def version = getInstalledVersion('node', ['-v'])
+        def location = getCommandLocation('node')
+        return [name: "NodeJS_${version}", home: location]
+    }
+
+    private Map getDockerToolInfo() {
+        def version = getInstalledVersion('docker', ['--version'])
+        def location = getCommandLocation('docker')
+        return [name: "Docker_${version}", home: location]
+    }
+
+    private Map getJdkToolInfo() {
+        // Assuming java binary is on PATH
+        def version = getInstalledVersion('java', ['-version'])
+        def location = getCommandLocation('java')
+        // For JDK, home is usually two levels up from java binary, adjust accordingly
+        def home = steps.sh(script: "dirname \$(dirname \$(readlink -f \$(which java)))", returnStdout: true).trim()
+        return [name: "JDK_${version}", home: home]
+    }
+
+    private String getInstalledVersion(String cmd, List args) {
         try {
-            def versionOutput = steps.sh(script: versionCmd, returnStdout: true).trim()
-            def pathOutput = steps.sh(script: pathCmd, returnStdout: true).trim()
-            def matcher = (versionOutput =~ versionPattern)
-            if (matcher) {
-                def version = matcher[0][1]
-                def pathDir = steps.sh(script: "dirname ${pathOutput}", returnStdout: true).trim()
-                outMap["${toolName}-${version}"] = pathDir
-            } else {
-                steps.echo "Version pattern not matched for ${toolName}"
-            }
+            def out = steps.sh(script: "${cmd} ${args.join(' ')}", returnStdout: true).trim()
+            // Extract first line/version info for common commands
+            def firstLine = out.readLines()[0]
+            return firstLine.replaceAll('[^0-9\\.]+', '') // only version digits & dots
         } catch (Exception e) {
-            steps.echo "Failed to detect ${toolName}: ${e.message}"
+            steps.echo "Failed to get version for ${cmd}: ${e.message}"
+            return "unknown"
         }
     }
 
-    // Special JDK detection
-    private List detectJDK() {
+    private String getCommandLocation(String cmd) {
         try {
-            // Get Java executable path and resolve home
-            def javaBin = steps.sh(script: 'readlink -f $(which java)', returnStdout: true).trim()
-            def javaHome = javaBin.replaceAll(/\/bin\/java$/, '')
-            def versionOutput = steps.sh(script: "${javaHome}/bin/java -version 2>&1", returnStdout: true).trim()
-            def matcher = (versionOutput =~ /version \"(\d+(\.\d+)*).*\"/)
-            def version = matcher ? matcher[0][1] : null
-            if (!version) {
-                steps.echo "Could not parse JDK version from output: ${versionOutput}"
-                return [null, null]
-            }
-            return [version, javaHome]
+            def location = steps.sh(script: "which ${cmd}", returnStdout: true).trim()
+            return location
         } catch (Exception e) {
-            steps.echo "Failed to detect JDK: ${e.message}"
-            return [null, null]
+            steps.echo "Failed to get location for ${cmd}: ${e.message}"
+            return ""
         }
     }
 
-    // Fetch current Jenkins config.xml (GET /config.xml)
-    private String fetchConfigXml() {
-        def script = """
-            import jenkins.model.*
-            return Jenkins.instance.getDescriptorByType(jenkins.model.JenkinsLocationConfiguration.class).getConfigFile().asString()
-        """
-        // We cannot run Groovy directly in pipeline to get config.xml, so do HTTP GET
-        def url = "${jenkinsUrl}/config.xml"
-        return httpGet(url)
-    }
-
-    // Post updated config.xml (POST /config.xml)
-    private int postConfigXml(String configXml) {
-        def url = "${jenkinsUrl}/config.xml"
-        return httpPost(url, configXml)
-    }
-
-    // HTTP GET helper with basic auth from Jenkins credentials
-    private String httpGet(String url) {
-        def authHeader = getAuthHeader()
-        def connection = new URL(url).openConnection()
-        connection.setRequestProperty("Authorization", authHeader)
-        connection.setRequestMethod("GET")
-        connection.setDoOutput(false)
-        return connection.inputStream.text
-    }
-
-    // HTTP POST helper with basic auth from Jenkins credentials
-    private int httpPost(String url, String body) {
-        def authHeader = getAuthHeader()
-        def connection = new URL(url).openConnection()
-        connection.setRequestProperty("Authorization", authHeader)
-        connection.setRequestProperty("Content-Type", "application/xml")
-        connection.setRequestMethod("POST")
-        connection.doOutput = true
-        connection.outputStream.withWriter { it << body }
-        return connection.responseCode
-    }
-
-    // Get base64 auth header from Jenkins credentials
-    private String getAuthHeader() {
-        def username = ''
-        def password = ''
-        steps.withCredentials([steps.usernamePassword(credentialsId: credsId, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-            username = steps.env.USER
-            password = steps.env.PASS
-        }
-        def userpass = "${username}:${password}".bytes.encodeBase64().toString()
-        return "Basic ${userpass}"
-    }
-
-    // Update Jenkins config.xml with detected tools
-    private String updateToolsInConfig(String configXml, Map toolsMap) {
-        def parser = new XmlParser(false, false)
-        def root = parser.parseText(configXml)
-
-        // Update JDK installations
-        def jdkDesc = root.'hudson.model.JDK_-DescriptorImpl'[0]
-        if (!jdkDesc) jdkDesc = root.appendNode('hudson.model.JDK_-DescriptorImpl')
-        def jdkInstalls = jdkDesc.installations[0] ?: jdkDesc.appendNode('installations')
-        jdkInstalls.replaceBody('')
-        toolsMap.jdk.each { name, home ->
-            def jdkNode = jdkInstalls.appendNode('jdk')
-            jdkNode.appendNode('name', name)
-            jdkNode.appendNode('home', home)
-            jdkNode.appendNode('properties')
+    private void configureToolsInXml(def configXml, Map tools) {
+        // Tools are under <tool> elements inside <toolLocations> or <toolInstallations> depending on Jenkins version
+        // This is a simplified example updating <toolLocations> section
+        
+        def toolLocationsNode = configXml.'toolLocations'[0]
+        if (!toolLocationsNode) {
+            toolLocationsNode = new Node(configXml, 'toolLocations')
         }
 
-        // Update Ant installations
-        def antDesc = root.'hudson.tasks.Ant$AntDescriptor'[0]
-        if (!antDesc) antDesc = root.appendNode('hudson.tasks.Ant$AntDescriptor')
-        def antInstalls = antDesc.installations[0] ?: antDesc.appendNode('installations')
-        antInstalls.replaceBody('')
-        toolsMap.ant.each { name, home ->
-            def antNode = antInstalls.appendNode('hudson.tasks.Ant')
-            antNode.appendNode('name', name)
-            antNode.appendNode('home', home)
-            antNode.appendNode('properties')
+        // Clear existing toolLocations
+        toolLocationsNode.replaceNode {
+            toolLocationsNode = 'toolLocations'()
         }
 
-        // Update Maven installations
-        def mavenDesc = root.'hudson.tasks.Maven$MavenInstallationDescriptor'[0]
-        if (!mavenDesc) mavenDesc = root.appendNode('hudson.tasks.Maven$MavenInstallationDescriptor')
-        def mavenInstalls = mavenDesc.installations[0] ?: mavenDesc.appendNode('installations')
-        mavenInstalls.replaceBody('')
-        toolsMap.maven.each { name, home ->
-            def mavenNode = mavenInstalls.appendNode('hudson.tasks.Maven$MavenInstallation')
-            mavenNode.appendNode('name', name)
-            mavenNode.appendNode('home', home)
-            mavenNode.appendNode('properties')
+        // For each tool, add a <toolLocation> entry
+        tools.each { key, value ->
+            if (value.home) {
+                def toolNode = new Node(toolLocationsNode, 'toolLocation')
+                new Node(toolNode, 'name', value.name)
+                new Node(toolNode, 'home', value.home)
+            }
         }
-
-        // Update Gradle installations
-        def gradleDesc = root.'hudson.plugins.gradle.GradleInstallation$DescriptorImpl'[0]
-        if (!gradleDesc) gradleDesc = root.appendNode('hudson.plugins.gradle.GradleInstallation$DescriptorImpl')
-        def gradleInstalls = gradleDesc.installations[0] ?: gradleDesc.appendNode('installations')
-        gradleInstalls.replaceBody('')
-        toolsMap.gradle.each { name, home ->
-            def gradleNode = gradleInstalls.appendNode('hudson.plugins.gradle.GradleInstallation')
-            gradleNode.appendNode('name', name)
-            gradleNode.appendNode('home', home)
-            gradleNode.appendNode('properties')
-        }
-
-        // Update NodeJS installations
-        def nodeDesc = root.'jenkins.plugins.nodejs.tools.NodeJSInstallation.DescriptorImpl'[0]
-        if (!nodeDesc) nodeDesc = root.appendNode('jenkins.plugins.nodejs.tools.NodeJSInstallation.DescriptorImpl')
-        def nodeInstalls = nodeDesc.installations[0] ?: nodeDesc.appendNode('installations')
-        nodeInstalls.replaceBody('')
-        toolsMap.nodejs.each { name, home ->
-            def nodeNode = nodeInstalls.appendNode('jenkins.plugins.nodejs.tools.NodeJSInstallation')
-            nodeNode.appendNode('name', name)
-            nodeNode.appendNode('home', home)
-            nodeNode.appendNode('properties')
-        }
-
-        // Update Docker installations (dockerTool)
-        def dockerDesc = root.'com.nirima.jenkins.plugins.docker.DockerTool.DescriptorImpl'[0]
-        if (!dockerDesc) dockerDesc = root.appendNode('com.nirima.jenkins.plugins.docker.DockerTool.DescriptorImpl')
-        def dockerInstalls = dockerDesc.installations[0] ?: dockerDesc.appendNode('installations')
-        dockerInstalls.replaceBody('')
-        toolsMap.docker.each { name, home ->
-            def dockerNode = dockerInstalls.appendNode('com.nirima.jenkins.plugins.docker.DockerTool')
-            dockerNode.appendNode('name', name)
-            dockerNode.appendNode('executable', "${home}/docker")
-            dockerNode.appendNode('properties')
-        }
-
-        // Serialize back to XML string
-        def writer = new StringWriter()
-        XmlNodePrinter printer = new XmlNodePrinter(new PrintWriter(writer))
-        printer.preserveWhitespace = true
-        printer.print(root)
-        return writer.toString()
     }
 }
-return new JenkinsToolConfigurator(this)
+
+return new ToolConfiguration(this, env)
