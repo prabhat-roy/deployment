@@ -27,28 +27,8 @@ pipeline {
         stage('Detect Microservices') {
             steps {
                 script {
-                    def envWriter = load 'groovy/env_writer.groovy'
-
-                    // Detect all folders in src/
-                    def services = sh(
-                        script: "find src -mindepth 1 -maxdepth 1 -type d -exec basename {} \\; | sort | tr '\\n' ',' | sed 's/,\$//'",
-                        returnStdout: true
-                    ).trim()
-
-                    // Detect only those with Dockerfile
-                    def dockerServices = sh(
-                        script: "find src -mindepth 1 -maxdepth 1 -type d -exec sh -c '[ -f \"{}/Dockerfile\" ] && basename {}' \\; | sort | tr '\\n' ',' | sed 's/,\$//'",
-                        returnStdout: true
-                    ).trim()
-
-                    echo "📦 All services: ${services}"
-                    echo "🐳 Dockerized services: ${dockerServices}"
-
-                    // Write both to the env file
-                    envWriter.writeEnvVars([
-                        'SERVICES': services,
-                        'DOCKER_SERVICES': dockerServices
-                    ])
+                   def microLister = load 'groovy/detect_microservice.groovy'
+                    microLister.writeServicesToEnv()
                 }
             }
         }
