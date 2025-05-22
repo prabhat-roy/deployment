@@ -66,7 +66,7 @@ EOF
 echo "♻️ Restarting Jenkins with updated Java options..."
 sudo systemctl daemon-reexec
 sudo systemctl daemon-reload
-sudo systemctl restart jenkins
+#sudo systemctl restart jenkins
 
 # Verify Docker and Docker Compose installation
 echo "✅ Docker installed successfully."
@@ -74,4 +74,4 @@ docker --version
 echo "✅ Docker Compose installed successfully."
 docker-compose --version
 
-echo "✅ Jenkins restarted. Docker and durable-task workaround are fully configured."
+#echo "✅ Jenkins restarted. Docker and durable-task workaround are fully configured."

@@ -33,14 +33,14 @@ pipeline {
             }
         }
 
-        // stage('Install docker') {
-        //     steps {
-        //         script {
-        //             def dockerInstaller = load 'groovy/install_docker.groovy'
-        //             dockerInstaller.installDocker()
-        //         }
-        //     }
-        // }
+        stage('Install docker') {
+            steps {
+                script {
+                    def dockerInstaller = load 'groovy/install_docker.groovy'
+                    dockerInstaller.installDocker()
+                }
+            }
+        }
 
     //     stage('Detect Microservices') {
     //         steps {
@@ -212,7 +212,11 @@ pipeline {
             steps {
                 echo "⚙️ Scheduling Jenkins restart via systemctl..."
                 sh '''
-                    nohup bash -c "sleep 10 && sudo systemctl restart jenkins" > /var/log/jenkins-restart.log 2>&1 &
+                    LOG_FILE="/var/log/jenkins-custom/jenkins-restart.log"
+                    sudo mkdir -p /var/log/jenkins-custom
+                    sudo chown jenkins:jenkins /var/log/jenkins-custom
+                    echo "⏱️ Restart scheduled at $(date)" | sudo tee -a "$LOG_FILE"
+                    nohup bash -c "sleep 10 && echo '🔁 Restarting Jenkins at $(date)' | sudo tee -a $LOG_FILE && sudo systemctl restart jenkins" > /dev/null 2>&1 &
                     echo "✅ Jenkins will restart gracefully in 10 seconds (in background)."
                 '''
             }

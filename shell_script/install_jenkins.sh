@@ -91,6 +91,15 @@ sudo chmod 440 /etc/sudoers.d/jenkins-nopasswd
 echo "🕓 Setting timezone to Asia/Kolkata..."
 sudo timedatectl set-timezone Asia/Kolkata
 
+# ✅ Safe logging directory
+echo "🗂️ Creating safe Jenkins log directory..."
+sudo mkdir -p /var/log/jenkins-custom
+sudo chown -R jenkins:jenkins /var/log/jenkins-custom
+sudo chmod 755 /var/log/jenkins-custom
+
+echo "🔄 Logging restart info..."
+echo "Restart triggered at $(date)" | sudo tee -a /var/log/jenkins-custom/jenkins-restart.log > /dev/null
+
 echo "🚀 Enabling and starting Jenkins service..."
 sudo systemctl enable "$JENKINS_SERVICE"
 sudo systemctl start "$JENKINS_SERVICE"
