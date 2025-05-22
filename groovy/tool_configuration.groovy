@@ -1,5 +1,5 @@
-import groovy.util.XmlParser
-import groovy.util.Node
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
 
 def runShell(steps, cmd) {
     try {
@@ -12,94 +12,94 @@ def runShell(steps, cmd) {
 def detectTools(steps) {
     def tools = [:]
 
-    // JDK
     def javaHome = runShell(steps, "dirname \$(dirname \$(readlink -f \$(which java)))")
-    def javaVersion = runShell(steps, "java -version 2>&1 | head -n 1")
-    if (javaHome) {
-        tools['jdk'] = [name: 'JDK', home: javaHome, version: javaVersion]
+    if(javaHome) {
+        tools['jdk'] = [name: 'jdk', home: javaHome, type: 'jdk']
     }
 
-    // Maven
     def mvnHome = runShell(steps, "dirname \$(dirname \$(readlink -f \$(which mvn)))")
-    def mvnVersion = runShell(steps, "mvn -version | head -n 1")
-    if (mvnHome) {
-        tools['maven'] = [name: 'Maven', home: mvnHome, version: mvnVersion]
+    if(mvnHome) {
+        tools['maven'] = [name: 'maven', home: mvnHome, type: 'maven']
     }
 
-    // Gradle
     def gradleHome = runShell(steps, "dirname \$(dirname \$(readlink -f \$(which gradle)))")
-    def gradleVersion = runShell(steps, "gradle -version | grep 'Gradle '")
-    if (gradleHome) {
-        tools['gradle'] = [name: 'Gradle', home: gradleHome, version: gradleVersion]
+    if(gradleHome) {
+        tools['gradle'] = [name: 'gradle', home: gradleHome, type: 'gradle']
     }
 
-    // Ant
     def antHome = runShell(steps, "dirname \$(dirname \$(readlink -f \$(which ant)))")
-    def antVersion = runShell(steps, "ant -version")
-    if (antHome) {
-        tools['ant'] = [name: 'Ant', home: antHome, version: antVersion]
+    if(antHome) {
+        tools['ant'] = [name: 'ant', home: antHome, type: 'ant']
     }
 
-    // NodeJS
     def nodeHome = runShell(steps, "dirname \$(dirname \$(readlink -f \$(which node)))")
-    def nodeVersion = runShell(steps, "node --version")
-    if (nodeHome) {
-        tools['nodejs'] = [name: 'NodeJS', home: nodeHome, version: nodeVersion]
+    if(nodeHome) {
+        tools['nodejs'] = [name: 'nodejs', home: nodeHome, type: 'nodejs']
     }
 
-    // Docker
     def dockerHome = runShell(steps, "dirname \$(dirname \$(readlink -f \$(which docker)))")
-    def dockerVersion = runShell(steps, "docker --version")
-    if (dockerHome) {
-        tools['docker'] = [name: 'Docker', home: dockerHome, version: dockerVersion]
+    if(dockerHome) {
+        tools['docker'] = [name: 'docker', home: dockerHome, type: 'docker']
     }
 
     return tools
 }
 
-def configureTools(steps) {
-    def jenkinsInstance = jenkins.model.Jenkins.get()
-
-    def configXmlFile = jenkinsInstance.getRootDir().toString() + "/config.xml"
-    def xmlParser = new XmlParser()
-    def configXml = xmlParser.parse(new File(configXmlFile))
+def configureTools(steps, env) {
+    def jenkinsUrl = env.JENKINS_URL
+    def credsId = env.JENKINS_CREDS_ID
+    if(!jenkinsUrl || !credsId) {
+        error "JENKINS_URL or JENKINS_CREDS_ID environment variables not set"
+    }
 
     def tools = detectTools(steps)
+    println "Detected tools: ${tools}"
 
-    def toolLocationsNode = configXml.'toolLocations'[0]
-    if (!toolLocationsNode) {
-        toolLocationsNode = new Node(configXml, 'toolLocations')
-    } else {
-        toolLocationsNode.children().clear()
+    // Prepare JSON payload or XML payload for Jenkins tool configuration
+    // This example uses JSON to update toolLocations via Jenkins Script Console API
+    // but in reality Jenkins doesn't expose a direct REST API for tool config
+    // So this approach needs to call a Groovy script via /scriptText API or configure using CLI
+
+    // Here we'll call /scriptText API with a Groovy script that updates tools on the Jenkins master
+
+    def groovyScript = """
+    import jenkins.model.*
+    def jenkins = Jenkins.instance
+    def toolsMap = [:]
+    ${tools.collect { k,v -> "toolsMap['${v.name}'] = '${v.home}'" }.join('\n')}
+    def configXml = jenkins.getConfigFile('tools').asString()
+    def parser = new XmlParser()
+    def config = parser.parseText(configXml)
+    def toolLocationsNode = config.toolLocations ? config.toolLocations[0] : config.appendNode('toolLocations')
+    toolLocationsNode.children().clear()
+    toolsMap.each { name, home ->
+        def toolLocation = new Node(toolLocationsNode, 'toolLocation')
+        new Node(toolLocation, 'name', name)
+        new Node(toolLocation, 'home', home)
     }
-
-    tools.each { key, value ->
-        if (value.home) {
-            def toolNode = new Node(toolLocationsNode, 'toolLocation')
-            new Node(toolNode, 'name', value.name)
-            new Node(toolNode, 'home', value.home)
-        }
-    }
-
-    // Save the updated config.xml
     def writer = new StringWriter()
-    groovy.xml.XmlNodePrinter printer = new groovy.xml.XmlNodePrinter(new PrintWriter(writer))
-    printer.setPreserveWhitespace(true)
-    printer.print(configXml)
+    def printer = new groovy.xml.XmlNodePrinter(new PrintWriter(writer))
+    printer.print(config)
+    jenkins.updateByXml(new StreamSource(new StringReader(writer.toString())))
+    jenkins.save()
+    return "Tools updated via script"
+    """
 
-    new File(configXmlFile).write(writer.toString())
+    def encodedScript = groovyScript.bytes.encodeBase64().toString()
 
-    jenkinsInstance.reload()
-
-    println("Configured tools:")
-    tools.each { key, value ->
-        println(" - ${value.name} at ${value.home} (version: ${value.version})")
-    }
+    def response = steps.httpRequest(
+        httpMode: 'POST',
+        acceptType: 'APPLICATION_JSON',
+        authentication: credsId,
+        contentType: 'APPLICATION_FORM',
+        requestBody: "script=${java.net.URLEncoder.encode(groovyScript, 'UTF-8')}",
+        url: "${jenkinsUrl}/scriptText"
+    )
+    println "Jenkins response: ${response.content}"
 }
 
 def toolConfiguration() {
-    // 'steps' is implicitly available inside pipeline 'script' block
-    configureTools(this)
+    configureTools(this, this.env)
 }
 
 return this
