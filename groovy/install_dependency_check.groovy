@@ -1,133 +1,113 @@
-import groovy.json.JsonSlurper
+import jenkins.model.*
+import hudson.tools.*
+import hudson.util.Secret
+import groovy.xml.XmlUtil
+import groovy.xml.XmlParser
 
-class DependencyCheckInstaller {
-    def script
-    def jenkinsUrl = System.getenv('JENKINS_URL') ?: 'http://localhost:8080'
-    def credId = System.getenv('JENKINS_CREDS_ID') ?: 'jenkins-cred'
-    def nvdDir = "/var/lib/jenkins/dependency-check-data"
-    def owaspImage = "owasp/dependency-check:latest"
+def JENKINS_URL = System.getenv('JENKINS_URL') ?: 'http://localhost:8080'
+def CRED_ID = System.getenv('JENKINS_CREDS_ID') ?: 'jenkins-cred'
 
-    DependencyCheckInstaller(script) {
-        this.script = script
-    }
+def nvdDir = "/var/lib/jenkins/dependency-check-data"
+def owaspImage = "owasp/dependency-check:latest"
 
-    def installDependencyCheck() {
-        script.echo "Starting OWASP Dependency-Check installation..."
+def installDependencyCheck() {
+    echo "Starting OWASP Dependency-Check setup..."
 
-        // Create NVD data directory (needs proper permissions)
-        script.sh "mkdir -p ${nvdDir}"
+    // 1. Create NVD data directory if not exists
+    sh "mkdir -p ${nvdDir}"
 
-        // Pull latest OWASP Dependency-Check Docker image
-        script.sh "docker pull ${owaspImage}"
+    // 2. Pull OWASP Dependency-Check Docker image
+    sh "docker pull ${owaspImage}"
 
-        // Run container to update NVD DB with verbose output
-        script.sh """
-            docker run --rm \\
-                -v ${nvdDir}:/usr/share/dependency-check/data \\
-                ${owaspImage} \\
-                --updateonly --verbose
-        """
+    // 3. Run container to update local NVD database
+    sh """
+        docker run --rm \\
+            -v ${nvdDir}:/usr/share/dependency-check/data \\
+            ${owaspImage} \\
+            --updateonly --verbose
+    """
 
-        script.echo "NVD database updated and cached at ${nvdDir}"
+    echo "NVD data cached locally at: ${nvdDir}"
 
-        // Configure Jenkins tool to use this local NVD DB
-        configureJenkinsTool()
-    }
-
-    def configureJenkinsTool() {
-        script.echo "Configuring Jenkins Dependency-Check tool..."
-
-        // Use Jenkins credentials: username/password
-        script.withCredentials([script.usernamePassword(credentialsId: credId,
-            usernameVariable: 'JENKINS_USER', passwordVariable: 'JENKINS_PASS')]) {
-
-            def user = script.env.JENKINS_USER
-            def pass = script.env.JENKINS_PASS
-            def basicAuth = "${user}:${pass}".bytes.encodeBase64().toString()
-
-            def httpGet = { urlStr ->
-                def url = new URL(urlStr)
-                def conn = url.openConnection()
-                conn.setRequestProperty('Authorization', "Basic ${basicAuth}")
-                conn.connect()
-                if (conn.responseCode != 200) {
-                    script.error "GET failed: ${urlStr} (HTTP ${conn.responseCode})"
-                }
-                return conn.inputStream.text
-            }
-
-            def httpPost = { urlStr, body, contentType='application/xml' ->
-                def url = new URL(urlStr)
-                def conn = url.openConnection()
-                conn.setRequestProperty('Authorization', "Basic ${basicAuth}")
-                conn.setRequestProperty('Content-Type', contentType)
-                conn.setDoOutput(true)
-                conn.setRequestMethod('POST')
-                conn.outputStream.withWriter { writer -> writer << body }
-                if (conn.responseCode < 200 || conn.responseCode >= 300) {
-                    script.error "POST failed: ${urlStr} (HTTP ${conn.responseCode})"
-                }
-                return conn.inputStream.text
-            }
-
-            // Fetch current tool config XML
-            def configUrl = "${jenkinsUrl}/tool/dependency-check/installations/config.xml"
-            def configXml = ''
-            try {
-                configXml = httpGet(configUrl)
-                script.echo "Fetched existing Dependency-Check config.xml"
-            } catch (Exception e) {
-                script.echo "No existing Dependency-Check config found, will create new."
-                // Start from minimal config if not exist
-                configXml = """<installations class="java.util.Collections$EmptyList"/>"""
-            }
-
-            // Parse XML to update/add installation
-            def parser = new XmlParser(false, false)
-            def root = parser.parseText(configXml)
-
-            // Clear existing installations and add one with local NVD
-            def installationsNode = root
-            if (root.name() != 'installations') {
-                installationsNode = root.'installations'[0]
-                if (installationsNode == null) {
-                    installationsNode = new Node(root, 'installations')
-                }
-            }
-
-            installationsNode.replaceNode {
-                installations(class: 'java.util.Collections$SingletonList') {
-                    'org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation' {
-                        name('LocalNVD')
-                        home(nvdDir)
-                        properties(class: 'java.util.Collections$EmptyList')
-                    }
-                }
-            }
-
-            // Serialize XML back to string
-            def writer = new StringWriter()
-            def printer = new XmlNodePrinter(new PrintWriter(writer))
-            printer.setPreserveWhitespace(true)
-            printer.print(root)
-            def newConfigXml = writer.toString()
-
-            // POST updated config back to Jenkins
-            def updateUrl = "${jenkinsUrl}/tool/dependency-check/installations/config.xml"
-            httpPost(updateUrl, newConfigXml, 'application/xml')
-
-            script.echo "Dependency-Check tool configured with local NVD directory at ${nvdDir}"
-        }
-    }
-
-    def cleanupDependencyCheck() {
-        script.echo "Cleaning up OWASP Dependency-Check data directory..."
-
-        // Remove cached NVD data directory
-        script.sh "rm -rf ${nvdDir}"
-
-        script.echo "Cleanup complete."
-    }
+    // 4. Configure Jenkins to add Dependency-Check installation pointing to local NVD data
+    configureDependencyCheckTool()
 }
 
-return new DependencyCheckInstaller(this)
+def configureDependencyCheckTool() {
+    echo "Configuring Jenkins Dependency-Check tool..."
+
+    // Get Jenkins instance
+    def jenkins = Jenkins.instance
+
+    // Read credentials for Jenkins HTTP auth (username/password)
+    def creds = com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials(
+        com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials.class,
+        jenkins,
+        null,
+        null
+    ).find { it.id == CRED_ID }
+
+    if (creds == null) {
+        error "Credentials with ID '${CRED_ID}' not found!"
+    }
+
+    def user = creds.username
+    def pass = creds.password.getPlainText()
+
+    echo "Using credentials ID: ${CRED_ID} with user: ${user}"
+
+    // Read current DependencyCheck tool configuration XML
+    def desc = jenkins.getDescriptorByType(hudson.tools.ToolDescriptor.class)
+    def depCheckDesc = jenkins.getDescriptorByType(org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation.DescriptorImpl.class)
+
+    if (depCheckDesc == null) {
+        error "DependencyCheck plugin descriptor not found!"
+    }
+
+    // Prepare new installation XML config
+    def xml = depCheckDesc.getConfigFile().asString()
+
+    def parser = new XmlParser(false, false)
+    def root = parser.parseText(xml)
+
+    // Check if installation with this name exists
+    def installationsNode = root.installations ? root.installations[0] : root.appendNode('installations')
+
+    def existing = installationsNode.'org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation'.find { it.name.text() == 'LocalNVD' }
+
+    if (existing) {
+        echo "Updating existing Dependency-Check installation 'LocalNVD'..."
+        existing.home[0].value = nvdDir
+        existing.nvdUrl[0].value = ''
+    } else {
+        echo "Adding new Dependency-Check installation 'LocalNVD'..."
+        def installNode = installationsNode.appendNode('org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation')
+        installNode.appendNode('name', 'LocalNVD')
+        installNode.appendNode('home', nvdDir)
+        installNode.appendNode('nvdUrl', '') // empty disables external download to force local
+    }
+
+    // Save updated config XML
+    def writer = new StringWriter()
+    XmlUtil.serialize(root, writer)
+    def newXml = writer.toString()
+
+    // Write back updated config
+    def configFile = depCheckDesc.getConfigFile()
+    configFile.write(newXml)
+
+    // Reload the config to apply changes immediately
+    depCheckDesc.load()
+
+    echo "Dependency-Check tool configured to use local NVD at: ${nvdDir}"
+}
+
+def cleanupDependencyCheck() {
+    echo "Cleaning up OWASP Dependency-Check data..."
+
+    sh "rm -rf ${nvdDir}"
+
+    echo "Cleanup complete."
+}
+
+return this
