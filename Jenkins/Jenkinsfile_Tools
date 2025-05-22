@@ -27,7 +27,7 @@ pipeline {
         stage('Detect Microservices') {
             steps {
                 script {
-                   def microLister = load 'groovy/detect_microservice.groovy'
+                    def microLister = load 'groovy/detect_microservice.groovy'
                     microLister.writeServicesToEnv()
                 }
             }
@@ -42,6 +42,7 @@ pipeline {
             }
         }
 
+        // Basic tools
         stage('Install Curl') {
             steps {
                 script {
@@ -59,7 +60,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Install Unzip') {
             steps {
                 script {
@@ -68,7 +69,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Install GnuPG') {
             steps {
                 script {
@@ -87,6 +88,16 @@ pipeline {
             }
         }
 
+        // Language runtimes
+        stage('Install OpenJDK 21') {
+            steps {
+                script {
+                    def jdkInstaller = load 'groovy/install_openjdk.groovy'
+                    jdkInstaller.installOpenJDK21()
+                }
+            }
+        }
+
         stage('Install Python') {
             steps {
                 script {
@@ -95,8 +106,8 @@ pipeline {
                 }
             }
         }
-        
-       stage('Install Node.js') {
+
+        stage('Install Node.js') {
             steps {
                 script {
                     def nodejsInstaller = load 'groovy/install_nodejs.groovy'
@@ -105,10 +116,84 @@ pipeline {
             }
         }
 
+        // Configuration management tools
+        stage('Install Ansible') {
+            steps {
+                script {
+                    def ansibleInstaller = load 'groovy/install_ansible.groovy'
+                    ansibleInstaller.installAnsible()
+                }
+            }
+        }
+
+        stage('Install Chef') {
+            steps {
+                script {
+                    def chefInstaller = load 'groovy/install_chef.groovy'
+                    chefInstaller.installChef()
+                }
+            }
+        }
+
+        stage('Install Puppet') {
+            steps {
+                script {
+                    def puppetInstaller = load 'groovy/install_puppet.groovy'
+                    puppetInstaller.installPuppet()
+                }
+            }
+        }
+
+        // Build tools
+        stage('Install Maven') {
+            steps {
+                script {
+                    def mavenInstaller = load 'groovy/install_maven.groovy'
+                    mavenInstaller.installMaven()
+                }
+            }
+        }
+
+        stage('Install Gradle') {
+            steps {
+                script {
+                    def gradleInstaller = load 'groovy/install_gradle.groovy'
+                    gradleInstaller.installGradle()
+                }
+            }
+        }
+
+        stage('Install Ant') {
+            steps {
+                script {
+                    def antInstaller = load 'groovy/install_ant.groovy'
+                    antInstaller.installAnt()
+                }
+            }
+        }
+
+        // Container and Cloud Tools
+        stage('Install Docker') {
+            steps {
+                script {
+                    def dockerInstaller = load 'groovy/install_docker.groovy'
+                    dockerInstaller.installDocker()
+                }
+            }
+        }
+
+        stage('Install Kubernetes CLI Tools') {
+            steps {
+                script {
+                    def kubernetesInstaller = load 'groovy/install_kubernetes_toolss.groovy'
+                    kubernetesInstaller.installKubernetes()
+                }
+            }
+        }
+
         stage('Install Cloud CLI Tool') {
             steps {
                 script {
-                    // Install AWS CLI / Azure CLI / GCP CLI depending on cloud provider
                     def cliInstaller = load 'groovy/install_cloud_cli.groovy'
                     cliInstaller.installCloudCLI()
                 }
@@ -124,47 +209,29 @@ pipeline {
             }
         }
 
-        stage('Install docker') {
+        stage('Install Vault CLI') {
             steps {
                 script {
-                    def dockerInstaller = load 'groovy/install_docker.groovy'
-                    dockerInstaller.installDocker()
+                    def vaultInstaller = load 'groovy/install_vault.groovy'
+                    vaultInstaller.installVaultCLI()
                 }
             }
         }
 
-    
-    
 
-    
-
-    
-
-    
-    //     stage('Install Kubernetes CLI Tools') {
-    //         steps {
-    //             script {
-    //                 // Install kubectl, helm, kustomize, etc.
-    //                 def kubernetesInstaller = load 'groovy/install_kubernetes.groovy'
-    //                 kubernetesInstaller.installKubernetes()
-    //             }
-    //         }
-    //     }
-
-    //     stage('Archive Jenkins.env') {
-    //         steps {
-    //             script {
-    //                 // Archive Jenkins.env for visibility and stash for next pipeline usage
-    //                 archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
-    //                 stash name: 'env-file', includes: 'Jenkins.env'
-    //             }
-    //         }
-    //     }
+        // Wrap-up
+        stage('Archive Jenkins.env') {
+            steps {
+                script {
+                    archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
+                    stash name: 'env-file', includes: 'Jenkins.env'
+                }
+            }
+        }
 
         stage('Clean Workspace') {
             steps {
                 script {
-                    // Remove all workspace files for a clean start in next run
                     deleteDir()
                     echo "Workspace deleted."
                 }
