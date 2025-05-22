@@ -11,6 +11,19 @@ pipeline {
             }
         }
 
+        stage('Inject Environment Variables') {
+            steps {
+                script {
+                    def envLoader = load 'groovy/env_loader.groovy'
+                    def envVars = envLoader.loadEnvVars("Jenkins.env")
+                    envVars.each { key, val ->
+                        env."${key}" = val
+                        echo "Injected: ${key}=${val}"
+                    }
+                }
+            }
+        }
+        
         stage('Detect Cloud Provider') {
             steps {
                 script {
