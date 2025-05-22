@@ -180,7 +180,7 @@ pipeline {
         stage('Install Kubernetes CLI Tools') {
             steps {
                 script {
-                    def kubernetesInstaller = load 'groovy/install_kubernetes_toolss.groovy'
+                    def kubernetesInstaller = load 'groovy/install_kubernetes_tools.groovy'
                     kubernetesInstaller.installKubernetes()
                 }
             }
