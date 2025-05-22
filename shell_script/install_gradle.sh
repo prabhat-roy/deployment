@@ -128,4 +128,4 @@ main() {
     echo "✅ Gradle setup complete."
 }
 
-main
+main "$@"
