@@ -51,6 +51,15 @@ pipeline {
             }
         }
 
+        stage('Install Wget') {
+            steps {
+                script {
+                    def wgetInstaller = load 'groovy/install_wget.groovy'
+                    wgetInstaller.installWget()
+                }
+            }
+        }
+        
         stage('Install docker') {
             steps {
                 script {
@@ -63,15 +72,7 @@ pipeline {
     
     
 
-    //     stage('Install Wget') {
-    //         steps {
-    //             script {
-    //                 // Install wget command-line tool
-    //                 def wgetInstaller = load 'groovy/wget.groovy'
-    //                 wgetInstaller.installWget()
-    //             }
-    //         }
-    //     }
+    
 
     //     stage('Install Unzip') {
     //         steps {
