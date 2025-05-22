@@ -45,4 +45,5 @@ class DependencyCheckInstaller implements Serializable {
     }
 }
 
-// Just define the class here, don't instantiate or return anything.
+// Return an instance to the pipeline script
+return new DependencyCheckInstaller(steps, env, params)

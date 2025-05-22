@@ -53,13 +53,10 @@ pipeline {
         //     }
         // }
 
-        stage('Manage OWASP ZAP - ${action}') {
-             steps {
+        stage("Manage OWASP Dependency-Check - ${params.action}") {
+            steps {
                 script {
-                    // Load the groovy class definition
-                    load 'groovy/install_dependency_check.groovy'
-                    // Instantiate the class explicitly
-                    def depCheckInstaller = new DependencyCheckInstaller(steps, env, params)
+                    def depCheckInstaller = load 'groovy/install_dependency_check.groovy'
 
                     if (params.action == 'create') {
                         depCheckInstaller.installDependencyCheck()
@@ -70,8 +67,8 @@ pipeline {
                     }
                 }
             }
-            
         }
+
 
         stage('Archive Jenkins.env') {
             steps {
