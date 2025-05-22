@@ -72,10 +72,26 @@ check_installed() {
 
 install_maven() {
     echo "📥 Installing Maven ${LATEST_VERSION}..."
+
+    echo "🔄 Cleaning old Maven installation if any..."
+    sudo rm -rf "$MAVEN_DIR"
+    sudo rm -f /usr/bin/mvn
+
+    echo "🛠 Downloading Maven from $MAVEN_DOWNLOAD_URL"
     sudo mkdir -p "$MAVEN_DIR"
     curl -fsSL "$MAVEN_DOWNLOAD_URL" -o /tmp/maven.tar.gz
     sudo tar -xzf /tmp/maven.tar.gz -C "$MAVEN_DIR" --strip-components=1
     sudo ln -sf "$MAVEN_DIR/bin/mvn" /usr/bin/mvn
+
+    echo "🔧 Verifying Maven executable:"
+    ls -l /usr/bin/mvn
+    file /usr/bin/mvn
+
+    echo "🔍 Printing environment variables related to Java and Maven for debugging:"
+    echo "JAVA_OPTS=$JAVA_OPTS"
+    echo "MAVEN_OPTS=$MAVEN_OPTS"
+
+    echo "🧪 Running mvn -v to verify installation:"
     mvn -v
 }
 
