@@ -1,49 +1,36 @@
-import java.nio.file.Files
-import java.nio.file.Paths
+def installDependencyCheck() {
+    def nvdDir = "/var/lib/jenkins/dependency-check-data"
+    def owaspImage = "owasp/dependency-check:latest"
 
-class DependencyCheckInstaller implements Serializable {
-    def steps
-    def env
-    def params
+    echo "Starting OWASP Dependency-Check installation..."
 
-    DependencyCheckInstaller(steps, env, params) {
-        this.steps = steps
-        this.env = env
-        this.params = params
-    }
+    // Create the directory to persist NVD data
+    sh "mkdir -p ${nvdDir}"
 
-    void installDependencyCheck() {
-        steps.echo "🔧 Starting OWASP Dependency-Check installation..."
+    // Pull the official OWASP Dependency-Check Docker image
+    sh "docker pull ${owaspImage}"
 
-        def dcDir = "/opt/dependency-check"
-        steps.sh "mkdir -p ${dcDir}"
+    // Run the container to fetch NVD database
+    sh """
+        docker run --rm \
+            -v ${nvdDir}:/usr/share/dependency-check/data \
+            ${owaspImage} \
+            --updateonly
+    """
 
-        steps.sh "docker pull owasp/dependency-check:latest"
-
-        steps.echo "⏳ Running Dependency-Check container to download NVD data..."
-
-        steps.sh """
-            docker run --rm \\
-                -v ${dcDir}:/usr/share/dependency-check/data \\
-                owasp/dependency-check:latest \\
-                --updateonly
-        """
-
-        steps.echo "✅ OWASP Dependency-Check installation and NVD database caching completed."
-    }
-
-    void cleanupDependencyCheck() {
-        def dcDir = "/opt/dependency-check"
-
-        steps.echo "🧹 Cleaning up OWASP Dependency-Check data..."
-
-        steps.sh "rm -rf ${dcDir}"
-
-        steps.sh "docker rmi owasp/dependency-check:latest || true"
-
-        steps.echo "✅ Cleanup completed."
-    }
+    echo "Dependency-Check setup complete. NVD data cached at ${nvdDir}"
 }
 
-// Return an instance to the pipeline script
-return new DependencyCheckInstaller(steps, env, params)
+def cleanupDependencyCheck() {
+    def nvdDir = "/var/lib/jenkins/dependency-check-data"
+
+    echo "Cleaning up OWASP Dependency-Check..."
+
+    // Remove the cached NVD data directory
+    sh "rm -rf ${nvdDir}"
+
+    echo "Cleanup complete."
+}
+
+// Return functions so the script can be used like a class
+return this
