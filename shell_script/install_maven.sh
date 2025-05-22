@@ -1,139 +1,58 @@
 #!/bin/bash
 set -euo pipefail
 
-# Default empty variables
-JENKINS_URL=""
-JENKINS_USER=""
-JENKINS_PASS=""
+echo "🔍 Checking if Maven is already installed..."
+if command -v mvn &>/dev/null; then
+    echo "✅ Maven is already installed."
+    mvn -version
+    exit 0
+fi
 
-# Parse arguments (supports both --arg val and --arg=val)
-while [[ "$#" -gt 0 ]]; do
-  case $1 in
-    --jenkins-url)
-      JENKINS_URL="$2"
-      shift 2
-      ;;
-    --jenkins-url=*)
-      JENKINS_URL="${1#*=}"
-      shift
-      ;;
-    --username)
-      JENKINS_USER="$2"
-      shift 2
-      ;;
-    --username=*)
-      JENKINS_USER="${1#*=}"
-      shift
-      ;;
-    --password)
-      JENKINS_PASS="$2"
-      shift 2
-      ;;
-    --password=*)
-      JENKINS_PASS="${1#*=}"
-      shift
-      ;;
-    *)
-      echo "❌ Unknown parameter passed: $1"
-      exit 1
-      ;;
-  esac
-done
+echo "⚙️ Maven not found. Proceeding with installation..."
 
-# Validate required arguments
-: "${JENKINS_URL:?Missing --jenkins-url}"
-: "${JENKINS_USER:?Missing --username}"
-: "${JENKINS_PASS:?Missing --password}"
-
-MAVEN_DIR="/opt/maven"
-
-get_latest_version() {
-    curl -s https://maven.apache.org/download.cgi |
-        grep -oP 'apache-maven-\K[0-9]+\.[0-9]+\.[0-9]+' |
-        head -1
-}
-
-LATEST_VERSION=$(get_latest_version)
-if [[ -z "$LATEST_VERSION" ]]; then
-    echo "❌ Could not fetch the latest Maven version."
+# Detect OS
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS=$ID
+else
+    echo "❌ Unsupported OS: Unable to detect."
     exit 1
 fi
 
-MAVEN_DOWNLOAD_URL="https://downloads.apache.org/maven/maven-3/${LATEST_VERSION}/binaries/apache-maven-${LATEST_VERSION}-bin.tar.gz"
+# Set variables
+INSTALL_DIR="/opt/maven"
+PROFILE_SCRIPT="/etc/profile.d/maven.sh"
 
-check_installed() {
-    if command -v mvn &>/dev/null; then
-        echo "✅ Maven already installed:"
-        mvn -v
-        return 0
-    fi
-    return 1
-}
+echo "🌐 Fetching latest Maven version..."
+MAVEN_VERSION=$(curl -s https://maven.apache.org/download.cgi | grep -oP 'apache-maven-\K[0-9.]+' | head -1)
 
-install_maven() {
-    echo "📥 Installing Maven ${LATEST_VERSION}..."
+if [ -z "$MAVEN_VERSION" ]; then
+    echo "❌ Failed to fetch Maven version."
+    exit 1
+fi
 
-    echo "🔄 Cleaning old Maven installation if any..."
-    sudo rm -rf "$MAVEN_DIR"
-    sudo rm -f /usr/bin/mvn
+echo "📦 Latest Maven version: $MAVEN_VERSION"
+MAVEN_URL="https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
 
-    echo "🛠 Downloading Maven from $MAVEN_DOWNLOAD_URL"
-    sudo mkdir -p "$MAVEN_DIR"
-    curl -fsSL "$MAVEN_DOWNLOAD_URL" -o /tmp/maven.tar.gz
-    sudo tar -xzf /tmp/maven.tar.gz -C "$MAVEN_DIR" --strip-components=1
-    sudo ln -sf "$MAVEN_DIR/bin/mvn" /usr/bin/mvn
+# Create install directory
+echo "📁 Preparing installation directory at $INSTALL_DIR..."
+sudo rm -rf "$INSTALL_DIR"
+sudo mkdir -p "$INSTALL_DIR"
 
-    echo "🔧 Verifying Maven executable:"
-    ls -l /usr/bin/mvn
-    file /usr/bin/mvn
+# Download and extract
+echo "📥 Downloading and extracting Maven..."
+curl -fsSL "$MAVEN_URL" | sudo tar -xz -C "$INSTALL_DIR" --strip-components=1
 
-    echo "🔍 Printing environment variables related to Java and Maven for debugging:"
-    echo "JAVA_OPTS=$JAVA_OPTS"
-    echo "MAVEN_OPTS=$MAVEN_OPTS"
-
-    echo "🧪 Running mvn -v to verify installation:"
-    mvn -v
-}
-
-add_maven_to_jenkins() {
-    echo "🔐 Authenticating to Jenkins as ${JENKINS_USER}..."
-
-    CRUMB=$(curl -s -u "${JENKINS_USER}:${JENKINS_PASS}" \
-        "${JENKINS_URL}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
-
-    if [[ -z "$CRUMB" ]]; then
-        echo "❌ Failed to get Jenkins crumb for CSRF protection."
-        exit 1
-    fi
-
-    TOOL_PAYLOAD=$(cat <<EOF
-<jenkins>
-  <installations>
-    <hudson.tasks.Maven_-MavenInstallation>
-      <name>Maven-${LATEST_VERSION}</name>
-      <home>${MAVEN_DIR}</home>
-      <properties/>
-    </hudson.tasks.Maven_-MavenInstallation>
-  </installations>
-</jenkins>
+# Set environment variables
+echo "🛠️ Configuring environment variables..."
+sudo tee "$PROFILE_SCRIPT" > /dev/null <<EOF
+export M2_HOME=$INSTALL_DIR
+export PATH=\$M2_HOME/bin:\$PATH
 EOF
-)
 
-    curl -X POST "${JENKINS_URL}/descriptorByName/hudson.tasks.Maven\$MavenInstallation/configure" \
-         -H "Content-Type: text/xml" \
-         -H "$CRUMB" \
-         -u "${JENKINS_USER}:${JENKINS_PASS}" \
-         --data-binary "${TOOL_PAYLOAD}"
+sudo chmod +x "$PROFILE_SCRIPT"
+source "$PROFILE_SCRIPT"
 
-    echo "✅ Maven-${LATEST_VERSION} registered in Jenkins tools."
-}
-
-main() {
-    if ! check_installed; then
-        install_maven
-    fi
-    add_maven_to_jenkins
-    echo "✅ Maven setup complete."
-}
-
-main
+# Post-install check
+echo "✅ Maven installed successfully."
+mvn -version

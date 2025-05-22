@@ -74,41 +74,6 @@ EOF
 sudo chown -R jenkins:jenkins /var/lib/jenkins/init.groovy.d
 sudo chmod 644 /var/lib/jenkins/init.groovy.d/basic-security.groovy
 
-echo "🔐 Creating Jenkins credentials: 'jenkins-cred'..."
-sudo tee /var/lib/jenkins/init.groovy.d/jenkins-cred.groovy > /dev/null <<EOF
-#!groovy
-import com.cloudbees.plugins.credentials.*
-import com.cloudbees.plugins.credentials.domains.*
-import com.cloudbees.plugins.credentials.impl.*
-import hudson.util.Secret
-import jenkins.model.Jenkins
-
-def creds_store = Jenkins.instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
-
-def existingCreds = com.cloudbees.plugins.credentials.CredentialsProvider.lookupCredentials(
-    com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials.class,
-    Jenkins.instance,
-    null,
-    null
-).find { it.id == "jenkins-cred" }
-
-if (existingCreds == null) {
-    println "--> Creating Jenkins credentials 'jenkins-cred'"
-    def credentials = new UsernamePasswordCredentialsImpl(
-        CredentialsScope.GLOBAL,
-        "jenkins-cred", "Auto-created by init script",
-        "${ADMIN_USER}",
-        "${ADMIN_PASSWORD}"
-    )
-    creds_store.addCredentials(Domain.global(), credentials)
-} else {
-    println "--> Jenkins credentials 'jenkins-cred' already exist"
-}
-EOF
-
-sudo chown jenkins:jenkins /var/lib/jenkins/init.groovy.d/jenkins-cred.groovy
-sudo chmod 644 /var/lib/jenkins/init.groovy.d/jenkins-cred.groovy
-
 # Remove initial password if it exists
 sudo rm -f /var/lib/jenkins/secrets/initialAdminPassword
 
@@ -140,8 +105,5 @@ sudo systemctl enable "$JENKINS_SERVICE"
 sudo systemctl start "$JENKINS_SERVICE"
 
 echo "✅ Jenkins installation and configuration completed!"
-echo "👤 Admin username: $ADMIN_USER"
-echo "🔐 Admin password: $ADMIN_PASSWORD"
-echo "🔑 Jenkins credential ID: jenkins-cred (username/password)"
-
-exit 0
+echo "👤 Admin: $ADMIN_USER"
+echo "🔐 Password: $ADMIN_PASSWORD"

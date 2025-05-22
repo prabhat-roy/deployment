@@ -87,14 +87,14 @@ pipeline {
             }
         }
 
-        stage('Install OpenJDK 21') {
-            steps {
-                script {
-                    def jdkInstaller = load 'groovy/install_openjdk.groovy'
-                    jdkInstaller.installOpenJDK21()
-                }
-            }
-        }
+        // stage('Install OpenJDK 21') {
+        //     steps {
+        //         script {
+        //             def jdkInstaller = load 'groovy/install_openjdk.groovy'
+        //             jdkInstaller.installOpenJDK21()
+        //         }
+        //     }
+        // }
 
         stage('Install Python') {
             steps {
