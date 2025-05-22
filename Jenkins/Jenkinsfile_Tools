@@ -42,7 +42,6 @@ pipeline {
             }
         }
 
-        // Basic tools
         stage('Install Curl') {
             steps {
                 script {
@@ -88,7 +87,6 @@ pipeline {
             }
         }
 
-        // Language runtimes
         stage('Install OpenJDK 21') {
             steps {
                 script {
@@ -116,7 +114,6 @@ pipeline {
             }
         }
 
-        // Configuration management tools
         stage('Install Ansible') {
             steps {
                 script {
@@ -144,7 +141,6 @@ pipeline {
             }
         }
 
-        // Build tools
         stage('Install Maven') {
             steps {
                 script {
@@ -172,7 +168,6 @@ pipeline {
             }
         }
 
-        // Container and Cloud Tools
         stage('Install Docker') {
             steps {
                 script {
@@ -219,7 +214,6 @@ pipeline {
         }
 
 
-        // Wrap-up
         stage('Archive Jenkins.env') {
             steps {
                 script {
