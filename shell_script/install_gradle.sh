@@ -1,60 +1,65 @@
 #!/bin/bash
 set -euo pipefail
 
+echo "🚀 Starting Gradle installation script..."
+
 GRADLE_DIR="/opt/gradle"
+TEMP_ZIP="/tmp/gradle-latest.zip"
 GRADLE_BIN_LINK="/usr/local/bin/gradle"
-TEMP_ZIP="/tmp/gradle.zip"
 
 check_installed() {
+    echo "🔍 Checking if Gradle is already installed..."
     if command -v gradle &>/dev/null; then
         echo "✅ Gradle is already installed:"
         gradle -v
-        return 0
+        exit 0
     fi
-    return 1
+    echo "📦 Gradle not found, proceeding with installation..."
 }
 
 get_latest_version() {
-    curl -s https://services.gradle.org/versions/current | grep -oP '"version":\s*"\K[^"]+'
+    curl -s https://services.gradle.org/versions/current | grep -oP '"version"\s*:\s*"\K[0-9.]+' | tr -d '\r\n[:space:]'
 }
 
 install_gradle() {
+    local LATEST_VERSION
     LATEST_VERSION=$(get_latest_version)
+
     if [[ -z "$LATEST_VERSION" ]]; then
-        echo "❌ Could not fetch the latest Gradle version."
+        echo "❌ Could not determine the latest Gradle version."
         exit 1
     fi
 
-    echo "📥 Installing Gradle ${LATEST_VERSION}..."
-
-    GRADLE_ZIP_URL="https://services.gradle.org/distributions/gradle-${LATEST_VERSION}-bin.zip"
+    echo "📥 Installing Gradle version: $LATEST_VERSION"
+    local GRADLE_ZIP_URL="https://services.gradle.org/distributions/gradle-${LATEST_VERSION}-bin.zip"
+    echo "🌐 Downloading from: $GRADLE_ZIP_URL"
 
     sudo mkdir -p "$GRADLE_DIR"
-    echo "📦 Downloading Gradle from: $GRADLE_ZIP_URL"
-    curl -fsSL "$GRADLE_ZIP_URL" -o "$TEMP_ZIP"
+    curl -fsSL "$GRADLE_ZIP_URL" -o "$TEMP_ZIP" || {
+        echo "❌ Failed to download Gradle."
+        exit 1
+    }
 
-    # Extract the archive
-    sudo unzip -q -d "$GRADLE_DIR" "$TEMP_ZIP"
+    echo "📦 Extracting Gradle ZIP..."
+    sudo unzip -q "$TEMP_ZIP" -d "$GRADLE_DIR"
 
-    # Detect extracted directory name
-    EXTRACTED_DIR=$(find "$GRADLE_DIR" -maxdepth 1 -type d -name "gradle-${LATEST_VERSION}" | head -n 1)
+    local EXTRACTED_DIR="$GRADLE_DIR/gradle-${LATEST_VERSION}"
 
-    if [[ -z "$EXTRACTED_DIR" || ! -f "$EXTRACTED_DIR/bin/gradle" ]]; then
-        echo "❌ Gradle binary not found after extraction."
+    if [[ ! -x "$EXTRACTED_DIR/bin/gradle" ]]; then
+        echo "❌ Gradle binary not found in $EXTRACTED_DIR/bin/"
         exit 1
     fi
 
-    # Symlink
+    echo "🔗 Creating symlink to /usr/local/bin/gradle..."
     sudo ln -sf "$EXTRACTED_DIR/bin/gradle" "$GRADLE_BIN_LINK"
 
-    echo "✅ Gradle installation complete."
+    echo "✅ Gradle installed successfully!"
     gradle -v
 }
 
 main() {
-    if ! check_installed; then
-        install_gradle
-    fi
+    check_installed
+    install_gradle
 }
 
 main "$@"
