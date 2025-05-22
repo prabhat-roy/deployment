@@ -42,7 +42,7 @@ pipeline {
             }
         }
 
-            stage('Install Curl') {
+        stage('Install Curl') {
             steps {
                 script {
                     def curlInstaller = load 'groovy/install_curl.groovy'
