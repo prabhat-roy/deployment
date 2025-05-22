@@ -60,6 +60,15 @@ pipeline {
             }
         }
         
+        stage('Install Unzip') {
+            steps {
+                script {
+                    def unzipInstaller = load 'groovy/install_unzip.groovy'
+                    unzipInstaller.installUnzip()
+                }
+            }
+        }
+        
         stage('Install docker') {
             steps {
                 script {
@@ -74,15 +83,7 @@ pipeline {
 
     
 
-    //     stage('Install Unzip') {
-    //         steps {
-    //             script {
-    //                 // Install unzip utility
-    //                 def unzipInstaller = load 'groovy/unzip.groovy'
-    //                 unzipInstaller.installUnzip()
-    //             }
-    //         }
-    //     }
+    
 
     //     stage('Install GnuPG') {
     //         steps {
