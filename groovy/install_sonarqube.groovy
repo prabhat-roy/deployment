@@ -31,7 +31,7 @@ class SonarqubeInstaller implements Serializable {
 
         // Retry checking SonarQube readiness up to 10 times with 30s sleep intervals
         steps.retry(10) {
-            steps.sleep 30
+            steps.sleep 60
             def code = steps.sh(script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:9000", returnStdout: true).trim()
             if (code != '200') {
                 error "SonarQube not ready yet (HTTP status: ${code})"
@@ -41,7 +41,7 @@ class SonarqubeInstaller implements Serializable {
         // Change default admin password (admin/admin) to a new secure password
         def defaultUser = 'admin'
         def defaultPass = 'admin'
-        def newPass = 'jenkinsadmin123'  // Change this to your desired password
+        def newPass = 'sonar'  // Change this to your desired password
 
         def changePassResponse = steps.sh(
             script: """curl -s -o /dev/null -w '%{http_code}' -u ${defaultUser}:${defaultPass} \\
