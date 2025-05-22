@@ -7,13 +7,8 @@ class MavenInstaller implements Serializable {
     }
 
     def installMaven() {
-        steps.sh '''
-            #!/bin/bash
-            set -e
-            echo "Executing install_maven.sh script..."
-            chmod +x ./scripts/install_maven.sh
-            ./scripts/install_maven.sh
-        '''
+        steps.sh "chmod +x shell_script/install_maven.sh"
+        steps.sh "shell_script/install_maven.sh"
     }
 }
 

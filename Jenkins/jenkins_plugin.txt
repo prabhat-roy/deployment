@@ -18,7 +18,6 @@ configuration-as-code
 copyartifact
 credentials
 credentials-binding
-csrf-default
 dependency-check-jenkins-plugin
 dependency-track
 discard-old-build
@@ -70,7 +69,7 @@ throttle-concurrents
 timestamper
 view-job-filters
 workflow-aggregator
-workflow-dispatch
+workflow-api
 zap
 zapper
 zap-pipeline
