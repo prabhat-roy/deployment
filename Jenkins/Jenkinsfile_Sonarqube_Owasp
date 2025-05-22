@@ -38,7 +38,7 @@ pipeline {
             }
         }
 
-        stage('Manage SonarQube - ' + params.action) {
+        stage('Manage SonarQube') {
             steps {
                 script {
                     def sonarqubeInstaller = load 'groovy/install_sonarqube.groovy'
