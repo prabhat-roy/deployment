@@ -54,18 +54,22 @@ pipeline {
         // }
 
         stage('Manage OWASP ZAP - ${action}') {
-            steps {
+             steps {
                 script {
-                    def owaspInstaller = load 'groovy/install_owasp.groovy'
+                    // Load the groovy class definition
+                    load 'groovy/install_dependency_check.groovy'
+                    // Instantiate the class explicitly
+                    def depCheckInstaller = new DependencyCheckInstaller(steps, env, params)
 
                     if (params.action == 'create') {
-                        owaspInstaller.installOwasp()
+                        depCheckInstaller.installDependencyCheck()
                     } else if (params.action == 'destroy') {
-                        owaspInstaller.cleanupOwasp()
+                        depCheckInstaller.cleanupDependencyCheck()
                     } else {
                         error "Invalid action: ${params.action}"
                     }
                 }
+            }
             }
         }
 
