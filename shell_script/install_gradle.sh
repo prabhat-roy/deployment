@@ -2,6 +2,8 @@
 set -euo pipefail
 
 GRADLE_DIR="/opt/gradle"
+GRADLE_BIN_LINK="/usr/local/bin/gradle"
+TEMP_ZIP="/tmp/gradle.zip"
 
 check_installed() {
     if command -v gradle &>/dev/null; then
@@ -18,7 +20,6 @@ get_latest_version() {
 
 install_gradle() {
     LATEST_VERSION=$(get_latest_version)
-
     if [[ -z "$LATEST_VERSION" ]]; then
         echo "❌ Could not fetch the latest Gradle version."
         exit 1
@@ -29,10 +30,22 @@ install_gradle() {
     GRADLE_ZIP_URL="https://services.gradle.org/distributions/gradle-${LATEST_VERSION}-bin.zip"
 
     sudo mkdir -p "$GRADLE_DIR"
-    curl -fsSL "$GRADLE_ZIP_URL" -o /tmp/gradle.zip
+    echo "📦 Downloading Gradle from: $GRADLE_ZIP_URL"
+    curl -fsSL "$GRADLE_ZIP_URL" -o "$TEMP_ZIP"
 
-    sudo unzip -q /tmp/gradle.zip -d "$GRADLE_DIR"
-    sudo ln -sf "$GRADLE_DIR/gradle-${LATEST_VERSION}/bin/gradle" /usr/bin/gradle
+    # Extract the archive
+    sudo unzip -q -d "$GRADLE_DIR" "$TEMP_ZIP"
+
+    # Detect extracted directory name
+    EXTRACTED_DIR=$(find "$GRADLE_DIR" -maxdepth 1 -type d -name "gradle-${LATEST_VERSION}" | head -n 1)
+
+    if [[ -z "$EXTRACTED_DIR" || ! -f "$EXTRACTED_DIR/bin/gradle" ]]; then
+        echo "❌ Gradle binary not found after extraction."
+        exit 1
+    fi
+
+    # Symlink
+    sudo ln -sf "$EXTRACTED_DIR/bin/gradle" "$GRADLE_BIN_LINK"
 
     echo "✅ Gradle installation complete."
     gradle -v
