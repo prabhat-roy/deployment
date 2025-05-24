@@ -127,7 +127,6 @@ if (installations.find { it.name == name }) {
     descriptor.save()
     println "✅ Docker tool '\$name' registered successfully."
 }
-}
 EOF
 )
 
