@@ -87,15 +87,6 @@ pipeline {
             }
         }
 
-        // stage('Install OpenJDK 21') {
-        //     steps {
-        //         script {
-        //             def jdkInstaller = load 'groovy/install_openjdk.groovy'
-        //             jdkInstaller.installOpenJDK21()
-        //         }
-        //     }
-        // }
-
         stage('Install Python') {
             steps {
                 script {
@@ -105,122 +96,113 @@ pipeline {
             }
         }
 
-        stage('Install Node.js') {
-            steps {
-                script {
-                    def nodejsInstaller = load 'groovy/install_nodejs.groovy'
-                    nodejsInstaller.installNodejs()
-                }
-            }
-        }
+        // stage('Install Node.js') {
+        //     steps {
+        //         script {
+        //             def nodejsInstaller = load 'groovy/install_nodejs.groovy'
+        //             nodejsInstaller.installNodejs()
+        //         }
+        //     }
+        // }
 
-        stage('Install Ansible') {
-            steps {
-                script {
-                    def ansibleInstaller = load 'groovy/install_ansible.groovy'
-                    ansibleInstaller.installAnsible()
-                }
-            }
-        }
+        // stage('Install Ansible') {
+        //     steps {
+        //         script {
+        //             def ansibleInstaller = load 'groovy/install_ansible.groovy'
+        //             ansibleInstaller.installAnsible()
+        //         }
+        //     }
+        // }
 
-        stage('Install Chef') {
-            steps {
-                script {
-                    def chefInstaller = load 'groovy/install_chef.groovy'
-                    chefInstaller.installChef()
-                }
-            }
-        }
+        // stage('Install Chef') {
+        //     steps {
+        //         script {
+        //             def chefInstaller = load 'groovy/install_chef.groovy'
+        //             chefInstaller.installChef()
+        //         }
+        //     }
+        // }
 
-        stage('Install Puppet') {
-            steps {
-                script {
-                    def puppetInstaller = load 'groovy/install_puppet.groovy'
-                    puppetInstaller.installPuppet()
-                }
-            }
-        }
+        // stage('Install Puppet') {
+        //     steps {
+        //         script {
+        //             def puppetInstaller = load 'groovy/install_puppet.groovy'
+        //             puppetInstaller.installPuppet()
+        //         }
+        //     }
+        // }
 
-        stage('Install Maven') {
-            steps {
-                script {
-                    def mavenInstaller = load 'groovy/install_maven.groovy'
-                    mavenInstaller.installMaven()
-                }
-            }
-        }
+        // stage('Install Maven') {
+        //     steps {
+        //         script {
+        //             def mavenInstaller = load 'groovy/install_maven.groovy'
+        //             mavenInstaller.installMaven()
+        //         }
+        //     }
+        // }
 
-        stage('Install Gradle') {
-            steps {
-                script {
-                    def gradleInstaller = load 'groovy/install_gradle.groovy'
-                    gradleInstaller.installGradle()
-                }
-            }
-        }
+        // stage('Install Gradle') {
+        //     steps {
+        //         script {
+        //             def gradleInstaller = load 'groovy/install_gradle.groovy'
+        //             gradleInstaller.installGradle()
+        //         }
+        //     }
+        // }
 
-        stage('Install Ant') {
-            steps {
-                script {
-                    def antInstaller = load 'groovy/install_ant.groovy'
-                    antInstaller.installAnt()
-                }
-            }
-        }
+        // stage('Install Ant') {
+        //     steps {
+        //         script {
+        //             def antInstaller = load 'groovy/install_ant.groovy'
+        //             antInstaller.installAnt()
+        //         }
+        //     }
+        // }
 
-        stage('Install Docker') {
-            steps {
-                script {
-                    def dockerInstaller = load 'groovy/install_docker.groovy'
-                    dockerInstaller.installDocker()
-                }
-            }
-        }
+        // stage('Install Kubernetes CLI Tools') {
+        //     steps {
+        //         script {
+        //             def kubernetesInstaller = load 'groovy/install_kubernetes_tools.groovy'
+        //             kubernetesInstaller.installKubernetes()
+        //         }
+        //     }
+        // }
 
-        stage('Install Kubernetes CLI Tools') {
-            steps {
-                script {
-                    def kubernetesInstaller = load 'groovy/install_kubernetes_tools.groovy'
-                    kubernetesInstaller.installKubernetes()
-                }
-            }
-        }
+        // stage('Install Cloud CLI Tool') {
+        //     steps {
+        //         script {
+        //             def cliInstaller = load 'groovy/install_cloud_cli.groovy'
+        //             cliInstaller.installCloudCLI()
+        //         }
+        //     }
+        // }
 
-        stage('Install Cloud CLI Tool') {
-            steps {
-                script {
-                    def cliInstaller = load 'groovy/install_cloud_cli.groovy'
-                    cliInstaller.installCloudCLI()
-                }
-            }
-        }
+        // stage('Install Terraform') {
+        //     steps {
+        //         script {
+        //             def terraformInstaller = load 'groovy/install_terraform.groovy'
+        //             terraformInstaller.installTerraform()
+        //         }
+        //     }
+        // }
 
-        stage('Install Terraform') {
-            steps {
-                script {
-                    def terraformInstaller = load 'groovy/install_terraform.groovy'
-                    terraformInstaller.installTerraform()
-                }
-            }
-        }
+        // stage('Install Vault CLI') {
+        //     steps {
+        //         script {
+        //             def vaultInstaller = load 'groovy/install_vault.groovy'
+        //             vaultInstaller.installVaultCLI()
+        //         }
+        //     }
+        // }
 
-        stage('Install Vault CLI') {
-            steps {
-                script {
-                    def vaultInstaller = load 'groovy/install_vault.groovy'
-                    vaultInstaller.installVaultCLI()
-                }
-            }
-        }
-
-        stage('Archive Jenkins.env') {
-            steps {
-                script {
-                    archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
-                    stash name: 'env-file', includes: 'Jenkins.env'
-                }
-            }
-        }
+        // stage('Archive Jenkins.env') {
+        //     steps {
+        //         script {
+        //             archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
+        //             stash name: 'env-file', includes: 'Jenkins.env'
+        //         }
+        //     }
+        // }
 
         stage('Clean Workspace') {
             steps {
@@ -230,22 +212,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Graceful Jenkins Restart') {
-            when {
-                expression { currentBuild.result == null || currentBuild.result == 'SUCCESS' }
-            }
-            steps {
-                echo "⚙️ Scheduling Jenkins restart via systemctl..."
-                sh '''
-                    LOG_FILE="/var/log/jenkins-custom/jenkins-restart.log"
-                    sudo mkdir -p /var/log/jenkins-custom
-                    sudo chown jenkins:jenkins /var/log/jenkins-custom
-                    echo "⏱️ Restart scheduled at $(date)" | sudo tee -a "$LOG_FILE"
-                    nohup bash -c "sleep 10 && echo '🔁 Restarting Jenkins at $(date)' | sudo tee -a $LOG_FILE && sudo systemctl restart jenkins" > /dev/null 2>&1 &
-                    echo "✅ Jenkins will restart gracefully in 10 seconds (in background)."
-                '''
-            }
-        }
+        
     }
 }

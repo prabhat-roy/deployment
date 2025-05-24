@@ -19,8 +19,8 @@ variable "key_name" {
   type        = string
 }
 
-variable "private_key_path" {
-  description = "Path to the private key file for SSH access."
+variable "public_key_path" {
+  description = "Path to your existing public key file"
   type        = string
 }
 
@@ -30,5 +30,10 @@ variable "disk_size" {
 }
 
 variable "cluster_name" {
+  description = "Name of the EKS cluster."
   type = string
+}
+
+variable "private_key" {
+  
 }
