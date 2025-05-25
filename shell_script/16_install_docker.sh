@@ -5,7 +5,7 @@ JENKINS_URL="http://localhost:8080"
 JENKINS_USER="admin"
 JENKINS_PASSWORD="admin"
 COOKIE_JAR="/tmp/jenkins_cookies.txt"
-TOOL_NAME="DefaultDocker"
+TOOL_NAME="Docker"
 
 echo "🔍 Checking if Docker is already installed..."
 if command -v docker &>/dev/null; then

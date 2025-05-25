@@ -31,7 +31,7 @@ elif [[ -f /etc/redhat-release ]]; then
     echo "🔍 Detected RHEL/CentOS/Fedora based system"
 
     # Install dependencies
-    sudo yum install -y yum-utils curl unzip
+    sudo yum install -y yum-utils
 
     # Add HashiCorp YUM repo
     sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo

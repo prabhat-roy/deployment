@@ -1,74 +1,99 @@
-// Note: This groovy file is loaded inside Jenkins pipeline script
-
-def nvdDir = "/var/lib/jenkins/dependency-check-data"
+def nvdDir = "/opt/dependency-check-data"
 def owaspImage = "owasp/dependency-check:latest"
-def jenkinsUrl = env.JENKINS_URL ?: "http://localhost:8080"
-def credentialsId = "jenkins-cred" // Your Jenkins credential ID
+def toolName = "OWASP-DependencyCheck"
 
 def installDependencyCheck() {
-    echo "Starting OWASP Dependency-Check installation..."
+    echo "🔧 Installing OWASP Dependency-Check..."
 
-    // Create directory (must be writable by Jenkins user)
-    sh "mkdir -p ${nvdDir}"
+    createDirectory()
+    pullDockerImage()
+    updateNVD()
+    registerTool()
 
-    // Pull the official OWASP Dependency-Check Docker image
-    sh "docker pull ${owaspImage}"
+    echo "✅ Dependency-Check setup complete."
+}
 
-    // Run container to download NVD data, show verbose progress
-    sh """
+def cleanupDependencyCheck() {
+    echo "🧹 Cleaning up Dependency-Check..."
+
+    removeDirectory()
+    deregisterTool()
+
+    echo "✅ Cleanup complete."
+}
+
+private def runShell(String cmd) {
+    def proc = ['bash', '-c', cmd].execute()
+    proc.in.eachLine { println "[shell] $it" }
+    proc.err.eachLine { println "[error] $it" }
+    proc.waitFor()
+    if (proc.exitValue() != 0) {
+        throw new RuntimeException("Shell command failed: $cmd")
+    }
+}
+
+private def createDirectory() {
+    echo "📁 Creating directory: ${nvdDir}"
+    runShell("sudo mkdir -p ${nvdDir}")
+    runShell("sudo chown -R \$(whoami) ${nvdDir}")
+}
+
+private def removeDirectory() {
+    echo "🗑️ Removing directory: ${nvdDir}"
+    runShell("sudo rm -rf ${nvdDir}")
+}
+
+private def pullDockerImage() {
+    echo "🐳 Pulling Docker image: ${owaspImage}"
+    runShell("docker pull ${owaspImage}")
+}
+
+private def updateNVD() {
+    echo "🌐 Downloading NVD data..."
+    def dockerCmd = """
         docker run --rm \\
             -v ${nvdDir}:/usr/share/dependency-check/data \\
             ${owaspImage} \\
             --updateonly --verbose
-    """
-
-    echo "NVD data cached at ${nvdDir}"
-
-    // Configure Jenkins Dependency-Check installation to use local NVD data
-    configureJenkinsDependencyCheck()
-}
-
-def cleanupDependencyCheck() {
-    echo "Cleaning up OWASP Dependency-Check data..."
-    sh "rm -rf ${nvdDir}"
-    echo "Cleanup complete."
-}
-
-// Configure Dependency-Check tool in Jenkins with local NVD path
-def configureJenkinsDependencyCheck() {
-    echo "Configuring Jenkins Dependency-Check tool installation..."
-
-    // Must run this part on Jenkins master JVM thread and outside sandbox
-    // So mark this function as @NonCPS (No pipeline CPS transformation)
-
-    configureToolInJenkins()
+    """.stripIndent().trim()
+    runShell(dockerCmd)
 }
 
 @NonCPS
-def configureToolInJenkins() {
-    def jenkins = Jenkins.getInstance()
-    def desc = jenkins.getDescriptorByType(org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation.DescriptorImpl.class)
+private def registerTool() {
+    echo "🔧 Registering '${toolName}' in Jenkins tools..."
 
-    def installations = desc.getInstallations() as List
+    def jenkins = jenkins.model.Jenkins.getInstance()
+    def descriptor = jenkins.getDescriptorByType(org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation.DescriptorImpl)
+    def installations = descriptor.getInstallations().toList()
 
-    def found = false
-    for (inst in installations) {
-        if (inst.name == 'LocalNVD') {
-            inst.home = nvdDir
-            found = true
-        }
+    def existing = installations.find { it.name == toolName }
+
+    if (existing) {
+        println "✔ Tool '${toolName}' already exists. Updating home to ${nvdDir}"
+        existing.home = nvdDir
+    } else {
+        println "➕ Registering new tool '${toolName}' at ${nvdDir}"
+        def newTool = new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation(toolName, nvdDir, null)
+        installations.add(newTool)
     }
 
-    if (!found) {
-        def newInst = new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation('LocalNVD', nvdDir, null)
-        installations.add(newInst)
-    }
-
-    desc.setInstallations(installations.toArray(new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation[0]))
-    desc.save()
-
-    echo "Configured Dependency-Check tool with local NVD data path: ${nvdDir}"
+    descriptor.setInstallations(installations.toArray(new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation[0]))
+    descriptor.save()
+    jenkins.save()
 }
 
-// Return this so pipeline can call functions
+@NonCPS
+private def deregisterTool() {
+    echo "🗑️ Removing '${toolName}' from Jenkins tools..."
+
+    def jenkins = jenkins.model.Jenkins.getInstance()
+    def descriptor = jenkins.getDescriptorByType(org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation.DescriptorImpl)
+    def installations = descriptor.getInstallations().findAll { it.name != toolName }
+
+    descriptor.setInstallations(installations.toArray(new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation[0]))
+    descriptor.save()
+    jenkins.save()
+}
+
 return this

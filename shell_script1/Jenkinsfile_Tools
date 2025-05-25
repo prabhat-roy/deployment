@@ -1,0 +1,217 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                script {
+                    echo "📥 Checking out source code..."
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Inject Environment Variables') {
+            steps {
+                script {
+                    def envLoader = load 'groovy/env_loader.groovy'
+                    def envVars = envLoader.loadEnvVars("Jenkins.env")
+                    envVars.each { key, val ->
+                        env."${key}" = val
+                        echo "Injected: ${key}=${val}"
+                    }
+                }
+            }
+        }
+
+        stage('Detect Microservices') {
+            steps {
+                script {
+                    def microLister = load 'groovy/detect_microservice.groovy'
+                    microLister.writeServicesToEnv()
+                }
+            }
+        }
+
+        stage('Detect Cloud Provider') {
+            steps {
+                script {
+                    def cloudScript = load 'groovy/detect_cloud.groovy'
+                    cloudScript.detectAndSaveCloudProvider()
+                }
+            }
+        }
+
+        stage('Install Curl') {
+            steps {
+                script {
+                    def curlInstaller = load 'groovy/install_curl.groovy'
+                    curlInstaller.installCurl()
+                }
+            }
+        }
+
+        stage('Install Wget') {
+            steps {
+                script {
+                    def wgetInstaller = load 'groovy/install_wget.groovy'
+                    wgetInstaller.installWget()
+                }
+            }
+        }
+
+        stage('Install Unzip') {
+            steps {
+                script {
+                    def unzipInstaller = load 'groovy/install_unzip.groovy'
+                    unzipInstaller.installUnzip()
+                }
+            }
+        }
+
+        stage('Install GnuPG') {
+            steps {
+                script {
+                    def gnupgInstaller = load 'groovy/install_gnupg.groovy'
+                    gnupgInstaller.installGnupg()
+                }
+            }
+        }
+
+        stage('Install Make') {
+            steps {
+                script {
+                    def makeInstaller = load 'groovy/install_make.groovy'
+                    makeInstaller.installMake()
+                }
+            }
+        }
+
+        stage('Install Python') {
+            steps {
+                script {
+                    def pythonInstaller = load 'groovy/install_python.groovy'
+                    pythonInstaller.installPython()
+                }
+            }
+        }
+
+        // stage('Install Node.js') {
+        //     steps {
+        //         script {
+        //             def nodejsInstaller = load 'groovy/install_nodejs.groovy'
+        //             nodejsInstaller.installNodejs()
+        //         }
+        //     }
+        // }
+
+        // stage('Install Ansible') {
+        //     steps {
+        //         script {
+        //             def ansibleInstaller = load 'groovy/install_ansible.groovy'
+        //             ansibleInstaller.installAnsible()
+        //         }
+        //     }
+        // }
+
+        // stage('Install Chef') {
+        //     steps {
+        //         script {
+        //             def chefInstaller = load 'groovy/install_chef.groovy'
+        //             chefInstaller.installChef()
+        //         }
+        //     }
+        // }
+
+        // stage('Install Puppet') {
+        //     steps {
+        //         script {
+        //             def puppetInstaller = load 'groovy/install_puppet.groovy'
+        //             puppetInstaller.installPuppet()
+        //         }
+        //     }
+        // }
+
+        // stage('Install Maven') {
+        //     steps {
+        //         script {
+        //             def mavenInstaller = load 'groovy/install_maven.groovy'
+        //             mavenInstaller.installMaven()
+        //         }
+        //     }
+        // }
+
+        // stage('Install Gradle') {
+        //     steps {
+        //         script {
+        //             def gradleInstaller = load 'groovy/install_gradle.groovy'
+        //             gradleInstaller.installGradle()
+        //         }
+        //     }
+        // }
+
+        // stage('Install Ant') {
+        //     steps {
+        //         script {
+        //             def antInstaller = load 'groovy/install_ant.groovy'
+        //             antInstaller.installAnt()
+        //         }
+        //     }
+        // }
+
+        // stage('Install Kubernetes CLI Tools') {
+        //     steps {
+        //         script {
+        //             def kubernetesInstaller = load 'groovy/install_kubernetes_tools.groovy'
+        //             kubernetesInstaller.installKubernetes()
+        //         }
+        //     }
+        // }
+
+        // stage('Install Cloud CLI Tool') {
+        //     steps {
+        //         script {
+        //             def cliInstaller = load 'groovy/install_cloud_cli.groovy'
+        //             cliInstaller.installCloudCLI()
+        //         }
+        //     }
+        // }
+
+        // stage('Install Terraform') {
+        //     steps {
+        //         script {
+        //             def terraformInstaller = load 'groovy/install_terraform.groovy'
+        //             terraformInstaller.installTerraform()
+        //         }
+        //     }
+        // }
+
+        // stage('Install Vault CLI') {
+        //     steps {
+        //         script {
+        //             def vaultInstaller = load 'groovy/install_vault.groovy'
+        //             vaultInstaller.installVaultCLI()
+        //         }
+        //     }
+        // }
+
+        // stage('Archive Jenkins.env') {
+        //     steps {
+        //         script {
+        //             archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
+        //             stash name: 'env-file', includes: 'Jenkins.env'
+        //         }
+        //     }
+        // }
+
+        stage('Clean Workspace') {
+            steps {
+                script {
+                    deleteDir()
+                    echo "Workspace deleted."
+                }
+            }
+        }
+        
+    }
+}

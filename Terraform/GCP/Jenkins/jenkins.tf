@@ -43,41 +43,21 @@ resource "null_resource" "jenkins_provision" {
     private_key = local.private_key_content
   }
 
-  # Copy update_upgrade_os.sh
+  # ✅ Copy entire shell_script folder at once
   provisioner "file" {
-    source      = "../../../shell_script/update_upgrade_os.sh"
-    destination = "/tmp/update_upgrade_os.sh"
+    source      = "../../../shell_script/"
+    destination = "/tmp"
   }
 
-  # Copy install_git.sh
-  provisioner "file" {
-    source      = "../../../shell_script/install_git.sh"
-    destination = "/tmp/install_git.sh"
+provisioner "file" {
+    source      = "../../../Jenkins/jenkins_plugin.txt"
+    destination = "/tmp/jenkins_plugin.txt"
   }
-
-  # Copy install_openjdk21.sh
-  provisioner "file" {
-    source      = "../../../shell_script/install_openjdk21.sh"
-    destination = "/tmp/install_openjdk21.sh"
-  }
-
-  # Copy install_jenkins.sh script
-  provisioner "file" {
-    source      = "../../../shell_script/install_jenkins.sh"
-    destination = "/tmp/install_jenkins.sh"
-  }
-
-  # Make executable and run with full logging
+  # ✅ Run orchestrator script
   provisioner "remote-exec" {
     inline = [
-      "chmod +x /tmp/install_jenkins.sh",
-      "chmod +x /tmp/install_git.sh",
-      "chmod +x /tmp/update_upgrade_os.sh",
-      "chmod +x /tmp/install_openjdk21.sh",
-      "sudo /tmp/update_upgrade_os.sh 2>&1 | tee /tmp/update_upgrade_os.log",
-      "sudo /tmp/install_git.sh 2>&1 | tee /tmp/git.log",
-      "sudo /tmp/install_openjdk21.sh 2>&1 | tee /tmp/openjdk21.log",
-      "sudo /tmp/install_jenkins.sh 2>&1 | tee /tmp/jenkins_install_full.log"
+      "chmod +x /tmp/install_tools.sh",
+      "sudo bash /tmp/install_tools.sh"
     ]
   }
 }

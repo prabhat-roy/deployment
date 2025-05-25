@@ -16,7 +16,6 @@ fi
 # Detect distribution and install Jenkins
 if [ -f /etc/redhat-release ]; then
     echo "🔧 Detected RHEL/CentOS-based system"
-    sudo yum install -y wget curl
     sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
     sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key
     sudo yum install -y jenkins
@@ -26,7 +25,6 @@ if [ -f /etc/redhat-release ]; then
 elif [ -f /etc/debian_version ]; then
     echo "🔧 Detected Debian/Ubuntu-based system"
     sudo apt update
-    sudo apt install -y wget curl gnupg2
     sudo mkdir -p /etc/apt/keyrings
     sudo wget -q -O /etc/apt/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian/jenkins.io-2023.key
     echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
