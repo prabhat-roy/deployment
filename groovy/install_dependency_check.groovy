@@ -66,7 +66,7 @@ private def registerTool() {
     echo "🔧 Registering '${toolName}' as generic Jenkins tool..."
 
     def jenkins = jenkins.model.Jenkins.getInstance()
-    def desc = jenkins.getDescriptorByType(hudson.tools.ToolDescriptor.class)
+    def desc = jenkins.getDescriptorByType(org.jenkinsci.plugins.generictools.GenericToolInstallation.DescriptorImpl.class)
     def installations = desc.getInstallations().toList()
 
     def existing = installations.find { it.name == toolName }
@@ -76,11 +76,11 @@ private def registerTool() {
         existing.home = nvdDir
     } else {
         println "➕ Registering new generic tool '${toolName}' at ${nvdDir}"
-        def newTool = new hudson.tools.ToolInstallation(toolName, nvdDir, null)
+        def newTool = new org.jenkinsci.plugins.generictools.GenericToolInstallation(toolName, nvdDir, null)
         installations.add(newTool)
     }
 
-    desc.setInstallations(installations.toArray(new hudson.tools.ToolInstallation[0]))
+    desc.setInstallations(installations.toArray(new org.jenkinsci.plugins.generictools.GenericToolInstallation[0]))
     desc.save()
     jenkins.save()
 }
@@ -90,12 +90,13 @@ private def deregisterTool() {
     echo "🗑️ Removing '${toolName}' from Jenkins generic tools..."
 
     def jenkins = jenkins.model.Jenkins.getInstance()
-    def desc = jenkins.getDescriptorByType(hudson.tools.ToolDescriptor.class)
+    def desc = jenkins.getDescriptorByType(org.jenkinsci.plugins.generictools.GenericToolInstallation.DescriptorImpl.class)
     def installations = desc.getInstallations().findAll { it.name != toolName }
 
-    desc.setInstallations(installations.toArray(new hudson.tools.ToolInstallation[0]))
+    desc.setInstallations(installations.toArray(new org.jenkinsci.plugins.generictools.GenericToolInstallation[0]))
     desc.save()
     jenkins.save()
 }
+
 
 return this
