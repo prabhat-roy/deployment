@@ -1,3 +1,5 @@
+// groovy/install_dependency_check.groovy
+
 def nvdDir = "/opt/dependency-check-data"
 def owaspImage = "owasp/dependency-check:latest"
 def toolName = "OWASP-DependencyCheck"
@@ -61,11 +63,11 @@ private def updateNVD() {
 
 @NonCPS
 private def registerTool() {
-    echo "🔧 Registering '${toolName}' in Jenkins tools..."
+    echo "🔧 Registering '${toolName}' as generic Jenkins tool..."
 
     def jenkins = jenkins.model.Jenkins.getInstance()
-    def descriptor = jenkins.getDescriptorByType(org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation.DescriptorImpl)
-    def installations = descriptor.getInstallations().toList()
+    def desc = jenkins.getDescriptorByType(hudson.tools.ToolDescriptor.class)
+    def installations = desc.getInstallations().toList()
 
     def existing = installations.find { it.name == toolName }
 
@@ -73,26 +75,26 @@ private def registerTool() {
         println "✔ Tool '${toolName}' already exists. Updating home to ${nvdDir}"
         existing.home = nvdDir
     } else {
-        println "➕ Registering new tool '${toolName}' at ${nvdDir}"
-        def newTool = new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation(toolName, nvdDir, null)
+        println "➕ Registering new generic tool '${toolName}' at ${nvdDir}"
+        def newTool = new hudson.tools.ToolInstallation(toolName, nvdDir, null)
         installations.add(newTool)
     }
 
-    descriptor.setInstallations(installations.toArray(new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation[0]))
-    descriptor.save()
+    desc.setInstallations(installations.toArray(new hudson.tools.ToolInstallation[0]))
+    desc.save()
     jenkins.save()
 }
 
 @NonCPS
 private def deregisterTool() {
-    echo "🗑️ Removing '${toolName}' from Jenkins tools..."
+    echo "🗑️ Removing '${toolName}' from Jenkins generic tools..."
 
     def jenkins = jenkins.model.Jenkins.getInstance()
-    def descriptor = jenkins.getDescriptorByType(org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation.DescriptorImpl)
-    def installations = descriptor.getInstallations().findAll { it.name != toolName }
+    def desc = jenkins.getDescriptorByType(hudson.tools.ToolDescriptor.class)
+    def installations = desc.getInstallations().findAll { it.name != toolName }
 
-    descriptor.setInstallations(installations.toArray(new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation[0]))
-    descriptor.save()
+    desc.setInstallations(installations.toArray(new hudson.tools.ToolInstallation[0]))
+    desc.save()
     jenkins.save()
 }
 
