@@ -1,5 +1,3 @@
-// groovy/install_dependency_check.groovy
-
 def nvdDir = "/opt/dependency-check-data"
 def owaspImage = "owasp/dependency-check:latest"
 def toolName = "OWASP-DependencyCheck"
@@ -63,11 +61,15 @@ private def updateNVD() {
 
 @NonCPS
 private def registerTool() {
-    echo "🔧 Registering '${toolName}' as generic Jenkins tool..."
+    echo "🔧 Registering '${toolName}' in Jenkins tools..."
 
-    def jenkins = jenkins.model.Jenkins.getInstance()
-    def desc = jenkins.getDescriptorByType(org.jenkinsci.plugins.generictools.GenericToolInstallation.DescriptorImpl.class)
-    def installations = desc.getInstallations().toList()
+    def jenkins = jenkins.model.Jenkins.getInstanceOrNull()
+    if (!jenkins) {
+        throw new IllegalStateException("Jenkins instance is not available.")
+    }
+
+    def descriptor = jenkins.getDescriptorByType(org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation.DescriptorImpl)
+    def installations = descriptor.getInstallations().toList()
 
     def existing = installations.find { it.name == toolName }
 
@@ -75,28 +77,31 @@ private def registerTool() {
         println "✔ Tool '${toolName}' already exists. Updating home to ${nvdDir}"
         existing.home = nvdDir
     } else {
-        println "➕ Registering new generic tool '${toolName}' at ${nvdDir}"
-        def newTool = new org.jenkinsci.plugins.generictools.GenericToolInstallation(toolName, nvdDir, null)
+        println "➕ Registering new tool '${toolName}' at ${nvdDir}"
+        def newTool = new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation(toolName, nvdDir, null)
         installations.add(newTool)
     }
 
-    desc.setInstallations(installations.toArray(new org.jenkinsci.plugins.generictools.GenericToolInstallation[0]))
-    desc.save()
+    descriptor.setInstallations(installations.toArray(new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation[0]))
+    descriptor.save()
     jenkins.save()
 }
 
 @NonCPS
 private def deregisterTool() {
-    echo "🗑️ Removing '${toolName}' from Jenkins generic tools..."
+    echo "🗑️ Removing '${toolName}' from Jenkins tools..."
 
-    def jenkins = jenkins.model.Jenkins.getInstance()
-    def desc = jenkins.getDescriptorByType(org.jenkinsci.plugins.generictools.GenericToolInstallation.DescriptorImpl.class)
-    def installations = desc.getInstallations().findAll { it.name != toolName }
+    def jenkins = jenkins.model.Jenkins.getInstanceOrNull()
+    if (!jenkins) {
+        throw new IllegalStateException("Jenkins instance is not available.")
+    }
 
-    desc.setInstallations(installations.toArray(new org.jenkinsci.plugins.generictools.GenericToolInstallation[0]))
-    desc.save()
+    def descriptor = jenkins.getDescriptorByType(org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation.DescriptorImpl)
+    def updated = descriptor.getInstallations().findAll { it.name != toolName }
+
+    descriptor.setInstallations(updated.toArray(new org.jenkinsci.plugins.DependencyCheck.DependencyCheckInstallation[0]))
+    descriptor.save()
     jenkins.save()
 }
-
 
 return this

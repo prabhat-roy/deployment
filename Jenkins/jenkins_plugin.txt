@@ -28,6 +28,7 @@ docker-workflow
 email-ext
 envinject
 fortify
+generic-tool
 git
 github
 gitlab-plugin
