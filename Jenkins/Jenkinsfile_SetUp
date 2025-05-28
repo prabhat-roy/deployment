@@ -46,7 +46,7 @@ pipeline {
             }
         }
 
-        stage('Manage Repository - ${action}') {
+        stage('Manage Repository') {
             steps {
                 script {
                     def cloudRepo = load 'groovy/cloud_repo.groovy'
