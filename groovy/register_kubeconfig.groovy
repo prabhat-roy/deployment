@@ -67,6 +67,7 @@ def registerKubeconfig() {
         returnStdout: true
     ).trim()
 
+    // Correctly wrap base64 content as SecretBytes object
     def payloadMap = [
         credentials: [
             scope      : "GLOBAL",
@@ -74,7 +75,10 @@ def registerKubeconfig() {
             description: "Kubeconfig for ${cloud} cluster",
             '$class'   : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
             fileName   : "config",
-            secretBytes: kubeconfigBase64
+            secretBytes: [
+                '$class': "org.jenkinsci.plugins.plaincredentials.impl.SecretBytes",
+                base64  : kubeconfigBase64
+            ]
         ]
     ]
 
