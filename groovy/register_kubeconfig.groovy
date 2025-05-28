@@ -1,10 +1,11 @@
 import groovy.json.JsonOutput
 
 def getCrumb(String jenkinsUrl, String user, String token) {
-    return sh(
+    def crumb = sh(
         script: "curl -s --user '${user}:${token}' '${jenkinsUrl}/crumbIssuer/api/json' | jq -r '.crumb'",
         returnStdout: true
     ).trim()
+    return crumb
 }
 
 def registerKubeconfig() {
@@ -19,12 +20,15 @@ def registerKubeconfig() {
     if (!jenkinsCreds) error "❌ JENKINS_CREDS_ID is not defined"
 
     def jenkinsAuth = jenkinsCreds.contains(":") ? jenkinsCreds : getUserToken(jenkinsCreds)
-    def (jenkinsUser, jenkinsToken) = jenkinsAuth.split(":", 2)*.trim()
+
+    def parts = jenkinsAuth.split(":", 2)
+    def jenkinsUser = parts[0].trim()
+    def jenkinsToken = parts.length > 1 ? parts[1].trim() : ''
+
     def credId = "kubeconfig-credential"
 
-    // Check if credential exists
     def exists = (sh(script: """
-        curl -s -o /dev/null -w "%{http_code}" -u '${jenkinsUser}:${jenkinsToken}' \\
+        curl -s -o /dev/null -w "%{http_code}" -u '${jenkinsUser}:${jenkinsToken}' \
         '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/api/json'
     """, returnStdout: true).trim() == "200")
 
@@ -33,16 +37,14 @@ def registerKubeconfig() {
         return
     }
 
-    // Ensure kubeconfig exists and copy it
-    sh "cp ~/.kube/config '${env.WORKSPACE}/kubeconfig'"
+    // Copy kubeconfig to workspace (you can replace this line with a real kubeconfig generation step)
+    sh "cp ~/.kube/config ${env.WORKSPACE}/kubeconfig"
 
-    // Encode the file as base64
     def kubeconfigBase64 = sh(
-        script: "base64 < '${env.WORKSPACE}/kubeconfig' | tr -d '\\n'",
+        script: "base64 -w0 ${env.WORKSPACE}/kubeconfig",
         returnStdout: true
     ).trim()
 
-    // Build payload
     def payloadMap = [
         "": "0",
         credentials: [
@@ -59,21 +61,19 @@ def registerKubeconfig() {
     ]
 
     def payloadFile = "${env.WORKSPACE}/kubeconfig-payload.json"
-    writeFile file: payloadFile, text: JsonOutput.prettyPrint(JsonOutput.toJson(payloadMap))
+    writeFile file: payloadFile, text: JsonOutput.toJson(payloadMap)
 
-    // Get crumb for CSRF protection
     def crumb = getCrumb(jenkinsUrl, jenkinsUser, jenkinsToken)
 
-    // Send payload to Jenkins
     sh """
     curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
          --user '${jenkinsUser}:${jenkinsToken}' \\
          -H 'Content-Type: application/json' \\
          -H 'Jenkins-Crumb: ${crumb}' \\
-         -d @'${payloadFile}'
+         -d @${payloadFile}
     """
 
-    echo "✅ Kubeconfig registered as Jenkins File credential with ID: '${credId}'"
+    echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
 }
 
 def getUserToken(String credId) {
