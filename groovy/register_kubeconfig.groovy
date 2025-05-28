@@ -1,17 +1,54 @@
 import groovy.json.JsonOutput
 
-def registerKubeconfig() {
+def registerKubeconfig(String action) {
     def props = readProperties file: 'Jenkins.env'
 
     def cloud = props['CLOUD_PROVIDER']?.toLowerCase()
     def jenkinsUrl = props['JENKINS_URL']
-    def jenkinsCredsId = props['JENKINS_CREDS_ID']
+    def jenkinsCreds = props['JENKINS_CREDS_ID']
 
     if (!cloud) error "❌ CLOUD_PROVIDER is not defined"
     if (!jenkinsUrl) error "❌ JENKINS_URL is not defined"
-    if (!jenkinsCredsId) error "❌ JENKINS_CREDS_ID is not defined"
+    if (!jenkinsCreds) error "❌ JENKINS_CREDS_ID is not defined"
+    if (!(action in ['create', 'destroy'])) error "❌ Invalid action '${action}'. Use 'create' or 'destroy'"
 
-    // Load kubeconfig
+    if (!jenkinsCreds.contains(":")) {
+        error "❌ JENKINS_CREDS_ID must be in format 'username:apitoken'"
+    }
+
+    def (jenkinsUser, jenkinsToken) = jenkinsCreds.split(":", 2).collect { it.trim() }
+
+    def credId = "kubeconfig-credential"
+
+    // Check if credential already exists
+    def credCheckCmd = """
+        curl -s -u '${jenkinsUser}:${jenkinsToken}' '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/api/json'
+    """
+    def exists = (sh(script: credCheckCmd, returnStatus: true) == 0)
+
+    if (action == 'destroy') {
+        if (!exists) {
+            echo "⚠️ Credential '${credId}' not found, skipping deletion."
+            return
+        }
+
+        def deleteCmd = """
+            curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/doDelete' \\
+            --user '${jenkinsUser}:${jenkinsToken}'
+        """
+        echo "🔥 Deleting Jenkins credential '${credId}'..."
+        sh deleteCmd
+        echo "✅ Credential '${credId}' deleted."
+        return
+    }
+
+    // For 'create' only
+    if (exists) {
+        echo "✅ Credential '${credId}' already exists, skipping creation."
+        return
+    }
+
+    // Update kubeconfig based on cloud
     switch (cloud) {
         case 'aws':
             if (!props['AWS_REGION']) error "❌ AWS_REGION not set"
@@ -29,20 +66,20 @@ def registerKubeconfig() {
             error "❌ Unsupported CLOUD_PROVIDER: ${cloud}"
     }
 
-    // Store kubeconfig to temp
+    // Copy kubeconfig and encode it
     def kubeconfigPath = "${env.WORKSPACE}/kubeconfig"
     sh "cp ~/.kube/config ${kubeconfigPath}"
 
-    def kubeconfigBase64 = sh(script: "base64 -w 0 ${kubeconfigPath}", returnStdout: true).trim()
-    def usernamePassword = props['JENKINS_CREDS_ID'].split(':')
-    def jenkinsUser = usernamePassword[0].trim()
-    def jenkinsToken = usernamePassword[1].trim()
+    def kubeconfigBase64 = sh(
+        script: "base64 ${kubeconfigPath} | tr -d '\\n'",
+        returnStdout: true
+    ).trim()
 
+    // Create credential JSON payload
     def payload = JsonOutput.toJson([
-        "": "0",
         credentials: [
             scope      : "GLOBAL",
-            id         : "kubeconfig-credential",
+            id         : credId,
             description: "Kubeconfig for ${cloud} cluster",
             $class     : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
             fileName   : "config",
@@ -50,16 +87,16 @@ def registerKubeconfig() {
         ]
     ])
 
-    def curlCmd = """
-        curl -s -X POST "${jenkinsUrl}/credentials/store/system/domain/_/createCredentials" \\
-        --user "${jenkinsUser}:${jenkinsToken}" \\
-        -H "Content-Type: application/json" \\
+    def createCmd = """
+        curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
+        --user '${jenkinsUser}:${jenkinsToken}' \\
+        -H 'Content-Type: application/json' \\
         -d '${payload}'
     """
 
-    echo "🔐 Creating Jenkins credential for kubeconfig..."
-    sh curlCmd
-    echo "✅ Kubeconfig registered as Jenkins file credential with ID: kubeconfig-credential"
+    echo "🔐 Creating Jenkins credential '${credId}'..."
+    sh createCmd
+    echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
 }
 
 return this
