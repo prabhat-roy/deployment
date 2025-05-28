@@ -58,29 +58,31 @@ def manageRepository(String action = 'create', boolean skipIfExists = true) {
         echo "📁 Entering Terraform directory: ${terraformDir}"
 
         sh "terraform init -input=false"
-
-        // Plan and validate
         sh "terraform plan -var-file=terraform.tfvars"
 
-        // Fetch state info to determine if any resources exist
-        def stateOutput = sh(script: "terraform show -json || true", returnStdout: true).trim()
-        def stateHasResources = stateOutput.contains('"values"') && !stateOutput.contains('"values": null')
+        // Check if any state exists
+        def resourcesExist = false
+        try {
+            def state = sh(script: "terraform state list || true", returnStdout: true).trim()
+            if (state) {
+                resourcesExist = true
+            }
+        } catch (ignored) {
+            echo "⚠️ Could not check Terraform state. Assuming no resources exist."
+        }
 
         if (action == 'create') {
-            if (skipIfExists && stateHasResources) {
+            if (skipIfExists && resourcesExist) {
                 echo "✅ Skipping creation. Repositories already exist in Terraform state."
                 return
             }
-
             echo "🚀 Creating repositories..."
             sh "terraform apply -auto-approve -var-file=terraform.tfvars"
-
         } else if (action == 'destroy') {
-            if (!stateHasResources) {
+            if (!resourcesExist) {
                 echo "✅ Nothing to destroy. No repositories found in Terraform state."
                 return
             }
-
             echo "🔥 Destroying repositories..."
             sh "terraform destroy -auto-approve -var-file=terraform.tfvars"
         }
