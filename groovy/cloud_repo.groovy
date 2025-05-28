@@ -58,15 +58,9 @@ def manageRepository(String action = 'create', boolean skipIfExists = true) {
         echo "📁 Entering Terraform directory: ${terraformDir}"
 
         sh "terraform init -input=false"
-        sh "terraform plan -var-file=terraform.tfvars"
 
-        def resourcesExist = false
-        try {
-            def state = sh(script: "terraform state list || true", returnStdout: true).trim()
-            resourcesExist = state ? true : false
-        } catch (ignored) {
-            echo "⚠️ Could not check Terraform state. Assuming no resources exist."
-        }
+        def stateCheck = sh(script: "terraform state list || true", returnStdout: true).trim()
+        def resourcesExist = stateCheck ? true : false
 
         if (action == 'create') {
             if (skipIfExists && resourcesExist) {
@@ -74,26 +68,17 @@ def manageRepository(String action = 'create', boolean skipIfExists = true) {
                 return
             }
             echo "🚀 Creating repositories..."
+            sh "terraform plan -var-file=terraform.tfvars"
             sh "terraform apply -auto-approve -var-file=terraform.tfvars"
+        }
 
-        } else if (action == 'destroy') {
+        else if (action == 'destroy') {
             if (!resourcesExist) {
-                echo "✅ Nothing to destroy. No repositories found in Terraform state."
-                return
+                error "❌ No resources found in Terraform state. Cannot destroy. Ensure correct state/backend is loaded."
             }
             echo "🔥 Destroying repositories..."
+            sh "terraform plan -destroy -var-file=terraform.tfvars"
             sh "terraform destroy -auto-approve -var-file=terraform.tfvars"
         }
     }
 }
-
-// Optional: helpers still available
-def createRepo() {
-    manageRepository('create', true)
-}
-
-def removeRepo() {
-    manageRepository('destroy', true)
-}
-
-return this

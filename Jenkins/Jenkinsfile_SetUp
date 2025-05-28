@@ -58,7 +58,7 @@ pipeline {
         // stage('Manage Kubernetes Cluster') {
         //     steps {
         //         script {
-        //             def k8sManager = load 'groovy/manage_kubernetes.groovy'
+        //             def k8sManager = load 'groovy/kubernetes_cluster.groovy'
         //             k8sManager.manageKubernetes(params.action)
         //         }
         //     }
