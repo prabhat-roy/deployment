@@ -64,39 +64,14 @@ pipeline {
             }
         }
 
-        // stage('Update Kubeconfig - ${action}') {
-        //     steps {
-        //         script {
-        //             def kubeconfigUpdate = load 'groovy/kubeconfig_update.groovy'
-
-        //             if (params.action == 'create') {
-        //                 echo "Updating kubeconfig..."
-        //                 kubeconfigUpdate.updateKubeconfig()
-        //             } else if (params.action == 'destroy') {
-        //                 echo "Skipping kubeconfig update on destroy."
-        //             } else {
-        //                 error "Invalid action parameter: ${params.action}"
-        //             }
-        //         }
-        //     }
-        // }
-
-        // stage('Repo Login - ${action}') {
-        //     steps {
-        //         script {
-        //             def repoLogin = load 'groovy/repo_login.groovy'
-
-        //             if (params.action == 'create') {
-        //                 echo "Logging into repository..."
-        //                 repoLogin.repoLogin()
-        //             } else if (params.action == 'destroy') {
-        //                 echo "Skipping repo login on destroy."
-        //             } else {
-        //                 error "Invalid action parameter: ${params.action}"
-        //             }
-        //         }
-        //     }
-        // }
+        stage('Register Kubernetes Credential') {
+            steps {
+                script {
+                    def kubeAuth = load 'groovy/register_kubeconfig.groovy'
+                    kubeAuth.registerKubeconfig()
+                }
+            }
+        }
 
         // stage('Manage Autoscaler - ${action}') {
         //     steps {
