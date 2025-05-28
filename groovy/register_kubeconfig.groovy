@@ -57,15 +57,15 @@ def registerKubeconfig() {
 
     def kubeconfigPath = "${env.WORKSPACE}/kubeconfig"
     sh "cp ~/.kube/config ${kubeconfigPath}"
-    def kubeconfigContent = readFile(kubeconfigPath)
+    def kubeconfigContent = readFile(kubeconfigPath).trim()
 
     def payloadMap = [
         credentials: [
             scope      : "GLOBAL",
             id         : credId,
             description: "Kubeconfig for ${cloud} cluster",
-            $class     : "org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl",
-            secret     : kubeconfigContent,
+            "\$class"  : "org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl",
+            secret     : kubeconfigContent
         ]
     ]
 
@@ -73,12 +73,15 @@ def registerKubeconfig() {
     writeFile file: payloadFile, text: JsonOutput.toJson(payloadMap)
 
     echo "🔐 Creating Jenkins credential '${credId}'..."
-    sh script: """
-        curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
+    def createCmd = """
+        curl -v -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
         --user '${jenkinsUser}:${jenkinsToken}' \\
         -H 'Content-Type: application/json' \\
         -d @${payloadFile}
     """
+    echo "Running command:\n${createCmd}"
+    def output = sh(script: createCmd, returnStdout: true).trim()
+    echo "Response: ${output}"
     echo "✅ Kubeconfig registered as Jenkins secret text credential with ID: ${credId}"
 }
 
