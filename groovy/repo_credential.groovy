@@ -76,14 +76,15 @@ def manageRegistryCredential(String action = 'create') {
 
         echo "🔐 Creating Jenkins credential for registry: ${registryUrl}"
 
-        // Escape backslashes and single quotes for Groovy string literal
-        def escapedPassword = password.replace("\\", "\\\\").replace("'", "\\'")
+        // Base64 encode password to avoid special char issues
+        def encodedPassword = password.bytes.encodeBase64().toString()
 
         def script = """
             import com.cloudbees.plugins.credentials.*
             import com.cloudbees.plugins.credentials.domains.*
             import com.cloudbees.plugins.credentials.impl.*
             import jenkins.model.*
+            import java.util.Base64
 
             def store = Jenkins.instance.getExtensionList('com.cloudbees.plugins.credentials.SystemCredentialsProvider')[0].getStore()
             def existing = CredentialsProvider.lookupCredentials(UsernamePasswordCredentialsImpl.class, Jenkins.instance, null, null).find { it.id == '${credId}' }
@@ -91,12 +92,14 @@ def manageRegistryCredential(String action = 'create') {
             if (existing != null) {
                 println("✅ Credential '${credId}' already exists. Skipping creation.")
             } else {
+                byte[] decodedBytes = Base64.decoder.decode('${encodedPassword}')
+                String decodedPassword = new String(decodedBytes, 'UTF-8')
                 def cred = new UsernamePasswordCredentialsImpl(
                     CredentialsScope.GLOBAL,
                     '${credId}',
                     'Docker login for ${cloud.toUpperCase()} registry',
                     '${username}',
-                    '''${escapedPassword}'''
+                    decodedPassword
                 )
                 store.addCredentials(Domain.global(), cred)
                 println("✅ Credential '${credId}' created.")
