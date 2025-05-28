@@ -1,5 +1,11 @@
 import groovy.json.JsonOutput
 
+def getUserToken(String credId) {
+    withCredentials([usernamePassword(credentialsId: credId, usernameVariable: 'USER', passwordVariable: 'TOKEN')]) {
+        return "${env.USER}:${env.TOKEN}"
+    }
+}
+
 def registerKubeconfig() {
     def props = readProperties file: 'Jenkins.env'
 
@@ -10,9 +16,16 @@ def registerKubeconfig() {
     if (!cloud) error "❌ CLOUD_PROVIDER is not defined"
     if (!jenkinsUrl) error "❌ JENKINS_URL is not defined"
     if (!jenkinsCreds) error "❌ JENKINS_CREDS_ID is not defined"
-    if (!jenkinsCreds.contains(":")) error "❌ JENKINS_CREDS_ID must be in format 'username:apitoken'"
 
-    def (jenkinsUser, jenkinsToken) = jenkinsCreds.split(":", 2).collect { it.trim() }
+    def jenkinsAuth
+    if (jenkinsCreds.contains(":")) {
+        jenkinsAuth = jenkinsCreds
+    } else {
+        echo "🔐 Resolving Jenkins credentials from ID: ${jenkinsCreds}"
+        jenkinsAuth = getUserToken(jenkinsCreds)
+    }
+
+    def (jenkinsUser, jenkinsToken) = jenkinsAuth.split(":", 2).collect { it.trim() }
     def credId = "kubeconfig-credential"
 
     def exists = (sh(script: """
