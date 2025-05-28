@@ -34,17 +34,17 @@ def registerKubeconfig() {
 
     def credId = "kubeconfig-credential"
 
-    def exists = (sh(script: """
-        curl -s -o /dev/null -w "%{http_code}" -u '${jenkinsUser}:${jenkinsToken}' \
-        '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/api/json'
-    """, returnStdout: true).trim() == "200")
+    def existsCode = sh(
+        script: """curl -s -o /dev/null -w "%{http_code}" -u '${jenkinsUser}:${jenkinsToken}' \
+        '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/api/json'""",
+        returnStdout: true
+    ).trim()
 
-    if (exists) {
+    if (existsCode == "200") {
         echo "✅ Credential '${credId}' already exists, skipping creation."
         return
     }
 
-    // Copy kubeconfig
     sh "cp ~/.kube/config ${env.WORKSPACE}/kubeconfig"
 
     def kubeconfigBase64 = sh(
@@ -52,17 +52,18 @@ def registerKubeconfig() {
         returnStdout: true
     ).trim()
 
+    // Prepare payload
     def payloadMap = [
         "": "0",
-        "credentials": [
-            "scope"      : "GLOBAL",
-            "id"         : credId,
-            "description": "Kubeconfig for ${cloud} cluster",
-            "class"      : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
-            "fileName"   : "config",
-            "secretBytes": [
-                "class": "org.jenkinsci.plugins.plaincredentials.impl.SecretBytes",
-                "bytes": kubeconfigBase64
+        credentials: [
+            scope      : "GLOBAL",
+            id         : credId,
+            description: "Kubeconfig for ${cloud} cluster",
+            "\$class"  : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
+            fileName   : "config",
+            secretBytes: [
+                "\$class": "org.jenkinsci.plugins.plaincredentials.impl.SecretBytes",
+                bytes   : kubeconfigBase64
             ]
         ]
     ]
@@ -84,9 +85,11 @@ def registerKubeconfig() {
 }
 
 def getUserToken(String credId) {
+    def result = ""
     withCredentials([usernamePassword(credentialsId: credId, usernameVariable: 'USER', passwordVariable: 'TOKEN')]) {
-        return "${env.USER}:${env.TOKEN}"
+        result = "${env.USER}:${env.TOKEN}"
     }
+    return result
 }
 
 return this
