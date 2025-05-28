@@ -61,19 +61,40 @@ def manageKubernetes(String action) {
             sh "terraform validate"
         }
 
-        if (cloud == 'azure' && action == 'create') {
-            echo "🚀 Creating AKS cluster and custom node pool..."
-            sh "terraform apply -auto-approve ${terraformVars.join(' ')} -var=remove_default_pool=false"
-            echo "🧵 Deleting default node pool..."
-            sh "terraform apply -auto-approve ${terraformVars.join(' ')} -var=remove_default_pool=true"
-            echo "✅ Azure cluster ready with custom node pool only."
-        } else if (cloud == 'azure' && action == 'destroy') {
-            echo "🔥 Destroying AKS cluster and node pools..."
-            sh "terraform destroy -auto-approve ${terraformVars.join(' ')} -var=remove_default_pool=false"
-            echo "✅ Azure cluster destroyed."
-        } else {
-            echo "🔧 Running terraform ${tfAction}..."
-            sh "terraform ${tfAction} -auto-approve ${terraformVars.join(' ')}"
+        // Check existing resources
+        def stateOutput = sh(script: "terraform show -json || true", returnStdout: true).trim()
+        def stateHasResources = stateOutput.contains('"values"') && !stateOutput.contains('"values": null')
+
+        if (action == 'create') {
+            if (stateHasResources) {
+                echo "✅ Cluster already exists, skipping creation."
+                return
+            }
+
+            if (cloud == 'azure') {
+                echo "🚀 Creating AKS cluster and custom node pool..."
+                sh "terraform apply -auto-approve ${terraformVars.join(' ')} -var=remove_default_pool=false"
+                echo "🧵 Deleting default node pool..."
+                sh "terraform apply -auto-approve ${terraformVars.join(' ')} -var=remove_default_pool=true"
+                echo "✅ Azure cluster ready with custom node pool only."
+            } else {
+                echo "🚀 Creating cluster using terraform apply..."
+                sh "terraform apply -auto-approve ${terraformVars.join(' ')}"
+            }
+        } else if (action == 'destroy') {
+            if (!stateHasResources) {
+                echo "✅ No cluster found, skipping destruction."
+                return
+            }
+
+            if (cloud == 'azure') {
+                echo "🔥 Destroying AKS cluster and node pools..."
+                sh "terraform destroy -auto-approve ${terraformVars.join(' ')} -var=remove_default_pool=false"
+                echo "✅ Azure cluster destroyed."
+            } else {
+                echo "🔥 Destroying cluster using terraform destroy..."
+                sh "terraform destroy -auto-approve ${terraformVars.join(' ')}"
+            }
         }
     }
 }

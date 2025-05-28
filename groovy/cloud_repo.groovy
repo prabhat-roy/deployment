@@ -1,5 +1,4 @@
-def manageRepository(String action = 'create') {
-    // Load required environment variables from Jenkins.env
+def manageRepository(String action = 'create', boolean skipIfExists = true) {
     def props = readProperties file: 'Jenkins.env'
 
     env.SERVICES = props['SERVICES']
@@ -53,27 +52,37 @@ def manageRepository(String action = 'create') {
             error "❌ Unsupported CLOUD_PROVIDER: '${cloud}'. Supported: aws, azure, gcp"
     }
 
-    // Write terraform.tfvars
     writeFile file: "${terraformDir}/terraform.tfvars", text: extraVars.trim()
 
     dir(terraformDir) {
+        echo "📁 Entering Terraform directory: ${terraformDir}"
+
         sh "terraform init -input=false"
+
+        // Plan and validate
         sh "terraform plan -var-file=terraform.tfvars"
 
+        // Fetch state info to determine if any resources exist
+        def stateOutput = sh(script: "terraform show -json || true", returnStdout: true).trim()
+        def stateHasResources = stateOutput.contains('"values"') && !stateOutput.contains('"values": null')
+
         if (action == 'create') {
+            if (skipIfExists && stateHasResources) {
+                echo "✅ Skipping creation. Repositories already exist in Terraform state."
+                return
+            }
+
+            echo "🚀 Creating repositories..."
             sh "terraform apply -auto-approve -var-file=terraform.tfvars"
-        } else {
+
+        } else if (action == 'destroy') {
+            if (!stateHasResources) {
+                echo "✅ Nothing to destroy. No repositories found in Terraform state."
+                return
+            }
+
+            echo "🔥 Destroying repositories..."
             sh "terraform destroy -auto-approve -var-file=terraform.tfvars"
         }
     }
 }
-
-def createRepo() {
-    manageRepository('create')
-}
-
-def removeRepo() {
-    manageRepository('destroy')
-}
-
-return this
