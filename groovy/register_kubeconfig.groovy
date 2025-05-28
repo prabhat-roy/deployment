@@ -1,11 +1,5 @@
 import groovy.json.JsonOutput
 
-def getUserToken(String credId) {
-    withCredentials([usernamePassword(credentialsId: credId, usernameVariable: 'USER', passwordVariable: 'TOKEN')]) {
-        return "${env.USER}:${env.TOKEN}"
-    }
-}
-
 def getCrumb(String jenkinsUrl, String user, String token) {
     def crumb = sh(
         script: "curl -s --user '${user}:${token}' '${jenkinsUrl}/crumbIssuer/api/json' | jq -r '.crumb'",
@@ -39,32 +33,16 @@ def registerKubeconfig() {
         return
     }
 
-    switch (cloud) {
-        case 'aws':
-            if (!props['AWS_REGION']) error "❌ AWS_REGION not set"
-            sh "aws eks update-kubeconfig --region ${props['AWS_REGION']} --name eks-cluster"
-            break
-        case 'azure':
-            if (!props['RESOURCE_GROUP']) error "❌ RESOURCE_GROUP not set"
-            sh "az aks get-credentials --resource-group ${props['RESOURCE_GROUP']} --name aks-cluster --overwrite-existing"
-            break
-        case 'gcp':
-            if (!props['GOOGLE_PROJECT']) error "❌ GOOGLE_PROJECT not set"
-            sh "gcloud container clusters get-credentials gke-cluster --region ${props['GOOGLE_REGION']} --project ${props['GOOGLE_PROJECT']}"
-            break
-        default:
-            error "❌ Unsupported CLOUD_PROVIDER: ${cloud}"
-    }
-
-    def kubeconfigPath = "${env.WORKSPACE}/kubeconfig"
-    sh "cp ~/.kube/config ${kubeconfigPath}"
+    // Generate or copy kubeconfig here — simplified for example:
+    sh "cp ~/.kube/config ${env.WORKSPACE}/kubeconfig"
 
     def kubeconfigBase64 = sh(
-        script: "base64 -w0 ${kubeconfigPath}", // Use -w0 to avoid newlines, or pipe to tr -d '\\n' on macOS
+        script: "base64 -w0 ${env.WORKSPACE}/kubeconfig",
         returnStdout: true
     ).trim()
 
     def payloadMap = [
+        "": "0",  // hack: Jenkins needs a root property with empty string key for POST
         credentials: [
             scope      : "GLOBAL",
             id         : credId,
@@ -73,25 +51,31 @@ def registerKubeconfig() {
             fileName   : "config",
             secretBytes: [
                 '$class': "org.jenkinsci.plugins.plaincredentials.impl.SecretBytes",
-                "base64": kubeconfigBase64
+                base64  : kubeconfigBase64
             ]
         ]
     ]
 
     def payloadFile = "${env.WORKSPACE}/kubeconfig-payload.json"
-    writeFile file: payloadFile, text: JsonOutput.prettyPrint(JsonOutput.toJson(payloadMap))
+    writeFile file: payloadFile, text: JsonOutput.toJson(payloadMap)
 
-    echo "🔐 Creating Jenkins credential '${credId}'..."
+    def crumb = getCrumb(jenkinsUrl, jenkinsUser, jenkinsToken)
 
     sh """
-        curl -v -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
-        --user '${jenkinsUser}:${jenkinsToken}' \\
-        -H 'Content-Type: application/json' \\
-        -H 'Jenkins-Crumb: ${getCrumb(jenkinsUrl, jenkinsUser, jenkinsToken)}' \\
-        -d @${payloadFile}
+    curl -v -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
+         --user '${jenkinsUser}:${jenkinsToken}' \\
+         -H 'Content-Type: application/json' \\
+         -H 'Jenkins-Crumb: ${crumb}' \\
+         -d @${payloadFile}
     """
 
     echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
+}
+
+def getUserToken(String credId) {
+    withCredentials([usernamePassword(credentialsId: credId, usernameVariable: 'USER', passwordVariable: 'TOKEN')]) {
+        return "${env.USER}:${env.TOKEN}"
+    }
 }
 
 return this
