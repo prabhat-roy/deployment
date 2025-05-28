@@ -85,6 +85,7 @@ def manageRegistryCredential(String action = 'create') {
 
         def encodedPassword = sh(script: """echo -n '${safePassword}' | base64""", returnStdout: true).trim()
 
+        // Notice the single quotes wrapping ${encodedPassword} inside the Groovy script!
         def script = """
             import com.cloudbees.plugins.credentials.*
             import com.cloudbees.plugins.credentials.domains.*
@@ -111,6 +112,18 @@ def manageRegistryCredential(String action = 'create') {
                 println("✅ Credential '${credId}' created.")
             }
         """
+
+        // Wrap encodedPassword in single quotes inside Groovy:
+        // To fix syntax, re-define script with single quotes around encodedPassword explicitly:
+        script = script.replace(
+            "Base64.decoder.decode('${encodedPassword}')",
+            "Base64.decoder.decode('${encodedPassword}')"
+        ).replace(
+            "Base64.decoder.decode('${encodedPassword}')",
+            "Base64.decoder.decode('${encodedPassword}')"
+        )
+
+        // Above is just to show intent; actually your original triple-quote string must already contain the single quotes.
 
         sh """
             curl -s -X POST '${jenkinsUrl}/scriptText' \\
