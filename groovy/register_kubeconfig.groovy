@@ -1,23 +1,8 @@
 import groovy.json.JsonOutput
 
-def getCrumb(String jenkinsUrl, String user, String token) {
-    def crumb = sh(
-        script: "curl -s --user '${user}:${token}' '${jenkinsUrl}/crumbIssuer/api/json' | jq -r .crumb",
-        returnStdout: true
-    ).trim()
-    echo "🔑 Jenkins crumb: ${crumb}"
-    return crumb
-}
-
-def getUserToken(String credId) {
-    def result = ""
-    withCredentials([usernamePassword(credentialsId: credId, usernameVariable: 'USER', passwordVariable: 'TOKEN')]) {
-        result = "${env.USER}:${env.TOKEN}"
-    }
-    return result
-}
-
 def registerKubeconfig() {
+    echo "🚀 Starting Kubernetes credential registration"
+
     def props = readProperties file: 'Jenkins.env'
 
     def cloud = props['CLOUD_PROVIDER']?.toLowerCase()
@@ -44,7 +29,8 @@ def registerKubeconfig() {
 
     def credId = "kubeconfig-credential"
 
-    // Check if credential exists
+    echo "🔍 Checking if credential '${credId}' already exists"
+
     def existsCode = sh(
         script: """curl -s -o /dev/null -w "%{http_code}" -u '${jenkinsUser}:${jenkinsToken}' \
         '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/api/json'""",
@@ -56,26 +42,26 @@ def registerKubeconfig() {
         return
     }
 
-    // Copy kubeconfig file to workspace
+    echo "📋 Copying kubeconfig file to workspace"
     sh "cp ~/.kube/config ${env.WORKSPACE}/kubeconfig"
 
-    // Read kubeconfig bytes, base64 decode to bytes array for JSON payload
-    // We do this in Groovy: read base64 string, decode it, then convert to integer list
-    def base64String = sh(
-        script: "base64 -w0 ${env.WORKSPACE}/kubeconfig",
+    echo "📤 Generating JSON array of raw kubeconfig bytes (avoiding decodeBase64 Groovy restriction)..."
+    def bytesJson = sh(
+        script: """
+            base64 -d ${env.WORKSPACE}/kubeconfig | od -An -t u1 | tr -s ' ' '\\n' | grep -v '^$' | jq -R -s 'split("\\n") | map(select(length > 0) | tonumber)'
+        """,
         returnStdout: true
     ).trim()
 
-    echo "🔍 Base64 length: ${base64String.length()}"
+    echo "Bytes JSON length: ${bytesJson.length()}"
+    echo "Bytes JSON snippet: ${bytesJson.take(200)}"
 
-    // Decode base64 to byte array
-    byte[] decodedBytes = base64String.decodeBase64()
+    def byteList = readJSON text: bytesJson
 
-    // Convert to list of integers
-    def byteList = decodedBytes.collect { b -> b & 0xFF }
+    echo "✔ Parsed byte array length: ${byteList.size()}"
 
-    // Compose payload map exactly as Jenkins expects
     def payloadMap = [
+        "": "0",
         credentials: [
             scope      : "GLOBAL",
             id         : credId,
@@ -91,29 +77,41 @@ def registerKubeconfig() {
 
     def payloadFile = "${env.WORKSPACE}/kubeconfig-payload.json"
     def payloadJson = JsonOutput.prettyPrint(JsonOutput.toJson(payloadMap))
+
+    echo "📄 Writing payload JSON to ${payloadFile}"
     writeFile file: payloadFile, text: payloadJson
 
-    // Debug output: print payload and validate JSON with jq
-    echo "📄 Credential payload JSON:"
-    sh "cat ${payloadFile}"
-    echo "🔎 Validating JSON syntax with jq:"
-    sh "jq . ${payloadFile}"
+    echo "🔑 Getting Jenkins crumb for CSRF protection"
+    def crumb = sh(
+        script: "curl -s --user '${jenkinsUser}:${jenkinsToken}' '${jenkinsUrl}/crumbIssuer/api/json' | jq -r .crumb",
+        returnStdout: true
+    ).trim()
 
-    def crumb = getCrumb(jenkinsUrl, jenkinsUser, jenkinsToken)
+    echo "📝 Sending credential creation POST request"
+    def response = sh(
+        script: """
+        curl -v -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
+            --user '${jenkinsUser}:${jenkinsToken}' \\
+            -H 'Content-Type: application/json' \\
+            -H 'Jenkins-Crumb: ${crumb}' \\
+            --data @${payloadFile}
+        """,
+        returnStdout: true
+    ).trim()
 
-    echo "🚀 Sending credential creation request to Jenkins..."
-
-    sh """
-    curl -v -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
-         --user '${jenkinsUser}:${jenkinsToken}' \\
-         -H 'Content-Type: application/json' \\
-         -H 'Jenkins-Crumb: ${crumb}' \\
-         --data @${payloadFile}
-    """
+    echo "Response: ${response}"
 
     echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
 
-    return // safe return
+    return true
+}
+
+def getUserToken(String credId) {
+    def result = ""
+    withCredentials([usernamePassword(credentialsId: credId, usernameVariable: 'USER', passwordVariable: 'TOKEN')]) {
+        result = "${env.USER}:${env.TOKEN}"
+    }
+    return result
 }
 
 return this
