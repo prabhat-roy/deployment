@@ -57,20 +57,15 @@ def registerKubeconfig() {
 
     def kubeconfigPath = "${env.WORKSPACE}/kubeconfig"
     sh "cp ~/.kube/config ${kubeconfigPath}"
-
-    def kubeconfigBase64 = sh(
-        script: "base64 ${kubeconfigPath} | tr -d '\\n'",
-        returnStdout: true
-    ).trim()
+    def kubeconfigContent = readFile(kubeconfigPath)
 
     def payloadMap = [
         credentials: [
             scope      : "GLOBAL",
             id         : credId,
             description: "Kubeconfig for ${cloud} cluster",
-            '$class'   : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
-            fileName   : "config",
-            secretBytes: kubeconfigBase64
+            $class     : "org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl",
+            secret     : kubeconfigContent,
         ]
     ]
 
@@ -84,7 +79,7 @@ def registerKubeconfig() {
         -H 'Content-Type: application/json' \\
         -d @${payloadFile}
     """
-    echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
+    echo "✅ Kubeconfig registered as Jenkins secret text credential with ID: ${credId}"
 }
 
 return this
