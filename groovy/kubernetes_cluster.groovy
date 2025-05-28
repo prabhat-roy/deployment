@@ -7,7 +7,6 @@ def manageKubernetes(String action) {
     def tfAction = (action == 'destroy') ? 'destroy' : 'apply'
     def terraformDir
     def terraformVars = []
-    def validateTerraform = true
 
     switch (cloud) {
         case 'aws':
@@ -61,7 +60,6 @@ def manageKubernetes(String action) {
             sh "terraform validate"
         }
 
-        // Check existing resources
         def stateOutput = sh(script: "terraform show -json || true", returnStdout: true).trim()
         def stateHasResources = stateOutput.contains('"values"') && !stateOutput.contains('"values": null')
 
@@ -81,6 +79,7 @@ def manageKubernetes(String action) {
                 echo "🚀 Creating cluster using terraform apply..."
                 sh "terraform apply -auto-approve ${terraformVars.join(' ')}"
             }
+
         } else if (action == 'destroy') {
             if (!stateHasResources) {
                 echo "✅ No cluster found, skipping destruction."

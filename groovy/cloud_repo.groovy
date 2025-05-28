@@ -1,11 +1,3 @@
-def createRepo() {
-    manageRepository('create', true)
-}
-
-def removeRepo() {
-    manageRepository('destroy', true)
-}
-
 def manageRepository(String action = 'create', boolean skipIfExists = true) {
     def props = readProperties file: 'Jenkins.env'
 
@@ -71,9 +63,7 @@ def manageRepository(String action = 'create', boolean skipIfExists = true) {
         def resourcesExist = false
         try {
             def state = sh(script: "terraform state list || true", returnStdout: true).trim()
-            if (state) {
-                resourcesExist = true
-            }
+            resourcesExist = state
         } catch (ignored) {
             echo "⚠️ Could not check Terraform state. Assuming no resources exist."
         }
@@ -96,5 +86,13 @@ def manageRepository(String action = 'create', boolean skipIfExists = true) {
     }
 }
 
-// Return this script object to expose functions when loaded
+// Optional: helpers still available
+def createRepo() {
+    manageRepository('create', true)
+}
+
+def removeRepo() {
+    manageRepository('destroy', true)
+}
+
 return this
