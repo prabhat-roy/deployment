@@ -1,3 +1,11 @@
+def createRepo() {
+    manageRepository('create', true)
+}
+
+def removeRepo() {
+    manageRepository('destroy', true)
+}
+
 def manageRepository(String action = 'create', boolean skipIfExists = true) {
     def props = readProperties file: 'Jenkins.env'
 
@@ -60,7 +68,6 @@ def manageRepository(String action = 'create', boolean skipIfExists = true) {
         sh "terraform init -input=false"
         sh "terraform plan -var-file=terraform.tfvars"
 
-        // Check if any state exists
         def resourcesExist = false
         try {
             def state = sh(script: "terraform state list || true", returnStdout: true).trim()
