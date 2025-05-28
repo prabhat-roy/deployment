@@ -55,17 +55,12 @@ def registerKubeconfig() {
 
     sh "cp ~/.kube/config ${env.WORKSPACE}/kubeconfig"
 
-    def kubeconfigBase64 = sh(
-        script: "base64 -w0 ${env.WORKSPACE}/kubeconfig",
-        returnStdout: true
-    ).trim()
+    // Read the kubeconfig file as bytes, then base64 encode it manually in Groovy
+    def kubeconfigBytes = readFile(file: "${env.WORKSPACE}/kubeconfig", encoding: "ISO-8859-1").getBytes("ISO-8859-1")
+    def kubeconfigBase64 = kubeconfigBytes.encodeBase64().toString()
 
-    def bytesJson = sh(
-        script: """
-            base64 -d ${env.WORKSPACE}/kubeconfig | od -An -t u1 | tr -s ' ' '\\n' | grep -v '^\\\$' | jq -R -s 'split("\\\\n") | map(select(length > 0) | tonumber)'
-        """,
-        returnStdout: true
-    ).trim()
+    // The Jenkins FileCredentials expects the secretBytes as array of bytes (integers)
+    def byteArray = kubeconfigBytes.collect { it & 0xFF } // convert signed bytes to unsigned integers
 
     def payloadMap = [
         credentials: [
@@ -76,7 +71,7 @@ def registerKubeconfig() {
             fileName   : "config",
             secretBytes: [
                 "\$class": "org.jenkinsci.plugins.plaincredentials.impl.SecretBytes",
-                bytes   : bytesJson
+                bytes   : byteArray
             ]
         ]
     ]
