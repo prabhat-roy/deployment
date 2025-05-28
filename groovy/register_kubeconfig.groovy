@@ -6,6 +6,15 @@ def getUserToken(String credId) {
     }
 }
 
+def getCrumb(jenkinsUrl, jenkinsUser, jenkinsToken) {
+    def crumbJson = sh(script: """
+        curl -s -u '${jenkinsUser}:${jenkinsToken}' '${jenkinsUrl}/crumbIssuer/api/json'
+    """, returnStdout: true).trim()
+    def jsonSlurper = new groovy.json.JsonSlurper()
+    def crumbObj = jsonSlurper.parseText(crumbJson)
+    return [crumbObj.crumbRequestField, crumbObj.crumb]
+}
+
 def registerKubeconfig() {
     def props = readProperties file: 'Jenkins.env'
 
@@ -72,16 +81,22 @@ def registerKubeconfig() {
     def payloadFile = "${env.WORKSPACE}/kubeconfig-payload.json"
     writeFile file: payloadFile, text: JsonOutput.toJson(payloadMap)
 
+    def (crumbField, crumbValue) = getCrumb(jenkinsUrl, jenkinsUser, jenkinsToken)
+
     echo "🔐 Creating Jenkins credential '${credId}'..."
+
     def createCmd = """
         curl -v -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
         --user '${jenkinsUser}:${jenkinsToken}' \\
         -H 'Content-Type: application/json' \\
+        -H '${crumbField}: ${crumbValue}' \\
         -d @${payloadFile}
     """
     echo "Running command:\n${createCmd}"
+
     def output = sh(script: createCmd, returnStdout: true).trim()
     echo "Response: ${output}"
+
     echo "✅ Kubeconfig registered as Jenkins secret text credential with ID: ${credId}"
 }
 
