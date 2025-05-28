@@ -55,12 +55,10 @@ def registerKubeconfig() {
 
     sh "cp ~/.kube/config ${env.WORKSPACE}/kubeconfig"
 
-    // Read the kubeconfig file as bytes, then base64 encode it manually in Groovy
-    def kubeconfigBytes = readFile(file: "${env.WORKSPACE}/kubeconfig", encoding: "ISO-8859-1").getBytes("ISO-8859-1")
-    def kubeconfigBase64 = kubeconfigBytes.encodeBase64().toString()
-
-    // The Jenkins FileCredentials expects the secretBytes as array of bytes (integers)
-    def byteArray = kubeconfigBytes.collect { it & 0xFF } // convert signed bytes to unsigned integers
+    // Read file as text, then convert each char to int (byte)
+    def kubeconfigText = readFile(file: "${env.WORKSPACE}/kubeconfig")
+    def byteArray = []
+    kubeconfigText.each { ch -> byteArray << (int) ch }
 
     def payloadMap = [
         credentials: [
@@ -83,17 +81,13 @@ def registerKubeconfig() {
 
     def crumb = getCrumb(jenkinsUrl, jenkinsUser, jenkinsToken)
 
-    def curlCommand = """
+    sh """
     curl -v -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
          --user '${jenkinsUser}:${jenkinsToken}' \\
          -H 'Content-Type: application/json' \\
          -H 'Jenkins-Crumb: ${crumb}' \\
          --data-binary @${payloadFile}
     """
-
-    echo "DEBUG: Executing curl command to create credential"
-
-    sh curlCommand
 
     echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
 }
