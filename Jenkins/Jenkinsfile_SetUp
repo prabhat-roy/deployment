@@ -64,14 +64,14 @@ pipeline {
             }
         }
 
-        stage('Manage Kubernetes Cluster') {
-            steps {
-                script {
-                    def k8sManager = load 'groovy/kubernetes_cluster.groovy'
-                    k8sManager.manageKubernetes(params.action)
-                }
-            }
-        }
+        // stage('Manage Kubernetes Cluster') {
+        //     steps {
+        //         script {
+        //             def k8sManager = load 'groovy/kubernetes_cluster.groovy'
+        //             k8sManager.manageKubernetes(params.action)
+        //         }
+        //     }
+        // }
 
         // stage('Update Kubeconfig - ${action}') {
         //     steps {
