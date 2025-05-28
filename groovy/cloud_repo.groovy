@@ -82,3 +82,6 @@ def manageRepository(String action = 'create', boolean skipIfExists = true) {
         }
     }
 }
+
+return this
+
