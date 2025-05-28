@@ -55,10 +55,8 @@ def registerKubeconfig() {
 
     sh "cp ~/.kube/config ${env.WORKSPACE}/kubeconfig"
 
-    // Read file as text, then convert each char to int (byte)
     def kubeconfigText = readFile(file: "${env.WORKSPACE}/kubeconfig")
-    def byteArray = []
-    kubeconfigText.each { ch -> byteArray << (int) ch }
+    def byteArray = kubeconfigText.bytes.collect { it as int }
 
     def payloadMap = [
         credentials: [
