@@ -63,7 +63,7 @@ def manageRepository(String action = 'create', boolean skipIfExists = true) {
         def resourcesExist = false
         try {
             def state = sh(script: "terraform state list || true", returnStdout: true).trim()
-            resourcesExist = state
+            resourcesExist = state ? true : false
         } catch (ignored) {
             echo "⚠️ Could not check Terraform state. Assuming no resources exist."
         }
@@ -75,6 +75,7 @@ def manageRepository(String action = 'create', boolean skipIfExists = true) {
             }
             echo "🚀 Creating repositories..."
             sh "terraform apply -auto-approve -var-file=terraform.tfvars"
+
         } else if (action == 'destroy') {
             if (!resourcesExist) {
                 echo "✅ Nothing to destroy. No repositories found in Terraform state."
