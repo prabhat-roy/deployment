@@ -1,11 +1,10 @@
 import groovy.json.JsonOutput
 
 def getCrumb(String jenkinsUrl, String user, String token) {
-    def crumb = sh(
-        script: "curl -s --user '${user}:${token}' '${jenkinsUrl}/crumbIssuer/api/json' | jq -r '.crumb'",
+    return sh(
+        script: "curl -s --user '${user}:${token}' '${jenkinsUrl}/crumbIssuer/api/json' | jq -r .crumb",
         returnStdout: true
     ).trim()
-    return crumb
 }
 
 def registerKubeconfig() {
@@ -37,7 +36,6 @@ def registerKubeconfig() {
         return
     }
 
-    // Copy kubeconfig to workspace (you can replace this line with a real kubeconfig generation step)
     sh "cp ~/.kube/config ${env.WORKSPACE}/kubeconfig"
 
     def kubeconfigBase64 = sh(
@@ -45,17 +43,18 @@ def registerKubeconfig() {
         returnStdout: true
     ).trim()
 
+    // Jenkins expects a nested structure with proper classes
     def payloadMap = [
         "": "0",
-        credentials: [
-            scope      : "GLOBAL",
-            id         : credId,
-            description: "Kubeconfig for ${cloud} cluster",
-            '$class'   : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
-            fileName   : "config",
-            secretBytes: [
-                '$class': "org.jenkinsci.plugins.plaincredentials.impl.SecretBytes",
-                base64  : kubeconfigBase64
+        "credentials": [
+            "scope"      : "GLOBAL",
+            "id"         : credId,
+            "description": "Kubeconfig for ${cloud} cluster",
+            "$class"     : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
+            "fileName"   : "config",
+            "secretBytes": [
+                "class": "org.jenkinsci.plugins.plaincredentials.impl.SecretBytes",
+                "bytes": kubeconfigBase64
             ]
         ]
     ]
@@ -70,7 +69,7 @@ def registerKubeconfig() {
          --user '${jenkinsUser}:${jenkinsToken}' \\
          -H 'Content-Type: application/json' \\
          -H 'Jenkins-Crumb: ${crumb}' \\
-         -d @${payloadFile}
+         --data-binary @${payloadFile}
     """
 
     echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
