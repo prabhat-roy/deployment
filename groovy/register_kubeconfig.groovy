@@ -17,14 +17,13 @@ def registerKubeconfig(String action) {
     }
 
     def (jenkinsUser, jenkinsToken) = jenkinsCreds.split(":", 2).collect { it.trim() }
-
     def credId = "kubeconfig-credential"
 
     // Check if credential already exists
-    def credCheckCmd = """
-        curl -s -u '${jenkinsUser}:${jenkinsToken}' '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/api/json'
-    """
-    def exists = (sh(script: credCheckCmd, returnStatus: true) == 0)
+    def exists = (sh(script: """
+        curl -s -o /dev/null -w "%{http_code}" -u '${jenkinsUser}:${jenkinsToken}' \
+        '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/api/json'
+    """, returnStdout: true).trim() == "200")
 
     if (action == 'destroy') {
         if (!exists) {
@@ -32,23 +31,22 @@ def registerKubeconfig(String action) {
             return
         }
 
-        def deleteCmd = """
+        echo "🔥 Deleting Jenkins credential '${credId}'..."
+        sh script: """
             curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/doDelete' \\
             --user '${jenkinsUser}:${jenkinsToken}'
         """
-        echo "🔥 Deleting Jenkins credential '${credId}'..."
-        sh deleteCmd
         echo "✅ Credential '${credId}' deleted."
         return
     }
 
-    // For 'create' only
+    // 'create' action
     if (exists) {
         echo "✅ Credential '${credId}' already exists, skipping creation."
         return
     }
 
-    // Update kubeconfig based on cloud
+    // Update kubeconfig based on cloud provider
     switch (cloud) {
         case 'aws':
             if (!props['AWS_REGION']) error "❌ AWS_REGION not set"
@@ -75,8 +73,8 @@ def registerKubeconfig(String action) {
         returnStdout: true
     ).trim()
 
-    // Create credential JSON payload
-    def payload = JsonOutput.toJson([
+    // Build the credential payload
+    def payloadMap = [
         credentials: [
             scope      : "GLOBAL",
             id         : credId,
@@ -85,17 +83,20 @@ def registerKubeconfig(String action) {
             fileName   : "config",
             secretBytes: kubeconfigBase64
         ]
-    ])
+    ]
+    def payload = JsonOutput.toJson(payloadMap).replace("$", "\\$") // Escape $ for shell
 
-    def createCmd = """
+    // Write payload to temp file to avoid quoting issues
+    def payloadFile = "${env.WORKSPACE}/kubeconfig-payload.json"
+    writeFile file: payloadFile, text: payload
+
+    echo "🔐 Creating Jenkins credential '${credId}'..."
+    sh script: """
         curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
         --user '${jenkinsUser}:${jenkinsToken}' \\
         -H 'Content-Type: application/json' \\
-        -d '${payload}'
+        -d @${payloadFile}
     """
-
-    echo "🔐 Creating Jenkins credential '${credId}'..."
-    sh createCmd
     echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
 }
 
