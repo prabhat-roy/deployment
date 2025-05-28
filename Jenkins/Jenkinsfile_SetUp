@@ -55,6 +55,15 @@ pipeline {
             }
         }
 
+        stage('Manage Repo credentials') {
+            steps {
+                script {
+                    def credManager = load 'groovy/repo_credential.groovy'
+                    credManager.manageRegistryCredential(params.action)
+                }
+            }
+        }
+
         stage('Manage Kubernetes Cluster') {
             steps {
                 script {
