@@ -6,6 +6,14 @@ def getUserToken(String credId) {
     }
 }
 
+def getCrumb(String jenkinsUrl, String user, String token) {
+    def crumb = sh(
+        script: "curl -s --user '${user}:${token}' '${jenkinsUrl}/crumbIssuer/api/json' | jq -r '.crumb'",
+        returnStdout: true
+    ).trim()
+    return crumb
+}
+
 def registerKubeconfig() {
     def props = readProperties file: 'Jenkins.env'
 
@@ -17,14 +25,7 @@ def registerKubeconfig() {
     if (!jenkinsUrl) error "❌ JENKINS_URL is not defined"
     if (!jenkinsCreds) error "❌ JENKINS_CREDS_ID is not defined"
 
-    def jenkinsAuth
-    if (jenkinsCreds.contains(":")) {
-        jenkinsAuth = jenkinsCreds
-    } else {
-        echo "🔐 Resolving Jenkins credentials from ID: ${jenkinsCreds}"
-        jenkinsAuth = getUserToken(jenkinsCreds)
-    }
-
+    def jenkinsAuth = jenkinsCreds.contains(":") ? jenkinsCreds : getUserToken(jenkinsCreds)
     def (jenkinsUser, jenkinsToken) = jenkinsAuth.split(":", 2).collect { it.trim() }
     def credId = "kubeconfig-credential"
 
@@ -58,16 +59,11 @@ def registerKubeconfig() {
     def kubeconfigPath = "${env.WORKSPACE}/kubeconfig"
     sh "cp ~/.kube/config ${kubeconfigPath}"
 
-    // Display kubeconfig content for debugging
-    def kubeconfigText = readFile(kubeconfigPath)
-    echo "📄 kubeconfig content (first 1000 chars):\n${kubeconfigText.take(1000)}"
-
     def kubeconfigBase64 = sh(
-        script: "base64 ${kubeconfigPath} | tr -d '\\n'",
+        script: "base64 -w0 ${kubeconfigPath}", // Use -w0 to avoid newlines, or pipe to tr -d '\\n' on macOS
         returnStdout: true
     ).trim()
 
-    // Correctly wrap base64 content as SecretBytes object
     def payloadMap = [
         credentials: [
             scope      : "GLOBAL",
@@ -77,31 +73,25 @@ def registerKubeconfig() {
             fileName   : "config",
             secretBytes: [
                 '$class': "org.jenkinsci.plugins.plaincredentials.impl.SecretBytes",
-                base64  : kubeconfigBase64
+                "base64": kubeconfigBase64
             ]
         ]
     ]
 
     def payloadFile = "${env.WORKSPACE}/kubeconfig-payload.json"
-    writeFile file: payloadFile, text: JsonOutput.toJson(payloadMap)
+    writeFile file: payloadFile, text: JsonOutput.prettyPrint(JsonOutput.toJson(payloadMap))
 
     echo "🔐 Creating Jenkins credential '${credId}'..."
-    sh script: """
+
+    sh """
         curl -v -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
         --user '${jenkinsUser}:${jenkinsToken}' \\
         -H 'Content-Type: application/json' \\
         -H 'Jenkins-Crumb: ${getCrumb(jenkinsUrl, jenkinsUser, jenkinsToken)}' \\
         -d @${payloadFile}
     """
-    echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
-}
 
-def getCrumb(String jenkinsUrl, String user, String token) {
-    def crumb = sh(
-        script: "curl -s --user '${user}:${token}' '${jenkinsUrl}/crumbIssuer/api/json' | jq -r '.crumb'",
-        returnStdout: true
-    ).trim()
-    return crumb
+    echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
 }
 
 return this
