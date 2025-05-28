@@ -46,23 +46,23 @@ pipeline {
             }
         }
 
-        // stage('Manage Repository') {
-        //     steps {
-        //         script {
-        //             def cloudRepo = load 'groovy/cloud_repo.groovy'
-        //             cloudRepo.manageRepository(params.action)
-        //         }
-        //     }
-        // }
-
-        stage('Manage Kubernetes Cluster') {
+        stage('Manage Repository') {
             steps {
                 script {
-                    def k8sManager = load 'groovy/manage_kubernetes.groovy'
-                    k8sManager.manageKubernetes(params.action)
+                    def cloudRepo = load 'groovy/cloud_repo.groovy'
+                    cloudRepo.manageRepository(params.action)
                 }
             }
         }
+
+        // stage('Manage Kubernetes Cluster') {
+        //     steps {
+        //         script {
+        //             def k8sManager = load 'groovy/manage_kubernetes.groovy'
+        //             k8sManager.manageKubernetes(params.action)
+        //         }
+        //     }
+        // }
 
         // stage('Update Kubeconfig - ${action}') {
         //     steps {
