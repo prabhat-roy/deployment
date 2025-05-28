@@ -4,7 +4,7 @@ set -euo pipefail
 
 echo "🌐 Installing all supported cloud CLIs (AWS, GCP, Azure)..."
 
-# Function to check if the command is already installed
+# Function to check if a command exists
 check_installed() {
   if command -v "$1" &> /dev/null; then
     echo "✅ $1 is already installed."
@@ -25,12 +25,18 @@ if ! check_installed "aws"; then
   aws --version
 fi
 
-# --- Install GCP CLI ---
+# --- Install GCP CLI (gcloud) ---
 if ! check_installed "gcloud"; then
   echo "📦 Installing Google Cloud SDK (gcloud)..."
-  curl -sSL https://sdk.cloud.google.com | bash -s -- --quiet
+  export CLOUDSDK_CORE_DISABLE_PROMPTS=1
+  curl -sSL https://dl.google.com/dl/cloudsdk/channels/rapid/install_google_cloud_sdk.bash -o install_google_cloud_sdk.bash
+  chmod +x install_google_cloud_sdk.bash
+  ./install_google_cloud_sdk.bash --disable-prompts --install-dir="$HOME"
   source "$HOME/google-cloud-sdk/path.bash.inc"
   gcloud --version
+
+  # Ensure it is available in future sessions
+  echo "source \$HOME/google-cloud-sdk/path.bash.inc" >> "$HOME/.bashrc"
 fi
 
 # --- Install Azure CLI ---

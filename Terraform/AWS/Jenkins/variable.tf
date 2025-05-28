@@ -35,5 +35,11 @@ variable "cluster_name" {
 }
 
 variable "private_key" {
-  
+  type = string
+  description = "Path to the private SSH key for EC2 access"
+}
+
+variable "admin_user" {
+  type = string
+  description = "Admin username for EC2 instance"
 }

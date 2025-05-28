@@ -6,17 +6,17 @@ JENKINS_USER="admin"
 JENKINS_PASSWORD="admin"
 COOKIE_JAR="/tmp/jenkins_cookies.txt"
 TOOL_NAME="Maven"
+INSTALL_DIR="/opt/maven"
+PROFILE_SCRIPT="/etc/profile.d/maven.sh"
+TMP_ARCHIVE="/tmp/apache-maven-latest.tar.gz"
 
 echo "🔍 Checking if Maven is already installed..."
 if command -v mvn &>/dev/null; then
     echo "✅ Maven is already installed."
     MAVEN_PATH=$(command -v mvn)
-    MAVEN_DIR=$(dirname "$MAVEN_PATH")
     MAVEN_HOME=$(mvn -v | grep "Maven home" | awk '{print $NF}')
     echo "📦 Maven path: $MAVEN_PATH"
     echo "📁 Maven home: $MAVEN_HOME"
-    echo "🔧 Tool name: $TOOL_NAME"
-    # Proceed to register in Jenkins in case it’s not already
 else
     # Detect OS
     if [ -f /etc/os-release ]; then
@@ -26,9 +26,6 @@ else
         echo "❌ Unsupported OS: Unable to detect."
         exit 1
     fi
-
-    INSTALL_DIR="/opt/maven"
-    PROFILE_SCRIPT="/etc/profile.d/maven.sh"
 
     echo "🌐 Fetching latest Maven version..."
     MAVEN_VERSION=$(curl -s https://maven.apache.org/download.cgi | grep -oP 'apache-maven-\K[0-9.]+' | head -1)
@@ -41,19 +38,19 @@ else
     echo "📦 Latest Maven version: $MAVEN_VERSION"
     MAVEN_URL="https://dlcdn.apache.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
 
-    # Cleanup existing installation and temp files
-    echo "🧹 Cleaning up old Maven installation and downloads..."
+    # Cleanup any existing Maven installation and temp files
+    echo "🧹 Cleaning up old Maven installations and archives..."
     sudo rm -rf "$INSTALL_DIR"
-    rm -f "/tmp/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+    sudo rm -f "$TMP_ARCHIVE"
 
     # Install Maven
-    echo "📁 Installing to $INSTALL_DIR..."
+    echo "📁 Installing Maven to $INSTALL_DIR..."
+    curl -fsSL "$MAVEN_URL" -o "$TMP_ARCHIVE"
     sudo mkdir -p "$INSTALL_DIR"
-    curl -fsSL "$MAVEN_URL" -o "/tmp/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
-    sudo tar -xzf "/tmp/apache-maven-${MAVEN_VERSION}-bin.tar.gz" -C "$INSTALL_DIR" --strip-components=1
+    sudo tar -xzf "$TMP_ARCHIVE" -C "$INSTALL_DIR" --strip-components=1
 
     # Set environment variables
-    echo "🛠️ Configuring environment variables..."
+    echo "🛠️ Setting environment variables..."
     sudo tee "$PROFILE_SCRIPT" > /dev/null <<EOF
 export M2_HOME=$INSTALL_DIR
 export MAVEN_HOME=$INSTALL_DIR
@@ -62,21 +59,20 @@ EOF
 
     sudo chmod +x "$PROFILE_SCRIPT"
     export PATH="$INSTALL_DIR/bin:$PATH"
-    export M2_HOME="$INSTALL_DIR"
     export MAVEN_HOME="$INSTALL_DIR"
 
     # Verify installation
     if command -v mvn &>/dev/null; then
         echo "✅ Maven installed successfully. Version: $(mvn -v | head -n 1)"
     else
-        echo "❌ Maven binary not found after install!"
+        echo "❌ Maven binary not found after installation!"
         exit 1
     fi
 fi
 
 # --- Jenkins Tool Registration ---
-echo "📍 Maven home for Jenkins registration: $MAVEN_HOME"
 echo "🔧 Registering tool in Jenkins: $TOOL_NAME"
+echo "📍 Maven home: $MAVEN_HOME"
 
 echo "🔐 Fetching Jenkins crumb..."
 CRUMB_JSON=$(curl -s -u "$JENKINS_USER:$JENKINS_PASSWORD" -c "$COOKIE_JAR" "$JENKINS_URL/crumbIssuer/api/json")
@@ -126,4 +122,8 @@ RESPONSE=$(curl -s -L -w "\nHTTP_STATUS_CODE:%{http_code}\n" \
 echo "📡 Jenkins response:"
 echo "$RESPONSE"
 
-echo "🎉 Maven installation and Jenkins tool registration complete."
+# Final cleanup
+echo "🧹 Removing temporary archive file..."
+rm -f "$TMP_ARCHIVE"
+
+echo "🎉 Maven installation and Jenkins registration complete."

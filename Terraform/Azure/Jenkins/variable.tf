@@ -42,3 +42,14 @@ variable "acr_name" {
   type    = string
   default = ""
 }
+
+variable "private_key" {
+  type        = string
+  description = "Path to the private SSH key for VM access"
+}
+
+variable "public_key" {
+  type        = string
+  description = "Path to the public SSH key for VM access"
+  
+}

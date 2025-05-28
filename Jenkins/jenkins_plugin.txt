@@ -14,6 +14,7 @@ build-monitor-plugin
 build-timeout
 build-name-setter
 badge
+cloudbees-credentials
 configuration-as-code
 copyartifact
 credentials
@@ -50,6 +51,7 @@ pipeline-github-lib
 pipeline-model-definition
 pipeline-stage-view
 pipeline-utility-steps
+plain-credentials
 preSCMbuildstep
 prometheus
 python

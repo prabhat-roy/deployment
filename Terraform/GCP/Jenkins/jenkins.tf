@@ -17,7 +17,7 @@ resource "google_compute_instance" "jenkins" {
   }
 
   metadata = {
-    ssh-keys = "${var.user}:${local.public_key_content}"
+    ssh-keys = "${var.admin_user}:${file(var.public_key)}"
   }
 
   service_account {
@@ -39,8 +39,8 @@ resource "null_resource" "jenkins_provision" {
   connection {
     type        = "ssh"
     host        = google_compute_address.jenkins.address
-    user        = var.user
-    private_key = local.private_key_content
+    user        = var.admin_user
+    private_key = file(var.private_key)
   }
 
   # ✅ Copy entire shell_script folder at once

@@ -4,5 +4,7 @@ key_name         = "jenkins-key"
 public_key_path = "~/.ssh/id_ed25519.pub"
 private_key = "~/.ssh/id_ed25519"
 instance_type    = "t2.medium"
+#instance_type    = "t3.xlarge"
 disk_size        = 50
 cluster_name     = "eks-cluster"
+admin_user = "ubuntu"

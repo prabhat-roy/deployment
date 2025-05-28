@@ -19,8 +19,18 @@ check_installed() {
 # Install on Debian/Ubuntu
 install_debian() {
     echo "📦 Installing Puppet on Debian/Ubuntu..."
-    DEB_FILE="puppet-release.deb"
-    wget -nc https://apt.puppetlabs.com/puppet-release-$(lsb_release -cs).deb -O "$DEB_FILE"
+
+    local codename
+    codename=$(lsb_release -cs)
+
+    # Fallback for unsupported releases like Ubuntu 24.04 ("oracular")
+    if ! wget -q --spider "https://apt.puppetlabs.com/puppet-release-${codename}.deb"; then
+        echo "⚠️  No official Puppet release for '${codename}'. Falling back to 'jammy' (22.04)..."
+        codename="jammy"
+    fi
+
+    DEB_FILE="puppet-release-${codename}.deb"
+    wget -nc "https://apt.puppetlabs.com/puppet-release-${codename}.deb" -O "$DEB_FILE"
     sudo dpkg -i "$DEB_FILE"
     sudo apt-get update
     sudo apt-get install -y puppet-agent
@@ -32,7 +42,7 @@ install_debian() {
 # Install on RHEL/CentOS/Fedora
 install_rhel() {
     echo "📦 Installing Puppet on RHEL/CentOS/Fedora..."
-    sudo rpm -Uvh https://yum.puppet.com/puppet-release-el-$(rpm -E %{rhel}).noarch.rpm
+    sudo rpm -Uvh "https://yum.puppet.com/puppet-release-el-$(rpm -E %{rhel}).noarch.rpm"
     if command -v yum &> /dev/null; then
         sudo yum install -y puppet-agent
     elif command -v dnf &> /dev/null; then

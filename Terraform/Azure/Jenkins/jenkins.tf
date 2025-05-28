@@ -28,7 +28,7 @@ resource "azurerm_linux_virtual_machine" "jenkins" {
 
   admin_ssh_key {
     username   = var.admin_user
-    public_key = file("~/.ssh/id_ed25519.pub")
+    public_key = file("var.public_key")
   }
 }
 
@@ -39,7 +39,7 @@ resource "null_resource" "jenkins_provision" {
     type        = "ssh"
     host        = azurerm_public_ip.jenkins_ip.ip_address
     user        = var.admin_user
-    private_key = file("~/.ssh/id_ed25519")
+    private_key = file("var.private_key")
     timeout     = "2m"
   }
 

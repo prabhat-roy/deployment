@@ -28,7 +28,7 @@ resource "null_resource" "jenkins_provision" {
   connection {
     type        = "ssh"
     host        = aws_instance.jenkins.public_ip
-    user        = "ubuntu"
+    user        = var.admin_user
     private_key = file(var.private_key)
   }
 

@@ -4,4 +4,6 @@ location            = "eastus"
 vnet_cidr           = "10.1.0.0/16"
 vm_size             = "Standard_B1ms"
 disk_size_gb        = 30
-admin_user          = "azureuser"
+admin_user          = "ubuntu"
+private_key = "~/.ssh/id_ed25519"
+public_key="~/.ssh/id_ed25519.pub"

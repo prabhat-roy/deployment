@@ -30,7 +30,7 @@ variable "disk_size" {
   type        = number
 }
 
-variable "user" {
+variable "admin_user" {
   description = "SSH username"
   type        = string
 }

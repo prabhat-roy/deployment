@@ -23,9 +23,4 @@ locals {
     "roles/dns.admin"
   ]
 
-  public_key_path  = startswith(var.public_key, "~") ? abspath(replace(var.public_key, "~", var.HOME)) : abspath(var.public_key)
-  private_key_path = startswith(var.private_key, "~") ? abspath(replace(var.private_key, "~", var.HOME)) : abspath(var.private_key)
-
-  public_key_content  = file(local.public_key_path)
-  private_key_content = file(local.private_key_path)
 }

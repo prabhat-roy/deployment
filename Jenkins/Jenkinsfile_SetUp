@@ -1,0 +1,176 @@
+pipeline {
+    agent any
+
+    parameters {
+        choice(name: 'action', choices: ['create', 'destroy'], description: 'Create or Destroy repo & cluster')
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                script {
+                    echo "📥 Checking out source code..."
+                    checkout scm
+                }
+            }
+        }
+        
+        stage('Inject Environment Variables') {
+            steps {
+                script {
+                    def envLoader = load 'groovy/env_loader.groovy'
+                    def envVars = envLoader.loadEnvVars("Jenkins.env")
+                    envVars.each { key, val ->
+                        env."${key}" = val
+                        echo "Injected: ${key}=${val}"
+                    }
+                }
+            }
+        }
+
+        stage('Detect Microservices') {
+            steps {
+                script {
+                    def microLister = load 'groovy/detect_microservice.groovy'
+                    microLister.writeServicesToEnv()
+                }
+            }
+        }
+
+        stage('Detect Cloud Provider') {
+            steps {
+                script {
+                    def cloudScript = load 'groovy/detect_cloud.groovy'
+                    cloudScript.detectAndSaveCloudProvider()
+                }
+            }
+        }
+
+        stage('Manage Repository - ${action}') {
+            steps {
+                script {
+                    def cloudRepo = load 'groovy/cloud_repo.groovy'
+
+                    if (params.action == 'create') {
+                        echo "Creating repository..."
+                        cloudRepo.createRepo()
+                    } else if (params.action == 'destroy') {
+                        echo "Removing repository..."
+                        cloudRepo.removeRepo()
+                    } else {
+                        error "Invalid action parameter: ${params.action}"
+                    }
+                }
+            }
+        }
+
+        // stage('Manage Kubernetes Cluster - ${action}') {
+        //     steps {
+        //         script {
+        //             def kubernetesCluster = load 'groovy/kubernetes_cluster.groovy'
+
+        //             if (params.action == 'create') {
+        //                 echo "Creating Kubernetes cluster..."
+        //                 kubernetesCluster.createCluster()
+        //             } else if (params.action == 'destroy') {
+        //                 echo "Removing Kubernetes cluster..."
+        //                 kubernetesCluster.removeCluster()
+        //             } else {
+        //                 error "Invalid action parameter: ${params.action}"
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Update Kubeconfig - ${action}') {
+        //     steps {
+        //         script {
+        //             def kubeconfigUpdate = load 'groovy/kubeconfig_update.groovy'
+
+        //             if (params.action == 'create') {
+        //                 echo "Updating kubeconfig..."
+        //                 kubeconfigUpdate.updateKubeconfig()
+        //             } else if (params.action == 'destroy') {
+        //                 echo "Skipping kubeconfig update on destroy."
+        //             } else {
+        //                 error "Invalid action parameter: ${params.action}"
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Repo Login - ${action}') {
+        //     steps {
+        //         script {
+        //             def repoLogin = load 'groovy/repo_login.groovy'
+
+        //             if (params.action == 'create') {
+        //                 echo "Logging into repository..."
+        //                 repoLogin.repoLogin()
+        //             } else if (params.action == 'destroy') {
+        //                 echo "Skipping repo login on destroy."
+        //             } else {
+        //                 error "Invalid action parameter: ${params.action}"
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Manage Autoscaler - ${action}') {
+        //     steps {
+        //         script {
+        //             def karpenterAutoscaler = load 'groovy/karpenter_autoscaler.groovy'
+
+        //             if (params.action == 'create') {
+        //                 echo "Installing Karpenter autoscaler..."
+        //                 karpenterAutoscaler.install()
+        //             } else if (params.action == 'destroy') {
+        //                 echo "Uninstalling Karpenter autoscaler..."
+        //                 infraManager.uninstall()
+        //             } else {
+        //                 error "Invalid action parameter: ${params.action}"
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Manage HPA KEDA - ${action}') {
+        //     steps {
+        //         script {
+        //             def hpaKeda = load 'groovy/hpa_keda.groovy'
+
+        //             if (params.action == 'create') {
+        //                 echo "Installing HPA KEDA..."
+        //                 hpaKeda.install()
+        //             } else if (params.action == 'destroy') {
+        //                 echo "Uninstalling HPA KEDA..."
+        //                 hpaKeda.uninstall()
+        //             } else {
+        //                 error "Invalid action parameter: ${params.action}"
+        //             }
+        //         }
+        //     }
+        // }
+
+        stage('Archive Jenkins.env') {
+            steps {
+                script {
+                    // Archive Jenkins.env for visibility and stash for next pipeline usage
+                    archiveArtifacts artifacts: 'Jenkins.env', onlyIfSuccessful: true
+                    stash name: 'env-file', includes: 'Jenkins.env'
+                }
+            }
+        }
+
+        stage('Clean Workspace') {
+            steps {
+                script {
+                    // Remove all workspace files for a clean start in next run
+                    deleteDir()
+                    echo "Workspace deleted."
+                }
+            }
+        }
+    }
+}
+

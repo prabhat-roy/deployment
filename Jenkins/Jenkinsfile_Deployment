@@ -21,7 +21,7 @@ pipeline {
             steps {
                 script {
                     echo "📦 Copying Jenkins.env from 'Monitoring' pipeline..."
-                    copyArtifacts projectName: 'Monitoring', filter: 'Jenkins.env', target: './', optional: false
+                    copyArtifacts projectName: 'setup', filter: 'Jenkins.env', target: './', optional: false
 
                     if (!fileExists('Jenkins.env')) {
                         error "❌ Jenkins.env file not found. Aborting build."
@@ -318,8 +318,8 @@ pipeline {
         stage('OWASP Dependency-Check') {
             steps {
                 script {
-                    def depkScan = load 'groovy/scan_owasp_dependency_check.groovy'
-                    depScan.canAndArchiveSource()
+                    def owaspScan = load 'groovy/scan_owasp_dependency_check.groovy'
+                    owaspScan.call()
                 }
             }
         }
