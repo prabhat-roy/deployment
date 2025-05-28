@@ -53,6 +53,7 @@ def registerKubeconfig() {
 
         def credId = "kubeconfig-credential"
 
+        // Check if credential already exists
         def existsCode = sh(
             script: """curl -s -o /dev/null -w "%{http_code}" -u '${jenkinsUser}:${jenkinsToken}' \
 '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/api/json'""",
@@ -64,18 +65,23 @@ def registerKubeconfig() {
             return
         }
 
+        // Copy kubeconfig to workspace
         sh "cp ~/.kube/config ${env.WORKSPACE}/kubeconfig"
 
+        // Read kubeconfig as base64 string
         def kubeconfigBase64 = sh(
             script: "base64 -w0 ${env.WORKSPACE}/kubeconfig",
             returnStdout: true
         ).trim()
 
-        byte[] rawBytes = Base64.decoder.decode(kubeconfigBase64)
-        def bytesList = rawBytes.collect { it & 0xFF }
+        // Decode base64 to bytes
+        byte[] decodedBytes = Base64.decoder.decode(kubeconfigBase64)
 
+        // Convert bytes to list of integers
+        def bytesList = decodedBytes.collect { it & 0xFF }
+
+        // Build JSON payload with correct structure
         def payloadMap = [
-            "": "0",
             credentials: [
                 scope      : "GLOBAL",
                 id         : credId,
@@ -92,8 +98,10 @@ def registerKubeconfig() {
         def payloadFile = "${env.WORKSPACE}/kubeconfig-payload.json"
         writeFile file: payloadFile, text: JsonOutput.toJson(payloadMap)
 
+        // Get Jenkins crumb for CSRF protection
         def crumb = getCrumb(jenkinsUrl, jenkinsUser, jenkinsToken)
 
+        // Send POST request to create credential
         sh """
         curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
              --user '${jenkinsUser}:${jenkinsToken}' \\
@@ -103,6 +111,7 @@ def registerKubeconfig() {
         """
 
         echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
+
     } catch (Exception e) {
         echo "❌ Failed to register kubeconfig credential: ${e.getMessage()}"
     }
