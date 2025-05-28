@@ -46,14 +46,14 @@ pipeline {
             }
         }
 
-        stage('Manage Repository') {
-            steps {
-                script {
-                    def cloudRepo = load 'groovy/cloud_repo.groovy'
-                    cloudRepo.manageRepository(params.action)
-                }
-            }
-        }
+        // stage('Manage Repository') {
+        //     steps {
+        //         script {
+        //             def cloudRepo = load 'groovy/cloud_repo.groovy'
+        //             cloudRepo.manageRepository(params.action)
+        //         }
+        //     }
+        // }
 
         stage('Manage Kubernetes Cluster') {
             steps {
