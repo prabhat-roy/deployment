@@ -144,15 +144,15 @@ pipeline {
             }
         }
 
-        stage('Clean Workspace') {
-            steps {
-                script {
-                    // Remove all workspace files for a clean start in next run
-                    deleteDir()
-                    echo "Workspace deleted."
-                }
-            }
-        }
+        // stage('Clean Workspace') {
+        //     steps {
+        //         script {
+        //             // Remove all workspace files for a clean start in next run
+        //             deleteDir()
+        //             echo "Workspace deleted."
+        //         }
+        //     }
+        // }
     }
 }
 
