@@ -19,7 +19,6 @@ def registerKubeconfig(String action) {
     def (jenkinsUser, jenkinsToken) = jenkinsCreds.split(":", 2).collect { it.trim() }
     def credId = "kubeconfig-credential"
 
-    // Check if credential already exists
     def exists = (sh(script: """
         curl -s -o /dev/null -w "%{http_code}" -u '${jenkinsUser}:${jenkinsToken}' \
         '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/api/json'
@@ -40,13 +39,11 @@ def registerKubeconfig(String action) {
         return
     }
 
-    // 'create' action
     if (exists) {
         echo "✅ Credential '${credId}' already exists, skipping creation."
         return
     }
 
-    // Update kubeconfig based on cloud provider
     switch (cloud) {
         case 'aws':
             if (!props['AWS_REGION']) error "❌ AWS_REGION not set"
@@ -64,7 +61,6 @@ def registerKubeconfig(String action) {
             error "❌ Unsupported CLOUD_PROVIDER: ${cloud}"
     }
 
-    // Copy kubeconfig and encode it
     def kubeconfigPath = "${env.WORKSPACE}/kubeconfig"
     sh "cp ~/.kube/config ${kubeconfigPath}"
 
@@ -73,7 +69,6 @@ def registerKubeconfig(String action) {
         returnStdout: true
     ).trim()
 
-    // Build the credential payload
     def payloadMap = [
         credentials: [
             scope      : "GLOBAL",
@@ -84,11 +79,9 @@ def registerKubeconfig(String action) {
             secretBytes: kubeconfigBase64
         ]
     ]
-    def payload = JsonOutput.toJson(payloadMap).replace("$", "\\$") // Escape $ for shell
 
-    // Write payload to temp file to avoid quoting issues
     def payloadFile = "${env.WORKSPACE}/kubeconfig-payload.json"
-    writeFile file: payloadFile, text: payload
+    writeFile file: payloadFile, text: JsonOutput.toJson(payloadMap)
 
     echo "🔐 Creating Jenkins credential '${credId}'..."
     sh script: """
