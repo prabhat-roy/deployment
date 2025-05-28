@@ -95,3 +95,6 @@ def manageRepository(String action = 'create', boolean skipIfExists = true) {
         }
     }
 }
+
+// Return this script object to expose functions when loaded
+return this
