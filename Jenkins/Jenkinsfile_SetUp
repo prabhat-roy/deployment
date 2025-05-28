@@ -64,23 +64,23 @@ pipeline {
             }
         }
 
-        // stage('Manage Kubernetes Cluster - ${action}') {
-        //     steps {
-        //         script {
-        //             def kubernetesCluster = load 'groovy/kubernetes_cluster.groovy'
+        stage('Manage Kubernetes Cluster') {
+            steps {
+                script {
+                    def kubernetesCluster = load 'groovy/kubernetes_cluster.groovy'
 
-        //             if (params.action == 'create') {
-        //                 echo "Creating Kubernetes cluster..."
-        //                 kubernetesCluster.createCluster()
-        //             } else if (params.action == 'destroy') {
-        //                 echo "Removing Kubernetes cluster..."
-        //                 kubernetesCluster.removeCluster()
-        //             } else {
-        //                 error "Invalid action parameter: ${params.action}"
-        //             }
-        //         }
-        //     }
-        // }
+                    if (params.action == 'create') {
+                        echo "Creating Kubernetes cluster..."
+                        kubernetesCluster.createCluster()
+                    } else if (params.action == 'destroy') {
+                        echo "Removing Kubernetes cluster..."
+                        kubernetesCluster.removeCluster()
+                    } else {
+                        error "Invalid action parameter: ${params.action}"
+                    }
+                }
+            }
+        }
 
         // stage('Update Kubeconfig - ${action}') {
         //     steps {
