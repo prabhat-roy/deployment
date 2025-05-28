@@ -1,14 +1,19 @@
 def manageRegistryCredential(String action = 'create') {
     def cloud = env.CLOUD_PROVIDER?.toLowerCase()
     def credId = "cloud-repo-login"
-    def jenkinsUrl = "http://localhost:8080"
-    def jenkinsCredId = "jenkins-cred" // Stored Jenkins credential
+    def jenkinsUrl = env.JENKINS_URL
+    def jenkinsCredId = env.JENKINS_CREDS_ID
     def username, password, registryUrl
 
+    if (!jenkinsUrl) {
+        error "❌ JENKINS_URL environment variable is not set!"
+    }
+    if (!jenkinsCredId) {
+        error "❌ JENKINS_CREDS_ID environment variable is not set!"
+    }
     if (!cloud) {
         error "❌ CLOUD_PROVIDER environment variable is not set!"
     }
-
     if (!(action in ['create', 'destroy'])) {
         error "❌ Invalid action '${action}'. Allowed: create, destroy"
     }
@@ -76,8 +81,9 @@ def manageRegistryCredential(String action = 'create') {
 
         echo "🔐 Creating Jenkins credential for registry: ${registryUrl}"
 
-        // Base64 encode password using shell to avoid sandbox rejection
-        def encodedPassword = sh(script: "echo -n '${password.replace(\"'\", \"'\\\\''\")}' | base64", returnStdout: true).trim()
+        def safePassword = password.replace("'", "'\\''")
+
+        def encodedPassword = sh(script: """echo -n '${safePassword}' | base64""", returnStdout: true).trim()
 
         def script = """
             import com.cloudbees.plugins.credentials.*
