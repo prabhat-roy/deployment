@@ -51,8 +51,8 @@ def manageRegistryCredential(String action = 'create') {
             case 'aws':
                 username = 'AWS'
                 password = sh(script: "aws ecr get-login-password --region ${env.AWS_REGION}", returnStdout: true).trim()
-                registryUrl = sh(script: "aws sts get-caller-identity --query 'Account' --output text", returnStdout: true).trim()
-                registryUrl = "${registryUrl}.dkr.ecr.${env.AWS_REGION}.amazonaws.com"
+                def accountId = sh(script: "aws sts get-caller-identity --query 'Account' --output text", returnStdout: true).trim()
+                registryUrl = "${accountId}.dkr.ecr.${env.AWS_REGION}.amazonaws.com"
                 break
 
             case 'azure':
@@ -76,6 +76,9 @@ def manageRegistryCredential(String action = 'create') {
 
         echo "🔐 Creating Jenkins credential for registry: ${registryUrl}"
 
+        // Escape backslashes and single quotes for Groovy string literal
+        def escapedPassword = password.replace("\\", "\\\\").replace("'", "\\'")
+
         def script = """
             import com.cloudbees.plugins.credentials.*
             import com.cloudbees.plugins.credentials.domains.*
@@ -93,7 +96,7 @@ def manageRegistryCredential(String action = 'create') {
                     '${credId}',
                     'Docker login for ${cloud.toUpperCase()} registry',
                     '${username}',
-                    '''${password}'''
+                    '''${escapedPassword}'''
                 )
                 store.addCredentials(Domain.global(), cred)
                 println("✅ Credential '${credId}' created.")
