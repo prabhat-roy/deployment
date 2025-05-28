@@ -19,6 +19,7 @@ def registerKubeconfig(String action) {
     def (jenkinsUser, jenkinsToken) = jenkinsCreds.split(":", 2).collect { it.trim() }
     def credId = "kubeconfig-credential"
 
+    // Check if credential exists
     def exists = (sh(script: """
         curl -s -o /dev/null -w "%{http_code}" -u '${jenkinsUser}:${jenkinsToken}' \
         '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/api/json'
@@ -32,7 +33,7 @@ def registerKubeconfig(String action) {
 
         echo "🔥 Deleting Jenkins credential '${credId}'..."
         sh script: """
-            curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/doDelete' \\
+            curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/credential/${credId}/doDelete' \
             --user '${jenkinsUser}:${jenkinsToken}'
         """
         echo "✅ Credential '${credId}' deleted."
@@ -44,18 +45,24 @@ def registerKubeconfig(String action) {
         return
     }
 
+    // --- Create kubeconfig depending on cloud provider ---
     switch (cloud) {
         case 'aws':
             if (!props['AWS_REGION']) error "❌ AWS_REGION not set"
-            sh "aws eks update-kubeconfig --region ${props['AWS_REGION']} --name eks-cluster"
+            def clusterName = props['CLUSTER_NAME'] ?: 'eks-cluster'
+            sh "aws eks update-kubeconfig --region ${props['AWS_REGION']} --name ${clusterName}"
             break
         case 'azure':
             if (!props['RESOURCE_GROUP']) error "❌ RESOURCE_GROUP not set"
-            sh "az aks get-credentials --resource-group ${props['RESOURCE_GROUP']} --name aks-cluster --overwrite-existing"
+            def clusterName = props['CLUSTER_NAME'] ?: 'aks-cluster'
+            sh "az aks get-credentials --resource-group ${props['RESOURCE_GROUP']} --name ${clusterName} --overwrite-existing"
             break
         case 'gcp':
-            if (!props['GOOGLE_PROJECT']) error "❌ GOOGLE_PROJECT not set"
-            sh "gcloud container clusters get-credentials gke-cluster --region ${props['GOOGLE_REGION']} --project ${props['GOOGLE_PROJECT']}"
+            if (!props['GOOGLE_PROJECT'] || !props['GOOGLE_REGION']) {
+                error "❌ GOOGLE_PROJECT and GOOGLE_REGION must be set"
+            }
+            def clusterName = props['CLUSTER_NAME'] ?: 'gke-cluster'
+            sh "gcloud container clusters get-credentials ${clusterName} --region ${props['GOOGLE_REGION']} --project ${props['GOOGLE_PROJECT']}"
             break
         default:
             error "❌ Unsupported CLOUD_PROVIDER: ${cloud}"
@@ -74,7 +81,7 @@ def registerKubeconfig(String action) {
             scope      : "GLOBAL",
             id         : credId,
             description: "Kubeconfig for ${cloud} cluster",
-            $class     : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
+            '$class'   : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
             fileName   : "config",
             secretBytes: kubeconfigBase64
         ]
@@ -85,9 +92,9 @@ def registerKubeconfig(String action) {
 
     echo "🔐 Creating Jenkins credential '${credId}'..."
     sh script: """
-        curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \\
-        --user '${jenkinsUser}:${jenkinsToken}' \\
-        -H 'Content-Type: application/json' \\
+        curl -s -X POST '${jenkinsUrl}/credentials/store/system/domain/_/createCredentials' \
+        --user '${jenkinsUser}:${jenkinsToken}' \
+        -H 'Content-Type: application/json' \
         -d @${payloadFile}
     """
     echo "✅ Kubeconfig registered as Jenkins file credential with ID: ${credId}"
