@@ -18,11 +18,19 @@ def registerKubeconfig() {
     if (!jenkinsUrl) error "❌ JENKINS_URL is not defined"
     if (!jenkinsCreds) error "❌ JENKINS_CREDS_ID is not defined"
 
-    def jenkinsAuth = jenkinsCreds.contains(":") ? jenkinsCreds : getUserToken(jenkinsCreds)
+    def jenkinsUser = ""
+    def jenkinsToken = ""
 
-    def parts = jenkinsAuth.split(":", 2)
-    def jenkinsUser = parts[0].trim()
-    def jenkinsToken = parts.length > 1 ? parts[1].trim() : ''
+    if (jenkinsCreds.contains(":")) {
+        def parts = jenkinsCreds.split(":", 2)
+        jenkinsUser = parts[0].trim()
+        jenkinsToken = parts[1].trim()
+    } else {
+        def tokenPair = getUserToken(jenkinsCreds)
+        def parts = tokenPair.split(":", 2)
+        jenkinsUser = parts[0].trim()
+        jenkinsToken = parts[1].trim()
+    }
 
     def credId = "kubeconfig-credential"
 
@@ -36,6 +44,7 @@ def registerKubeconfig() {
         return
     }
 
+    // Copy kubeconfig
     sh "cp ~/.kube/config ${env.WORKSPACE}/kubeconfig"
 
     def kubeconfigBase64 = sh(
@@ -43,14 +52,13 @@ def registerKubeconfig() {
         returnStdout: true
     ).trim()
 
-    // Jenkins expects a nested structure with proper classes
     def payloadMap = [
         "": "0",
         "credentials": [
             "scope"      : "GLOBAL",
             "id"         : credId,
             "description": "Kubeconfig for ${cloud} cluster",
-            "$class"     : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
+            "class"      : "org.jenkinsci.plugins.plaincredentials.impl.FileCredentialsImpl",
             "fileName"   : "config",
             "secretBytes": [
                 "class": "org.jenkinsci.plugins.plaincredentials.impl.SecretBytes",
