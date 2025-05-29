@@ -64,15 +64,6 @@ pipeline {
             }
         }
 
-        stage('Register Kubernetes Credential') {
-            steps {
-                script {
-                    def kubeAuth = load 'groovy/register_kubeconfig.groovy'
-                    kubeAuth.registerKubeconfig()
-                }
-            }
-        }
-
         // stage('Manage Autoscaler - ${action}') {
         //     steps {
         //         script {
