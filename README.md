@@ -1,21 +1,21 @@
 <!-- <p align="center">
 <img src="/src/frontend/static/icons/Hipster_HeroLogoMaroon.svg" width="300" alt="Online Boutique" />
 </p> -->
-![Continuous Integration](https://github.com/GoogleCloudPlatform/microservices-demo/workflows/Continuous%20Integration%20-%20Main/Release/badge.svg)
+![Continuous Integration](https://github.com/prabhat-roy/multicloud_10_microservice_deployment/workflows/Continuous%20Integration%20-%20Main/Release/badge.svg)
 
-**Online Boutique** is a cloud-first microservices demo application.  The application is a
-web-based e-commerce app where users can browse items, add them to the cart, and purchase them.
+**Online Boutique** is a cloud-first **multi-cloud Kubernetes** demo application. The application is a web-based e-commerce app where users can browse items, add them to the cart, and purchase them.
 
-Google uses this application to demonstrate how developers can modernize enterprise applications using Google Cloud products, including: [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine), [Cloud Service Mesh (CSM)](https://cloud.google.com/service-mesh), [gRPC](https://grpc.io/), [Cloud Operations](https://cloud.google.com/products/operations), [Spanner](https://cloud.google.com/spanner), [Memorystore](https://cloud.google.com/memorystore), [AlloyDB](https://cloud.google.com/alloydb), and [Gemini](https://ai.google.dev/). This application works on any Kubernetes cluster.
+This project demonstrates how developers can deploy and manage enterprise applications across multiple cloud providers using Kubernetes. It is designed to work seamlessly on any Kubernetes cluster, whether on Google Cloud, AWS, Azure, or on-premises environments.
+
+Google uses this application to showcase how developers can modernize enterprise applications using Google Cloud products, including: [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine), [Cloud Service Mesh (CSM)](https://cloud.google.com/service-mesh), [gRPC](https://grpc.io/), [Cloud Operations](https://cloud.google.com/products/operations), [Spanner](https://cloud.google.com/spanner), [Memorystore](https://cloud.google.com/memorystore), [AlloyDB](https://cloud.google.com/alloydb), and [Gemini](https://ai.google.dev/). However, the application is designed to be cloud-agnostic and can be deployed on any Kubernetes platform.
 
 If you’re using this demo, please **★Star** this repository to show your interest!
 
-**Note to Googlers:** Please fill out the form at [go/microservices-demo](http://go/microservices-demo).
+**Note to Developers:** This repository is hosted at [https://github.com/prabhat-roy/multicloud_10_microservice_deployment.git](https://github.com/prabhat-roy/multicloud_10_microservice_deployment.git).
 
 ## Architecture
 
-**Online Boutique** is composed of 11 microservices written in different
-languages that talk to each other over gRPC.
+**Online Boutique** is composed of 11 microservices written in different languages that talk to each other over gRPC. These microservices can be deployed across multiple cloud environments, showcasing the flexibility of Kubernetes in a multi-cloud setup.
 
 [![Architecture of
 microservices](/docs/img/architecture-diagram.png)](/docs/img/architecture-diagram.png)
@@ -36,28 +36,27 @@ Find **Protocol Buffers Descriptions** at the [`./protos` directory](/protos).
 | [adservice](/src/adservice)                         | Java          | Provides text ads based on given context words.                                                                                   |
 | [loadgenerator](/src/loadgenerator)                 | Python/Locust | Continuously sends requests imitating realistic user shopping flows to the frontend.                                              |
 
-## Screenshots
+## Multi-Cloud Deployment
 
-| Home Page                                                                                                         | Checkout Screen                                                                                                    |
-| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| [![Screenshot of store homepage](/docs/img/online-boutique-frontend-1.png)](/docs/img/online-boutique-frontend-1.png) | [![Screenshot of checkout screen](/docs/img/online-boutique-frontend-2.png)](/docs/img/online-boutique-frontend-2.png) |
+This project is designed to be deployed across multiple cloud providers. It supports Kubernetes clusters on:
 
-## Quickstart (GKE)
+- **Google Cloud**: Using [Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine).
+- **AWS**: Using [Amazon Elastic Kubernetes Service (EKS)](https://aws.amazon.com/eks/).
+- **Azure**: Using [Azure Kubernetes Service (AKS)](https://azure.microsoft.com/en-us/services/kubernetes-service/).
+- **On-Premises**: Using [Minikube](https://minikube.sigs.k8s.io/docs/) or [Kind](https://kind.sigs.k8s.io/).
 
-1. Ensure you have the following requirements:
-   - [Google Cloud project](https://cloud.google.com/resource-manager/docs/creating-managing-projects#creating_a_project).
-   - Shell environment with `gcloud`, `git`, and `kubectl`.
+The application demonstrates how to achieve portability and scalability across different cloud environments using Kubernetes.
 
-2. Clone the latest major version.
+## Quickstart
+
+1. Clone the repository:
 
    ```sh
-   git clone --depth 1 --branch v0 https://github.com/GoogleCloudPlatform/microservices-demo.git
-   cd microservices-demo/
+   git clone https://github.com/prabhat-roy/multicloud_10_microservice_deployment.git
+   cd multicloud_10_microservice_deployment
    ```
 
-   The `--depth 1` argument skips downloading git history.
-
-3. Set the Google Cloud project and region and ensure the Google Kubernetes Engine API is enabled.
+2. Set the Google Cloud project and region and ensure the Google Kubernetes Engine API is enabled.
 
    ```sh
    export PROJECT_ID=<PROJECT_ID>
@@ -68,7 +67,7 @@ Find **Protocol Buffers Descriptions** at the [`./protos` directory](/protos).
 
    Substitute `<PROJECT_ID>` with the ID of your Google Cloud project.
 
-4. Create a GKE cluster and get the credentials for it.
+3. Create a GKE cluster and get the credentials for it.
 
    ```sh
    gcloud container clusters create-auto online-boutique \
@@ -77,13 +76,13 @@ Find **Protocol Buffers Descriptions** at the [`./protos` directory](/protos).
 
    Creating the cluster may take a few minutes.
 
-5. Deploy Online Boutique to the cluster.
+4. Deploy Online Boutique to the cluster.
 
    ```sh
    kubectl apply -f ./release/kubernetes-manifests.yaml
    ```
 
-6. Wait for the pods to be ready.
+5. Wait for the pods to be ready.
 
    ```sh
    kubectl get pods
@@ -107,7 +106,7 @@ Find **Protocol Buffers Descriptions** at the [`./protos` directory](/protos).
    shippingservice-6ccc89f8fd-v686r         1/1     Running   0          2m58s
    ```
 
-7. Access the web frontend in a browser using the frontend's external IP.
+6. Access the web frontend in a browser using the frontend's external IP.
 
    ```sh
    kubectl get service frontend-external | awk '{print $4}'
@@ -115,9 +114,9 @@ Find **Protocol Buffers Descriptions** at the [`./protos` directory](/protos).
 
    Visit `http://EXTERNAL_IP` in a web browser to access your instance of Online Boutique.
 
-8. Congrats! You've deployed the default Online Boutique. To deploy a different variation of Online Boutique (e.g., with Google Cloud Operations tracing, Istio, etc.), see [Deploy Online Boutique variations with Kustomize](#deploy-online-boutique-variations-with-kustomize).
+7. Congrats! You've deployed the default Online Boutique. To deploy a different variation of Online Boutique (e.g., with Google Cloud Operations tracing, Istio, etc.), see [Deploy Online Boutique variations with Kustomize](#deploy-online-boutique-variations-with-kustomize).
 
-9. Once you are done with it, delete the GKE cluster.
+8. Once you are done with it, delete the GKE cluster.
 
    ```sh
    gcloud container clusters delete online-boutique \

@@ -64,6 +64,15 @@ pipeline {
             }
         }
 
+        // stage('Manage Kubernetes Autoscaler') {
+        //     steps {
+        //         script {
+        //             def autoscaler = load 'groovy/manage_autoscaler.groovy'
+        //             autoscaler.manageAutoscaler(params.action)
+        //         }
+        //     }
+        // }
+
         // stage('Manage Autoscaler - ${action}') {
         //     steps {
         //         script {
@@ -96,6 +105,24 @@ pipeline {
         //             } else {
         //                 error "Invalid action parameter: ${params.action}"
         //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Manage Elastic Stack') {
+        //     steps {
+        //         script {
+        //             def elasticManager = load 'groovy/elastic_stack.groovy'
+        //             elasticManager.manageElasticStack(params.action)
+        //         }
+        //     }
+        // }
+
+        // stage('Manage Prometheeus Stack') {
+        //     steps {
+        //         script {
+        //             def prometheusManager = load 'groovy/prometheus_stack.groovy'
+        //             prometheusManager.managePrometheusStack(params.action)
         //         }
         //     }
         // }
