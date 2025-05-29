@@ -75,10 +75,27 @@ def manageKubernetes(String action) {
                 echo "🧵 Deleting default node pool..."
                 sh "terraform apply -auto-approve ${terraformVars.join(' ')} -var=remove_default_pool=true"
                 echo "✅ Azure cluster ready with custom node pool only."
-            } else {
+                echo "📥 Fetching kubeconfig..."
+                sh "az aks get-credentials --resource-group ${env.RESOURCE_GROUP} --name aks-cluster --file /tmp/kubeconfig --overwrite-existing"
+            } else if (cloud == 'aws') {
                 echo "🚀 Creating cluster using terraform apply..."
                 sh "terraform apply -auto-approve ${terraformVars.join(' ')}"
+                echo "📥 Fetching kubeconfig..."
+                sh "aws eks update-kubeconfig --region ${env.AWS_REGION} --name eks-cluster --kubeconfig /tmp/kubeconfig"
+            } else if (cloud == 'gcp') {
+                echo "🚀 Creating cluster using terraform apply..."
+                sh "terraform apply -auto-approve ${terraformVars.join(' ')}"
+                echo "📥 Fetching kubeconfig..."
+                sh "gcloud container clusters get-credentials gke-cluster --region ${env.GOOGLE_REGION} --project ${env.GOOGLE_PROJECT} --kubeconfig=/tmp/kubeconfig"
             }
+
+            echo "📦 Encoding kubeconfig and appending to Jenkins.env..."
+            sh """
+                echo '' >> ../../Jenkins.env
+                echo '# Kubernetes kubeconfig (base64 encoded)' >> ../../Jenkins.env
+                echo 'KUBECONFIG_BASE64='$(base64 -w 0 /tmp/kubeconfig) >> ../../Jenkins.env
+            """
+            echo "✅ KUBECONFIG_BASE64 appended to Jenkins.env"
 
         } else if (action == 'destroy') {
             if (!stateHasResources) {
@@ -93,6 +110,7 @@ def manageKubernetes(String action) {
             } else {
                 echo "🔥 Destroying cluster using terraform destroy..."
                 sh "terraform destroy -auto-approve ${terraformVars.join(' ')}"
+                echo "🧹 Removing kubeconfig reference from Jenkins.env (optional manual cleanup if needed)."
             }
         }
     }
